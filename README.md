@@ -1,4 +1,4 @@
-# erlArango
+# eArango
     arangodb erlang driver
     erlang otp21.2+ arangodb 3.6.2 3.7
     

@@ -2,7 +2,7 @@
    [{description, "An OTP application"},
       {vsn, "0.1.0"},
       {registered, []},
-      {mod, {erlArango_app, []}},
+      {mod, {eArango_app, []}},
       {applications, [kernel, stdlib, jiffy]},
       {env, []},
       {modules, []},

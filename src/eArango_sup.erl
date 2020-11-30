@@ -1,6 +1,6 @@
--module(erlArango_sup).
+-module(eArango_sup).
 -include("agHttpCli.hrl").
--include("erlArango.hrl").
+-include("eArango.hrl").
 
 -behaviour(supervisor).
 

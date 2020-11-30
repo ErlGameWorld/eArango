@@ -1,5 +1,5 @@
 -module(agAdminMonitor).
--include("erlArango.hrl").
+-include("eArango.hrl").
 
 -compile(inline).
 -compile({inline_size, 128}).
