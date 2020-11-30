@@ -54,7 +54,7 @@
 getRepInventory(PoolNameOrSocket, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/replication/inventory", QueryBinary/binary>>,
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
 
 % 创建新的转储批次
 % 处理转储批处理命令
@@ -73,7 +73,7 @@ getRepInventory(PoolNameOrSocket, QueryPars) ->
 %    405：使用无效的HTTP方法时返回。
 newRepBatch(PoolNameOrSocket, MapData) ->
    BodyStr = jiffy:encode(MapData),
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/replication/batch">>, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/replication/batch">>, [], BodyStr).
 
 % 删除现有的转储批次固定链接
 % 处理转储批处理命令
@@ -89,7 +89,7 @@ newRepBatch(PoolNameOrSocket, MapData) ->
 %    405：使用无效的HTTP方法时返回。
 delRepBatch(PoolNameOrSocket, BatchId) ->
    Path = <<"/_api/replication/batch/", (agMiscUtils:toBinary(BatchId))/binary>>,
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, [], undefined).
 
 % 延长现有的转储批次固定链接
 % 处理转储批处理命令
@@ -112,7 +112,7 @@ delRepBatch(PoolNameOrSocket, BatchId) ->
 prolongRepBatch(PoolNameOrSocket, BatchId, MapData) ->
    Path = <<"/_api/replication/batch/", (agMiscUtils:toBinary(BatchId))/binary>>,
    BodyStr = jiffy:encode(MapData),
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
 
 % 返回集合的数据
 % 返回一个集合的全部内容
@@ -144,7 +144,7 @@ prolongRepBatch(PoolNameOrSocket, BatchId, MapData) ->
 getRepDump(PoolNameOrSocket, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/replication/dump", QueryBinary/binary>>,
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
 
 % 返回Merkle树以进行收集
 % 检索与集合关联的Merkle树
@@ -182,7 +182,7 @@ getRepDump(PoolNameOrSocket, QueryPars) ->
 getRepTree(PoolNameOrSocket, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/replication/revisions/tree", QueryBinary/binary>>,
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
 
 % 为集合永久链接重建Merkle树
 % 重建与集合关联的Merkle树
@@ -202,7 +202,7 @@ getRepTree(PoolNameOrSocket, QueryPars) ->
 resetRepTree(PoolNameOrSocket, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/replication/revisions/tree", QueryBinary/binary>>,
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], undefined).
 
 % 返回要求范围内的修订版ID 永久链接
 % 检索请求范围内的文档的修订ID
@@ -215,7 +215,7 @@ resetRepTree(PoolNameOrSocket, QueryPars) ->
 getRepRanges(PoolNameOrSocket, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/replication/revisions/ranges", QueryBinary/binary>>,
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], undefined).
 
 % 通过修订返回文档
 % 通过修订检索文档
@@ -246,7 +246,7 @@ getRepRanges(PoolNameOrSocket, QueryPars) ->
 getRepDoc(PoolNameOrSocket, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/replication/revisions/documents", QueryBinary/binary>>,
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], undefined).
 
 % 从远程端点同步数据永久
 % 开始复制
@@ -278,7 +278,7 @@ getRepDoc(PoolNameOrSocket, QueryPars) ->
 %    501：在集群中的协调器上调用此操作时返回。
 startRepSync(PoolNameOrSocket, MapData) ->
    BodyStr = jiffy:encode(MapData),
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/sync">>, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/sync">>, [], BodyStr).
 
 % 返回集合和索引的集群清单
 % 重建集群中的集合和索引的概述
@@ -294,7 +294,7 @@ startRepSync(PoolNameOrSocket, MapData) ->
 getRepClusterInv(PoolNameOrSocket, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/replication/clusterInventory", QueryBinary/binary>>,
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
 
 % 复制记录器命令
 % 早期版本的ArangoDB允许启动，停止和配置复制记录器。这些命令在ArangoDB 2.2中是多余的，因为所有数据修改操作均写入服务器的预写日志，并且不再由单独的记录器处理。
@@ -323,7 +323,7 @@ getRepClusterInv(PoolNameOrSocket, QueryPars) ->
 %     405：使用无效的HTTP方法时返回。
 %     500：如果无法确定记录器状态，则返回。
 getRepLoggerState(PoolNameOrSocket) ->
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/replication/logger-state">>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/replication/logger-state">>, [], undefined).
 
 
 % 返回日志条目永久链接固定链接
@@ -378,7 +378,7 @@ getRepLoggerState(PoolNameOrSocket) ->
 %     500：如果组装响应时发生错误，则返回500。
 %     501：在集群中的协调器上调用此操作时返回。
 getRepLoggerFirstTick(PoolNameOrSocket) ->
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/replication/logger-first-tick">>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/replication/logger-first-tick">>, [], undefined).
 
 % 返回日志文件中可用的刻度值范围
 % GET /_api/replication/logger-tick-ranges
@@ -394,7 +394,7 @@ getRepLoggerFirstTick(PoolNameOrSocket) ->
 %     500：如果无法确定记录器状态，则返回。
 %     501：在集群中的协调器上调用此操作时返回。
 getRepLoggerTickRanges(PoolNameOrSocket) ->
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/replication/logger-tick-ranges">>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/replication/logger-tick-ranges">>, [], undefined).
 
 % 复制应用程序命令
 % applier命令允许远程启动，停止和查询ArangoDB数据库复制应用程序的状态和配置。
@@ -433,11 +433,11 @@ getRepLoggerTickRanges(PoolNameOrSocket) ->
 % 405：使用无效的HTTP方法时返回。
 % 500：如果组装响应时发生错误，则返回500。
 getRepApplierConfig(PoolNameOrSocket) ->
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/replication/applier-config">>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/replication/applier-config">>, [], undefined).
 
 getRepApplierConfig(PoolNameOrSocket, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/replication/applier-config", QueryBinary/binary>>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/replication/applier-config", QueryBinary/binary>>, [], undefined).
 
 % 设置申请者的配置值
 % PUT /_api/replication/applier-config
@@ -475,12 +475,12 @@ getRepApplierConfig(PoolNameOrSocket, QueryPars) ->
 % 500：如果组装响应时发生错误，则返回500。
 setRepApplierConfig(PoolNameOrSocket, MapData) ->
    BodyStr = jiffy:encode(MapData),
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/applier-config">>, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/applier-config">>, [], BodyStr).
 
 setRepApplierConfig(PoolNameOrSocket, MapData, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    BodyStr = jiffy:encode(MapData),
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/applier-config", QueryBinary/binary>>, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/applier-config", QueryBinary/binary>>, [], BodyStr).
 
 % 启动复制应用程序
 % PUT /_api/replication/applier-start
@@ -496,12 +496,12 @@ setRepApplierConfig(PoolNameOrSocket, MapData, QueryPars) ->
 % 405：使用无效的HTTP方法时返回。
 % 500：如果组装响应时发生错误，则返回500。
 startRepApplier(PoolNameOrSocket) ->
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/applier-start">>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/applier-start">>, [], undefined).
 
 startRepApplier(PoolNameOrSocket, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/replication/applier-start", QueryBinary/binary>>,
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], undefined).
 
 % 停止复制
 % PUT /_api/replication/applier-stop
@@ -513,11 +513,11 @@ startRepApplier(PoolNameOrSocket, QueryPars) ->
 % 405：使用无效的HTTP方法时返回。
 % 500：如果组装响应时发生错误，则返回500。
 stopRepApplier(PoolNameOrSocket) ->
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/applier-stop">>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/applier-stop">>, [], undefined).
 
 stopRepApplier(PoolNameOrSocket, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/applier-stop", QueryBinary/binary>>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/applier-stop", QueryBinary/binary>>, [], undefined).
 
 % 输出复制的当前状态
 % GET /_api/replication/applier-state
@@ -559,11 +559,11 @@ stopRepApplier(PoolNameOrSocket, QueryPars) ->
 % 405：使用无效的HTTP方法时返回。
 % 500：如果组装响应时发生错误，则返回500。
 getRepApplierState(PoolNameOrSocket) ->
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/replication/applier-state">>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/replication/applier-state">>, [], undefined).
 
 getRepApplierState(PoolNameOrSocket, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/replication/applier-state", QueryBinary/binary>>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/replication/applier-state", QueryBinary/binary>>, [], undefined).
 
 % 将角色更改为奴隶
 % PUT /_api/replication/make-slave
@@ -632,7 +632,7 @@ getRepApplierState(PoolNameOrSocket, QueryPars) ->
 % 501：在集群中的协调器上调用此操作时返回。
 changeRepMakeSlave(PoolNameOrSocket, MapData) ->
    BodyStr = jiffy:encode(MapData),
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/make-slave">>, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/make-slave">>, [], BodyStr).
 
 %其他复制命令
 %返回服务器ID
@@ -645,7 +645,7 @@ changeRepMakeSlave(PoolNameOrSocket, MapData) ->
 %405：使用无效的HTTP方法时返回。
 %500：如果组装响应时发生错误，则返回500。
 getRepServerId(PoolNameOrSocket) ->
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/replication/server-id">>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/replication/server-id">>, [], undefined).
 
 % WAL 固定链接操作中可用的返回刻度范围
 % 返回预写日志中可用的刻度线范围
@@ -662,7 +662,7 @@ getRepServerId(PoolNameOrSocket) ->
 % 500：如果无法确定服务器操作状态，则返回。
 % 501：在集群中的协调器上调用此操作时返回。
 getWalRange(PoolNameOrSocket) ->
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/wal/range">>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/wal/range">>, [], undefined).
 
 % 返回最后一个可用的刻度值固定链接
 % 返回最后一个可用的刻度值
@@ -679,7 +679,7 @@ getWalRange(PoolNameOrSocket) ->
 % 500：如果组装响应时发生错误，则返回500。
 % 501：在集群中的协调器上调用此操作时返回。
 getWalLastTick(PoolNameOrSocket) ->
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/wal/lastTick">>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/wal/lastTick">>, [], undefined).
 
 % 获取最近的操作
 % GET /_api/wal/tail
@@ -725,10 +725,10 @@ getWalLastTick(PoolNameOrSocket) ->
 % 500：如果组装响应时发生错误，则返回500。
 % 501：在集群中的协调器上调用此操作时返回。
 getWalTail(PoolNameOrSocket) ->
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/wal/tail">>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/wal/tail">>, [], undefined).
 
 getWalTail(PoolNameOrSocket, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/wal/tail", QueryBinary/binary>>,
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
 

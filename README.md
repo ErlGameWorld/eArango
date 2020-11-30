@@ -4,8 +4,8 @@
     
 # Feature
   Efficient, fast and easy to use.
-  1. To make this driver as efficient as possible, customizations encapsulate an HTTP1.1 client(agHttpCli) with connection pooling.
-       Comparisons between packaged agHttpCli and similar HTTP client tests are available:[Address](https://github.com/SisMaker/httpc_bench)
+  1. To make this driver as efficient as possible, customizations encapsulate an HTTP1.1 client(agVstCli) with connection pooling.
+       Comparisons between packaged agVstCli and similar HTTP client tests are available:[Address](https://github.com/SisMaker/httpc_bench)
   2. This driver can use connection pooling or simply establish multiple connections in a single process (non-connection pooling mode) for various data operations.
      Synchronous and asynchronous operations are supported when using connection pooling,
      and you need to save the requestId extra if you want to use asynchronous operations Waiting for the received data to return,
@@ -28,13 +28,13 @@
     revar3: rebar3 shell
     Non-connection pooling mode
     Make a connection first
-        {ok, Socket} = agHttpCli:connect([]).           %% Use default Settings
+        {ok, Socket} = agVstCli:connect([]).           %% Use default Settings
         %% Then you can then call various apis using Socket as the first argument
         agMgrDb:curDbInfo(Socket).
     
     Connection pooling mode
        application:ensure_all_started(erlArango).        %% start app
-       agHttpCli:startPool(poolName, [], []).            %% start pool
+       agVstCli:startPool(poolName, [], []).            %% start pool
        %% Then you can then invoke various apis using poolName as the first argument
        agMgrDb:curDbInfo(poolName).  
 

@@ -25,7 +25,7 @@
 %    200：当服务器以群集模式运行时返回。
 %    500：当服务器未在群集模式下运行时返回。
 serverId(PoolNameOrSocket) ->
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/server/id">>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/server/id">>, [], undefined).
 
 % 返回集群中服务器的角色
 % GET /_admin/server/role
@@ -42,7 +42,7 @@ serverId(PoolNameOrSocket) ->
 %    errorNum：服务器错误号
 %    role：之一[ SINGLE，COORDINATOR，PRIMARY，SECONDARY，AGENT，UNDEFINED ]
 serverRole(PoolNameOrSocket) ->
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/server/role">>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/server/role">>, [], undefined).
 
 % 数据库服务器的查询统计信息
 % 允许查询集群中DB-Server的统计信息
@@ -55,7 +55,7 @@ serverRole(PoolNameOrSocket) ->
 %    403：
 clusterStats(PoolNameOrSocket, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/clusterStatistics", QueryBinary/binary>>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/clusterStatistics", QueryBinary/binary>>, [], undefined).
 
 % 返回监督（机构）评估的集群的运行状况
 % GET /_admin/cluster/health
@@ -85,7 +85,7 @@ clusterStats(PoolNameOrSocket, QueryPars) ->
 % 返回码
 %    200：
 clusterHealth(PoolNameOrSocket) ->
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/cluster/health">>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/cluster/health">>, [], undefined).
 
 % 启用或禁用集群监督（代理）维护模式
 % PUT /_admin/cluster/maintenance
@@ -97,7 +97,7 @@ clusterHealth(PoolNameOrSocket) ->
 %    501：
 %    504：
 setClusterMaintenance(PoolNameOrSocket, OnOrOff) ->
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_admin/cluster/maintenance">>, [], OnOrOff).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_admin/cluster/maintenance">>, [], OnOrOff).
 
 %%%%%%%%%%%%%%% Agency ??????????????????????????
 

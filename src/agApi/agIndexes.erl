@@ -58,7 +58,7 @@
 %    404：如果索引不存在，则 返回HTTP 404。
 getIndexInfo(PoolNameOrSocket, IndexId) ->
    Path = <<"/_api/index/", (agMiscUtils:toBinary(IndexId))/binary>>,
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
 
 % 创建一个索引
 % POST /_api/index#general
@@ -88,7 +88,7 @@ getIndexInfo(PoolNameOrSocket, IndexId) ->
 newIndex(PoolNameOrSocket, CollName, MapData) ->
    Path = <<"/_api/index?collection=", CollName/binary>>,
    BodyStr = jiffy:encode(MapData),
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).
 
 % 删除索引
 % DELETE /_api/index/{index-id}
@@ -100,7 +100,7 @@ newIndex(PoolNameOrSocket, CollName, MapData) ->
 %    404：如果index-id未知，则返回HTTP 404。
 delIndex(PoolNameOrSocket, IndexId) ->
    Path = <<"/_api/index/", (agMiscUtils:toBinary(IndexId))/binary>>,
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, [], undefined).
 
 % 返回集合的所有索引
 % GET /_api/index
@@ -111,7 +111,7 @@ delIndex(PoolNameOrSocket, IndexId) ->
 %    200：返回一个JSON对象，其中包含该集合的索引列表。
 getIndexList(PoolNameOrSocket, CollName) ->
    Path = <<"/_api/index?collection=", CollName/binary>>,
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
 
 % 使用哈希索引
 % 如果存在合适的哈希索引，/_api/simple/by-example则将使用该索引执行示例查询。
@@ -140,11 +140,11 @@ newIndexOfHash(PoolNameOrSocket, CollName, MapData) ->
       #{type := <<"hash">>} ->
          Path = <<"/_api/index?collection=", CollName/binary>>,
          BodyStr = jiffy:encode(MapData),
-         agHttpCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
+         agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
       #{<<"type">> := <<"hash">>} ->
          Path = <<"/_api/index?collection=", CollName/binary>>,
          BodyStr = jiffy:encode(MapData),
-         agHttpCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
+         agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
       _ ->
          {error, param}
    end.
@@ -209,11 +209,11 @@ newIndexOfSkipList(PoolNameOrSocket, CollName, MapData) ->
       #{type := <<"skiplist">>} ->
          Path = <<"/_api/index?collection=", CollName/binary>>,
          BodyStr = jiffy:encode(MapData),
-         agHttpCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
+         agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
       #{<<"type">> := <<"skiplist">>} ->
          Path = <<"/_api/index?collection=", CollName/binary>>,
          BodyStr = jiffy:encode(MapData),
-         agHttpCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
+         agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
       _ ->
          {error, param}
    end.
@@ -244,11 +244,11 @@ newIndexOfPersistent(PoolNameOrSocket, CollName, MapData) ->
       #{type := <<"persistent">>} ->
          Path = <<"/_api/index?collection=", CollName/binary>>,
          BodyStr = jiffy:encode(MapData),
-         agHttpCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
+         agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
       #{<<"type">> := <<"persistent">>} ->
          Path = <<"/_api/index?collection=", CollName/binary>>,
          BodyStr = jiffy:encode(MapData),
-         agHttpCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
+         agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
       _ ->
          {error, param}
    end.
@@ -274,11 +274,11 @@ newIndexOfTtl(PoolNameOrSocket, CollName, MapData) ->
       #{type := <<"ttl">>} ->
          Path = <<"/_api/index?collection=", CollName/binary>>,
          BodyStr = jiffy:encode(MapData),
-         agHttpCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
+         agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
       #{<<"type">> := <<"ttl">>} ->
          Path = <<"/_api/index?collection=", CollName/binary>>,
          BodyStr = jiffy:encode(MapData),
-         agHttpCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
+         agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
       _ ->
          {error, param}
    end.
@@ -306,11 +306,11 @@ newIndexOfGeo(PoolNameOrSocket, CollName, MapData) ->
       #{type := <<"geo">>} ->
          Path = <<"/_api/index?collection=", CollName/binary>>,
          BodyStr = jiffy:encode(MapData),
-         agHttpCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
+         agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
       #{<<"type">> := <<"geo">>} ->
          Path = <<"/_api/index?collection=", CollName/binary>>,
          BodyStr = jiffy:encode(MapData),
-         agHttpCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
+         agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
       _ ->
          {error, param}
    end.
@@ -378,11 +378,11 @@ newIndexOfFulltext(PoolNameOrSocket, CollName, MapData) ->
       #{type := <<"fulltext">>} ->
          Path = <<"/_api/index?collection=", CollName/binary>>,
          BodyStr = jiffy:encode(MapData),
-         agHttpCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
+         agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
       #{<<"type">> := <<"fulltext">>} ->
          Path = <<"/_api/index?collection=", CollName/binary>>,
          BodyStr = jiffy:encode(MapData),
-         agHttpCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
+         agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
       _ ->
          {error, param}
    end.

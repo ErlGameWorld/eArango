@@ -6,11 +6,11 @@
 start() ->
    erlSync:run(),
    application:ensure_all_started(erlArango),
-   agHttpCli:startPool(tt, [{poolSize, 10}], []).
+   agVstCli:startPool(tt, [{poolSize, 10}], []).
 
 tt(C, N) ->
    application:ensure_all_started(erlArango),
-   agHttpCli:startPool(tt, [{poolSize, 16}], []),
+   agVstCli:startPool(tt, [{poolSize, 16}], []),
    StartTime = erlang:system_time(millisecond),
    io:format("IMY**********************  started~n"),
    [spawn(?MODULE, test, [N, StartTime]) || _Idx <- lists:seq(1, C)].

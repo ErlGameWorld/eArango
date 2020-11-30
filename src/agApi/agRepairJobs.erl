@@ -30,7 +30,7 @@
 %% 检查修复
 %% GET /_admin/repairs/distributeShardsLike
 checkRepair(PoolNameOrSocket) ->
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/repairs/distributeShardsLike">>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/repairs/distributeShardsLike">>, [], undefined).
 
 % 如果要修复某些内容，则响应将具有该属性 collections，<db>/<collection>其中包含每个必须修复的集合的条目。每个集合还作为单独的error属性，true如果该集合（以及false 其他情况）发生错误，则将作为错误。如果error为true，则还将设置属性errorNum和 errorMessage，并且在某些情况下还将errorDetails 提供有关如何处理特定错误的附加信息。
 % 用修复POST /_admin/repairs/distributeShardsLike
@@ -72,4 +72,4 @@ checkRepair(PoolNameOrSocket) ->
 %% 修复
 %% POST /_admin/repairs/distributeShardsLike
 doRepair(PoolNameOrSocket) ->
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_admin/repairs/distributeShardsLike">>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_admin/repairs/distributeShardsLike">>, [], undefined).

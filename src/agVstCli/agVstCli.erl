@@ -1,4 +1,4 @@
--module(agHttpCli).
+-module(agVstCli).
 -include("agHttpCli.hrl").
 -include("eArango.hrl").
 

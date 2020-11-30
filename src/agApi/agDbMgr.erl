@@ -34,7 +34,7 @@
 % 400：如果请求无效，则返回。
 % 404：如果找不到数据库，则返回。
 curDbInfo(PoolNameOrSocket) ->
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/database/current">>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/database/current">>, [], undefined).
 
 % 检索当前用户可以访问的所有数据库的列表
 % GET /_api/database/user
@@ -43,7 +43,7 @@ curDbInfo(PoolNameOrSocket) ->
 % 200：如果数据库列表编译成功，则返回。
 % 400：如果请求无效，则返回。
 visitDbs(PoolNameOrSocket) ->
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/database/user">>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/database/user">>, [], undefined).
 
 % 检索所有现有数据库的列表
 % GET /_api/database
@@ -55,7 +55,7 @@ visitDbs(PoolNameOrSocket) ->
 % 400：如果请求无效，则返回。
 % 403：如果请求未在_system数据库中执行，则返回。
 allDbs(PoolNameOrSocket) ->
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/database">>, [], undefined, true).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/database">>, [], undefined, true).
 
 % 创建一个新的数据库
 % POST /_api/database
@@ -80,7 +80,7 @@ allDbs(PoolNameOrSocket) ->
 % 409：如果具有指定名称的数据库已经存在，则返回。
 newDb(PoolNameOrSocket, MapData) ->
    BodyStr = jiffy:encode(MapData),
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/database">>, [], BodyStr, true).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/database">>, [], BodyStr, true).
 
 % 删除现有数据库
 % DELETE /_api/database/{database-name}
@@ -95,4 +95,4 @@ newDb(PoolNameOrSocket, MapData) ->
 % 404：如果找不到数据库，则返回。
 delDb(PoolNameOrSocket, Name) ->
    Path = <<"/_api/database/", Name/binary>>,
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, [], undefined, true).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, [], undefined, true).

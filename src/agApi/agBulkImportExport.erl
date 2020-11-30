@@ -59,7 +59,7 @@ docImport(PoolNameOrSocket, ListOfList, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/import", QueryBinary/binary>>,
    BodyStr = <<<<(jiffy:encode(OneList))/binary, "\n">> || OneList <- ListOfList>>,
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).
 
 % 从JSON导入文档
 % POST /_api/import#json
@@ -109,7 +109,7 @@ jsonImport(PoolNameOrSocket, MapDataList, QueryPars) ->
    end,
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/import", QueryBinary/binary>>,
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).
 
 % 说明------->
 % 导入自包含的JSON文档
@@ -230,4 +230,4 @@ jsonImport(PoolNameOrSocket, MapDataList, QueryPars) ->
 docExport(PoolNameOrSocket, CollName, MapData) ->
    Path = <<"/_api/export?collection=", CollName/binary>>,
    BodyStr = jiffy:encode(MapData),
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).

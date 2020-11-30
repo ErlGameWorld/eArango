@@ -102,11 +102,11 @@
 % 412：如果给出“ If-Match”标头并且找到的文档具有不同版本，则返回412。响应还将在_rev属性中包含找到的文档的当前修订。此外，将返回属性_id和_key。
 getDoc(PoolNameOrSocket, CollName, Key) ->
    Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary>>,
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
 
 getDoc(PoolNameOrSocket, CollName, Key, Headers) ->
    Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary>>,
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgGet, Path, Headers, undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, Headers, undefined).
 
 % 读取单个文档头
 % HEAD /_api/document/{collection}/{key}
@@ -124,11 +124,11 @@ getDoc(PoolNameOrSocket, CollName, Key, Headers) ->
 % 412：如果给出“ If-Match”标头并且找到的文档具有不同版本，则返回412。响应还将在Etag标头中包含找到的文档的当前版本。
 getDocHead(PoolNameOrSocket, CollName, Key) ->
    Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary>>,
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgHead, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgHead, Path, [], undefined).
 
 getDocHead(PoolNameOrSocket, CollName, Key, Headers) ->
    Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary>>,
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgHead, Path, Headers, undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgHead, Path, Headers, undefined).
 
 % 创建文档
 % POST /_api/document/{collection}
@@ -169,13 +169,13 @@ getDocHead(PoolNameOrSocket, CollName, Key, Headers) ->
 newDoc(PoolNameOrSocket, CollName, MapData) ->
    Path = <<"/_api/document/", CollName/binary>>,
    BodyStr = jiffy:encode(MapData),
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).
 
 newDoc(PoolNameOrSocket, CollName, MapData, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/document/", CollName/binary, QueryBinary/binary>>,
    BodyStr = jiffy:encode(MapData),
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).
 
 % 替换文档
 % PUT /_api/document/{collection}/{key}
@@ -213,19 +213,19 @@ newDoc(PoolNameOrSocket, CollName, MapData, QueryPars) ->
 replaceDoc(PoolNameOrSocket, CollName, Key, MapData) ->
    Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary>>,
    BodyStr = jiffy:encode(MapData),
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
 
 replaceDoc(PoolNameOrSocket, CollName, Key, MapData, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary, QueryBinary/binary>>,
    BodyStr = jiffy:encode(MapData),
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
 
 replaceDoc(PoolNameOrSocket, CollName, Key, MapData, QueryPars, Headers) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary, QueryBinary/binary>>,
    BodyStr = jiffy:encode(MapData),
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgPut, Path, Headers, BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, Headers, BodyStr).
 
 % 更新文档
 % PATCH /_api/document/{collection}/{key}
@@ -266,19 +266,19 @@ replaceDoc(PoolNameOrSocket, CollName, Key, MapData, QueryPars, Headers) ->
 updateDoc(PoolNameOrSocket, CollName, Key, MapData) ->
    Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary>>,
    BodyStr = jiffy:encode(MapData),
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, [], BodyStr).
 
 updateDoc(PoolNameOrSocket, CollName, Key, MapData, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary, QueryBinary/binary>>,
    BodyStr = jiffy:encode(MapData),
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, [], BodyStr).
 
 updateDoc(PoolNameOrSocket, CollName, Key, MapData, QueryPars, Headers) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary, QueryBinary/binary>>,
    BodyStr = jiffy:encode(MapData),
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, Headers, BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, Headers, BodyStr).
 
 % 删除文档
 % DELETE /_api/document/{collection}/{key}
@@ -301,17 +301,17 @@ updateDoc(PoolNameOrSocket, CollName, Key, MapData, QueryPars, Headers) ->
 % 412：如果“如果-match”标头或返回转，并给出找到的文件有不同的版本。响应还将在_rev属性中包含找到的文档的当前修订。此外，将返回属性_id和_key。
 delDoc(PoolNameOrSocket, CollName, Key) ->
    Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary>>,
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, [], undefined).
 
 delDoc(PoolNameOrSocket, CollName, Key, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary, QueryBinary/binary>>,
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, [], undefined).
 
 delDoc(PoolNameOrSocket, CollName, Key, QueryPars, Headers) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary, QueryBinary/binary>>,
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, Headers, undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, Headers, undefined).
 
 % 批量文件操作
 % ArangoDB支持批量处理文档。批量操作影响 单个集合。使用此API变体可使客户端分摊整批文档中的单个请求的开销。不能保证批量操作可以串行执行，ArangoDB 可以并行执行这些操作。这可以转化为大幅的性能提升，尤其是在集群部署中。
@@ -338,7 +338,7 @@ getDocs(PoolNameOrSocket, CollName, KeyOrMapDataList) ->
    QueryBinary = agMiscUtils:spellQueryPars([{onlyget, true}]),
    Path = <<"/_api/document/", CollName/binary, QueryBinary/binary>>,
    BodyStr = jiffy:encode(KeyOrMapDataList),
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
 
 getDocs(PoolNameOrSocket, CollName, KeyOrMapDataList, QueryPars) ->
    LastQueryPars =
@@ -351,7 +351,7 @@ getDocs(PoolNameOrSocket, CollName, KeyOrMapDataList, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(LastQueryPars),
    Path = <<"/_api/document/", CollName/binary, QueryBinary/binary>>,
    BodyStr = jiffy:encode(KeyOrMapDataList),
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
 
 % 创建多个文档
 % POST /_api/document/{collection}#multiple
@@ -386,13 +386,13 @@ getDocs(PoolNameOrSocket, CollName, KeyOrMapDataList, QueryPars) ->
 newDocs(PoolNameOrSocket, CollName, MapDataList) ->
    Path = <<"/_api/document/", CollName/binary>>,
    BodyStr = jiffy:encode(MapDataList),
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).
 
 newDocs(PoolNameOrSocket, CollName, MapDataList, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/document/", CollName/binary, QueryBinary/binary>>,
    BodyStr = jiffy:encode(MapDataList),
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).
 
 % 替换多个文件
 % PUT /_api/document/{collection}
@@ -422,13 +422,13 @@ newDocs(PoolNameOrSocket, CollName, MapDataList, QueryPars) ->
 replaceDocs(PoolNameOrSocket, CollName, MapDataList) ->
    Path = <<"/_api/document/", CollName/binary>>,
    BodyStr = jiffy:encode(MapDataList),
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
 
 replaceDocs(PoolNameOrSocket, CollName, MapDataList, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/document/", CollName/binary, QueryBinary/binary>>,
    BodyStr = jiffy:encode(MapDataList),
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
 
 % 更新多个文件
 % PATCH /_api/document/{collection}
@@ -461,13 +461,13 @@ replaceDocs(PoolNameOrSocket, CollName, MapDataList, QueryPars) ->
 updateDocs(PoolNameOrSocket, CollName, MapDataList) ->
    Path = <<"/_api/document/", CollName/binary>>,
    BodyStr = jiffy:encode(MapDataList),
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, [], BodyStr).
 
 updateDocs(PoolNameOrSocket, CollName, MapDataList, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/document/", CollName/binary, QueryBinary/binary>>,
    BodyStr = jiffy:encode(MapDataList),
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, [], BodyStr).
 
 % 删除多个文件
 % DELETE /_api/document/{collection}
@@ -491,10 +491,10 @@ updateDocs(PoolNameOrSocket, CollName, MapDataList, QueryPars) ->
 delDocs(PoolNameOrSocket, CollName, KeyOrMapDataList) ->
    Path = <<"/_api/document/", CollName/binary, "/">>,
    BodyStr = jiffy:encode(KeyOrMapDataList),
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, [], BodyStr).
 
 delDocs(PoolNameOrSocket, CollName, KeyOrMapDataList, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/document/", CollName/binary, QueryBinary/binary>>,
    BodyStr = jiffy:encode(KeyOrMapDataList),
-   agHttpCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, [], BodyStr).
