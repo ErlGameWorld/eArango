@@ -11,6 +11,21 @@
 -define(AgCDone, 3).                %% Wait One Chunk Receive Over
 -define(AgMDone, 4).                %% Wait One Message Over
 
+
+%% IMY-todo  考虑多个消息回复的的时候 如果有消息 此时进程自动可能不存在 需要重新订阅获取
+%% pidFrom pid() to reply; undefiend  discard; waitSend 起送定时器等待requester来获取 过期就删除
+-record(msgIdCache, {pidFrom, timerRef, chunkCnt, msgBuffer, chunkIdx, chunkSize, chunkBuffer}).
+
+-define(AgCBIdx, 7).
+-define(AgCSIdx, 6).
+-define(AgCIIdx, 5).
+-define(AgMBIdx, 4).
+-define(AgCCIdx, 3).
+
+
+
+
+
 %% 默认选项定义
 -define(AgDefBaseUrl, <<"http://127.0.0.1:8529">>).
 -define(AgDefDbName, <<"_system">>).
@@ -32,7 +47,7 @@
 
 -define(AgMDoNetConn, mDoNetConn).
 
--record(miRequest, {
+-record(agReq, {
    method :: method()
    , path :: path()
    , queryPars :: queryPars()
@@ -44,7 +59,7 @@
    , isSystem = false :: boolean()
 }).
 
--record(miRequestRet, {
+-record(agReqRet, {
    messageId :: messageId(),
    reply :: term()
 }).
@@ -71,6 +86,7 @@
    backlogNum = 0 :: integer(),
    backlogSize = 0 :: integer(),
    buffer = <<>> :: binary()
+   %% IMY-todo 这里添加一个chunks的接受信息index size  缓存信息
 }).
 
 -record(dbOpts, {
@@ -91,8 +107,8 @@
    reconnectTimeMax :: pos_integer()
 }).
 
--type miRequest() :: #miRequest{}.
--type miRequestRet() :: #miRequestRet{}.
+-type miRequest() :: #agReq{}.
+-type miRequestRet() :: #agReqRet{}.
 -type srvState() :: #srvState{}.
 -type cliState() :: #cliState{}.
 -type reconnectState() :: #reConnState{}.

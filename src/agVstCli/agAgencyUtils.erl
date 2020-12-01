@@ -34,24 +34,23 @@ agencyReply({undefined, _RequestId, TimerRef}, _Reply) ->
    agAgencyUtils:cancelTimer(TimerRef);
 agencyReply({PidForm, RequestId, TimerRef}, Reply) ->
    agAgencyUtils:cancelTimer(TimerRef),
-   catch PidForm ! #miRequestRet{messageId = RequestId, reply = Reply},
+   catch PidForm ! #agReqRet{messageId = RequestId, reply = Reply},
    ok;
 agencyReply(undefined, _RequestRet) ->
    ok.
 
 -spec agencyReply(undefined | pid(), messageId(), undefined | reference(), term()) -> ok.
-agencyReply(undefined, _RequestId, TimerRef, _Reply) ->
-   agAgencyUtils:cancelTimer(TimerRef),
-   ok;
+agencyReply(undefined, MessageId, TimerRef, _Reply) ->
+   agAgencyUtils:cancelTimer(TimerRef);
 agencyReply(FormPid, RequestId, TimerRef, Reply) ->
    agAgencyUtils:cancelTimer(TimerRef),
-   catch FormPid ! #miRequestRet{messageId = RequestId, reply = Reply},
+   catch FormPid ! #agReqRet{messageId = RequestId, reply = Reply},
    ok.
 
 -spec agencyReplyAll(list(), list(), term()) -> ok.
 agencyReplyAll(RequestsOuts, RequestsIns, Reply) ->
-   [agencyReply(FormPid, RequestId, undefined, Reply) || #miRequest{messageId = RequestId, fromPid = FormPid} <- RequestsOuts],
-   [agencyReply(FormPid, RequestId, undefined, Reply) || #miRequest{messageId = RequestId, fromPid = FormPid} <- lists:reverse(RequestsIns)],
+   [agencyReply(FormPid, RequestId, undefined, Reply) || #agReq{messageId = RequestId, fromPid = FormPid} <- RequestsOuts],
+   [agencyReply(FormPid, RequestId, undefined, Reply) || #agReq{messageId = RequestId, fromPid = FormPid} <- lists:reverse(RequestsIns)],
    ok.
 
 -spec cancelTimer(undefined | reference()) -> ok.

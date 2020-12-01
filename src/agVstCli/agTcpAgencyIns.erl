@@ -19,8 +19,8 @@ init({PoolName, AgencyName, #agencyOpts{reconnect = Reconnect, backlogSize = Bac
    {ok, #srvState{poolName = PoolName, serverName = AgencyName, reconnectState = ReconnectState}, #cliState{backlogSize = BacklogSize}}.
 
 -spec handleMsg(term(), srvState(), cliState()) -> {ok, term(), term()}.
-handleMsg(#miRequest{method = Method, path = Path, queryPars = QueryPars, headers = Headers, body = Body, messageId = MessageId, fromPid = FromPid, overTime = OverTime, isSystem = IsSystem} = MiRequest,
-   #srvState{serverName = ServerName, host = Host, dbName = DbName, socket = Socket} = SrvState,
+handleMsg(#agReq{method = Method, path = Path, queryPars = QueryPars, headers = Headers, body = Body, messageId = MessageId, fromPid = FromPid, overTime = OverTime, isSystem = IsSystem},
+   #srvState{serverName = ServerName, dbName = DbName, socket = Socket} = SrvState,
    #cliState{backlogNum = BacklogNum, backlogSize = BacklogSize} = CliState) ->
    case Socket of
       undefined ->
@@ -40,9 +40,9 @@ handleMsg(#miRequest{method = Method, path = Path, queryPars = QueryPars, header
                         infinity ->
                            undefined;
                         _ ->
-                           erlang:start_timer(OverTime, self(), {mWaitingOver, MessageId}, [{abs, true}])
+                           erlang:start_timer(OverTime, self(), {mWaitingOver, MessageId, FromPid}, [{abs, true}])
                      end,
-                     erlang:put(MessageId, {TimerRef, 0, <<>>}),
+                     erlang:put(MessageId, {FromPid, TimerRef, 0, <<>>, 0, 0, <<>>}),
                      {ok, SrvState, CliState#cliState{backlogNum = BacklogNum + 1}};
                   {error, Reason} ->
                      ?AgWarn(ServerName, ":send error: ~p ~p ~p ~n", [Reason, FromPid, MessageId]),
@@ -86,13 +86,11 @@ handleMsg({tcp, Socket, Data},
          gen_tcp:close(Socket),
          agAgencyUtils:dealClose(SrvState, CliState, {error, agencyHandledataError})
    end;
-handleMsg({timeout, TimerRef, mWaitingOver},
-   #srvState{socket = Socket} = SrvState,
-   #cliState{backlogNum = BacklogNum, curInfo = {FromPid, RequestId, TimerRef}} = CliState) ->
-   agAgencyUtils:agencyReply(FromPid, RequestId, undefined, {error, timeout}),
-   %% 之前的数据超时之后 要关闭tcp 然后重新建立连接 以免后面该tcp收到该次超时数据 影响后面请求的接收数据 导致数据错乱
-   gen_tcp:close(Socket),
-   handleMsg(?AgMDoNetConn, SrvState#srvState{socket = undefined}, CliState#cliState{backlogNum = BacklogNum - 1});
+handleMsg({timeout, _TimerRef, {mWaitingOver, MessageId, FromPid}},
+   SrvState,
+   #cliState{backlogNum = BacklogNum} = CliState) ->
+   agAgencyUtils:agencyReply(FromPid, MessageId, undefined, {error, timeout}),
+   {ok, SrvState, CliState#cliState{backlogNum = BacklogNum - 1}};
 handleMsg({tcp_closed, Socket},
    #srvState{socket = Socket, serverName = ServerName} = SrvState,
    CliState) ->
@@ -107,7 +105,7 @@ handleMsg({tcp_error, Socket, Reason},
    agAgencyUtils:dealClose(SrvState, CliState, {error, {tcp_error, Reason}});
 handleMsg(?AgMDoNetConn,
    #srvState{poolName = PoolName, serverName = ServerName, reconnectState = ReconnectState} = SrvState,
-   #cliState{requestsIns = RequestsIns, requestsOuts = RequestsOuts} = CliState) ->
+   CliState) ->
    case ?agBeamPool:getv(PoolName) of
       #dbOpts{host = Host, port = Port, hostname = HostName, dbName = DbName, userPassword = UserPassword, socketOpts = SocketOpts} ->
          case dealConnect(ServerName, HostName, Port, SocketOpts) of
@@ -174,7 +172,7 @@ overAllWork(SrvState, #cliState{requestsIns = RequestsIns, requestsOuts = Reques
    end.
 
 -spec overDealQueueRequest(miRequest(), srvState(), cliState()) -> {ok, srvState(), cliState()}.
-overDealQueueRequest(#miRequest{method = Method, path = Path, headers = Headers, body = Body, messageId = RequestId, fromPid = FromPid, overTime = OverTime, isSystem = IsSystem},
+overDealQueueRequest(#agReq{method = Method, path = Path, headers = Headers, body = Body, messageId = RequestId, fromPid = FromPid, overTime = OverTime, isSystem = IsSystem},
    #srvState{serverName = ServerName, host = Host, userPassWord = UserPassWord, dbName = DbName, socket = Socket} = SrvState,
    #cliState{requestsIns = RequestsIns, requestsOuts = RequestsOuts, backlogNum = BacklogNum} = CliState) ->
    case erlang:monotonic_time(millisecond) > OverTime of
@@ -325,7 +323,7 @@ overReceiveTcpData(#srvState{poolName = PoolName, serverName = ServerName, rn = 
       {tcp_error, Socket, Reason} ->
          gen_tcp:close(Socket),
          agAgencyUtils:dealClose(SrvState, CliState, {error, {tcp_error, Reason}});
-      #miRequest{} = MiRequest ->
+      #agReq{} = MiRequest ->
          overReceiveTcpData(SrvState, CliState#cliState{requestsIns = [MiRequest | RequestsIns], backlogNum = BacklogNum + 1});
       _Msg ->
          ?AgWarn(overReceiveTcpData, "receive unexpect msg: ~p~n", [_Msg]),
@@ -350,7 +348,7 @@ dealConnect(ServerName, HostName, Port, SocketOptions) ->
    end.
 
 -spec dealQueueRequest(miRequest(), srvState(), cliState()) -> {ok, srvState(), cliState()}.
-dealQueueRequest(#miRequest{method = Method, path = Path, headers = Headers, body = Body, messageId = RequestId, fromPid = FromPid, overTime = OverTime, isSystem = IsSystem},
+dealQueueRequest(#agReq{method = Method, path = Path, headers = Headers, body = Body, messageId = RequestId, fromPid = FromPid, overTime = OverTime, isSystem = IsSystem},
    #srvState{serverName = ServerName, host = Host, userPassWord = UserPassWord, dbName = DbName, socket = Socket} = SrvState,
    #cliState{requestsIns = RequestsIns, requestsOuts = RequestsOuts, backlogNum = BacklogNum} = CliState) ->
    case erlang:monotonic_time(millisecond) > OverTime of

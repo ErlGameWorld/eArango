@@ -19,7 +19,7 @@ init({PoolName, AgencyName, #agencyOpts{reconnect = Reconnect, backlogSize = Bac
    {ok, #srvState{poolName = PoolName, serverName = AgencyName, rn = binary:compile_pattern(<<"\r\n">>), rnrn = binary:compile_pattern(<<"\r\n\r\n">>), reconnectState = ReconnectState}, #cliState{backlogSize = BacklogSize}}.
 
 -spec handleMsg(term(), srvState(), cliState()) -> {ok, term(), term()}.
-handleMsg(#miRequest{method = Method, path = Path, headers = Headers, body = Body, messageId = RequestId, fromPid = FromPid, overTime = OverTime, isSystem = IsSystem} = MiRequest,
+handleMsg(#agReq{method = Method, path = Path, headers = Headers, body = Body, messageId = RequestId, fromPid = FromPid, overTime = OverTime, isSystem = IsSystem} = MiRequest,
    #srvState{serverName = ServerName, host = Host, userPassWord = UserPassWord, dbName = DbName, socket = Socket} = SrvState,
    #cliState{backlogNum = BacklogNum, backlogSize = BacklogSize, requestsIns = RequestsIns, revStatus = Status} = CliState) ->
    case Socket of
@@ -180,7 +180,7 @@ overAllWork(SrvState, #cliState{requestsIns = RequestsIns, requestsOuts = Reques
    end.
 
 -spec overDealQueueRequest(miRequest(), srvState(), cliState()) -> {ok, srvState(), cliState()}.
-overDealQueueRequest(#miRequest{method = Method, path = Path, headers = Headers, body = Body, messageId = RequestId, fromPid = FromPid, overTime = OverTime, isSystem = IsSystem},
+overDealQueueRequest(#agReq{method = Method, path = Path, headers = Headers, body = Body, messageId = RequestId, fromPid = FromPid, overTime = OverTime, isSystem = IsSystem},
    #srvState{serverName = ServerName, host = Host, userPassWord = UserPassWord, dbName = DbName, socket = Socket} = SrvState,
    #cliState{requestsIns = RequestsIns, requestsOuts = RequestsOuts, backlogNum = BacklogNum} = CliState) ->
    case erlang:monotonic_time(millisecond) > OverTime of
@@ -331,7 +331,7 @@ overReceiveSslData(#srvState{poolName = PoolName, serverName = ServerName, rn = 
       {ssl_error, Socket, Reason} ->
          ssl:close(Socket),
          agAgencyUtils:dealClose(SrvState, CliState, {error, {ssl_error, Reason}});
-      #miRequest{} = MiRequest ->
+      #agReq{} = MiRequest ->
          overReceiveSslData(SrvState, CliState#cliState{requestsIns = [MiRequest | RequestsIns], backlogNum = BacklogNum + 1});
       _Msg ->
          ?AgWarn(overReceiveSslData, "receive unexpect msg: ~p~n", [_Msg]),
@@ -356,7 +356,7 @@ dealConnect(ServerName, HostName, Port, SocketOptions) ->
    end.
 
 -spec dealQueueRequest(miRequest(), srvState(), cliState()) -> {ok, srvState(), cliState()}.
-dealQueueRequest(#miRequest{method = Method, path = Path, headers = Headers, body = Body, messageId = RequestId, fromPid = FromPid, overTime = OverTime, isSystem = IsSystem},
+dealQueueRequest(#agReq{method = Method, path = Path, headers = Headers, body = Body, messageId = RequestId, fromPid = FromPid, overTime = OverTime, isSystem = IsSystem},
    #srvState{serverName = ServerName, host = Host, userPassWord = UserPassWord, dbName = DbName, socket = Socket} = SrvState,
    #cliState{requestsIns = RequestsIns, requestsOuts = RequestsOuts, backlogNum = BacklogNum} = CliState) ->
    case erlang:monotonic_time(millisecond) > OverTime of

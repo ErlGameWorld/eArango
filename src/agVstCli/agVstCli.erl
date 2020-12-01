@@ -78,7 +78,7 @@ castAgency(PoolNameOrSocket, Method, Path, Headers, Body, Pid, IsSystem, Timeout
             AgencyName ->
                MonitorRef = erlang:monitor(process, AgencyName),
                RequestId = {AgencyName, MonitorRef},
-               catch AgencyName ! #miRequest{method = Method, path = Path, headers = Headers, body = Body, messageId = RequestId, fromPid = Pid, overTime = OverTime, isSystem = IsSystem},
+               catch AgencyName ! #agReq{method = Method, path = Path, headers = Headers, body = Body, messageId = RequestId, fromPid = Pid, overTime = OverTime, isSystem = IsSystem},
                {waitRRT, RequestId, MonitorRef}
          end;
       _ ->
@@ -113,7 +113,7 @@ castAgency(PoolNameOrSocket, Method, Path, Headers, Body, Pid, IsSystem, Timeout
 -spec receiveRequestRet(messageId(), reference()) -> {StatusCode :: non_neg_integer(), Body :: binary(), Headers :: binary()} | {error, term()}.
 receiveRequestRet(RequestId, MonitorRef) ->
    receive
-      #miRequestRet{messageId = RequestId, reply = Reply} ->
+      #agReqRet{messageId = RequestId, reply = Reply} ->
          erlang:demonitor(MonitorRef),
          case Reply of
             {_StatusCode, Body, _Headers} ->
