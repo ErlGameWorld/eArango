@@ -1,5 +1,5 @@
 -module(agMiscUtils).
--include("agHttpCli.hrl").
+-include("agVstCli.hrl").
 
 -compile(inline).
 -compile({inline_size, 128}).
@@ -12,9 +12,6 @@
    , getListValue/3
    , randomElement/1
    , toBinary/1
-   , spellQueryPars/1
-   , getHeaderValue/2
-   , lookHeader/2
 ]).
 
 -spec parseUrl(binary()) -> dbOpts() | {error, invalidUrl}.
@@ -51,22 +48,22 @@ parseUrl(Protocol, Rest) ->
 
 -spec dbOpts(list()) -> dbOpts().
 dbOpts(DbCfgs) ->
-   BaseUrl = ?GET_FROM_LIST(baseUrl, DbCfgs, ?DEFAULT_BASE_URL),
-   DbName = ?GET_FROM_LIST(dbName, DbCfgs, ?DEFAULT_DBNAME),
-   User = ?GET_FROM_LIST(user, DbCfgs, ?DEFAULT_USER),
-   Password = ?GET_FROM_LIST(password, DbCfgs, ?DEFAULT_PASSWORD),
-   PoolSize = ?GET_FROM_LIST(poolSize, DbCfgs, ?DEFAULT_POOL_SIZE),
-   SocketOpts = ?GET_FROM_LIST(socketOpts, DbCfgs, ?DEFAULT_SOCKET_OPTS),
+   BaseUrl = ?AgGetListKV(baseUrl, DbCfgs, ?AgDefBaseUrl),
+   DbName = ?AgGetListKV(dbName, DbCfgs, ?AgDefDbName),
+   User = ?AgGetListKV(user, DbCfgs, ?AgDefUser),
+   Password = ?AgGetListKV(password, DbCfgs, ?AgDefPassWord),
+   PoolSize = ?AgGetListKV(poolSize, DbCfgs, ?AgDefPoolSize),
+   SocketOpts = ?AgGetListKV(socketOpts, DbCfgs, ?AgDefSocketOpts),
    DbOpts = agMiscUtils:parseUrl(BaseUrl),
    UserPasswordBase64 = {<<"Authorization">>, <<"Basic ", (base64:encode(<<User/binary, ":", Password/binary>>))/binary>>},
    DbOpts#dbOpts{dbName = <<"/_db/", DbName/binary>>, userPassword = UserPasswordBase64, poolSize = PoolSize, socketOpts = SocketOpts}.
 
 -spec agencyOpts(list()) -> agencyOpts().
 agencyOpts(AgencyCfgs) ->
-   IsReconnect = ?GET_FROM_LIST(reconnect, AgencyCfgs, ?DEFAULT_IS_RECONNECT),
-   BacklogSize = ?GET_FROM_LIST(backlogSize, AgencyCfgs, ?DEFAULT_BACKLOG_SIZE),
-   Min = ?GET_FROM_LIST(reconnectTimeMin, AgencyCfgs, ?DEFAULT_RECONNECT_MIN),
-   Max = ?GET_FROM_LIST(reconnectTimeMax, AgencyCfgs, ?DEFAULT_RECONNECT_MAX),
+   IsReconnect = ?AgGetListKV(reconnect, AgencyCfgs, ?AgDefIsReConn),
+   BacklogSize = ?AgGetListKV(backlogSize, AgencyCfgs, ?AgDefBacklogSize),
+   Min = ?AgGetListKV(reconnectTimeMin, AgencyCfgs, ?AgDefReConnMin),
+   Max = ?AgGetListKV(reconnectTimeMax, AgencyCfgs, ?AgDefReConnMax),
    #agencyOpts{reconnect = IsReconnect, backlogSize = BacklogSize, reconnectTimeMin = Min, reconnectTimeMax = Max}.
 
 -spec getListValue(term(), list(), term()) -> term().
@@ -98,30 +95,4 @@ toBinary(Value) when is_binary(Value) -> Value;
 toBinary([Tuple | PropList] = Value) when is_list(PropList) and is_tuple(Tuple) ->
    lists:map(fun({K, V}) -> {toBinary(K), toBinary(V)} end, Value);
 toBinary(Value) -> term_to_binary(Value).
-
--spec spellQueryPars(list()) -> binary().
-spellQueryPars([]) ->
-   <<>>;
-spellQueryPars([{Key, Value}]) ->
-   <<"?", (toBinary(Key))/binary, "=", (toBinary(Value))/binary>>;
-spellQueryPars([{Key, Value} | Tail]) ->
-   FirstBinary = <<"?", (toBinary(Key))/binary, "=", (toBinary(Value))/binary>>,
-   TailBinary = <<<<"&", (toBinary(OtherKey))/binary, "=", (toBinary(OtherValue))/binary>> || {OtherKey, OtherValue} <- Tail>>,
-   <<FirstBinary/binary, TailBinary/binary>>.
-
--spec getHeaderValue(binary(), binary()) -> binary().
-getHeaderValue(Header, HeaderBin) ->
-   HeadersList = binary:split(HeaderBin, <<"\r\n">>, [global]),
-   lookHeader(Header, HeadersList).
-
--spec lookHeader(binary, list()) -> binary().
-lookHeader(_Header, []) ->
-   undefined;
-lookHeader(Header, [H | T]) ->
-   case binary:split(H, <<": ">>) of
-      [Header, Value] ->
-         Value;
-      _ ->
-         lookHeader(Header, T)
-   end.
 

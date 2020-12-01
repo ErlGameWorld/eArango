@@ -7,46 +7,6 @@
    vst_maxsize/0
 ]).
 
-assign_map(_acc@1, _key@1, _value@1) ->
-   case _acc@1 of
-      #{_key@1 := _} -> _acc@1;
-      #{} -> _acc@1#{_key@1 => _value@1};
-      _ -> #{_key@1 => _value@1}
-   end.
-
-assign_split([<<>>, _rest@1], _value@1, _acc@1, _pattern@1) ->
-   _parts@1 = binary:split(_rest@1, _pattern@1),
-   case _acc@1 of
-      [_ | _] ->
-         [assign_split(_parts@1, _value@1, none, _pattern@1) | _acc@1];
-      none ->
-         [assign_split(_parts@1, _value@1, none, _pattern@1)];
-      _ -> _acc@1
-   end;
-assign_split([_key@1, _rest@1], _value@1, _acc@1, _pattern@1) ->
-   _parts@1 = binary:split(_rest@1, _pattern@1),
-   case _acc@1 of
-      #{_key@1 := _current@1} ->
-         _acc@1#{_key@1 =>
-         assign_split(_parts@1, _value@1, _current@1, _pattern@1)};
-      #{} ->
-         _acc@1#{_key@1 => assign_split(_parts@1, _value@1, none, _pattern@1)};
-      _ ->
-         #{_key@1 => assign_split(_parts@1, _value@1, none, _pattern@1)}
-   end;
-assign_split([<<>>], nil, _acc@1, __pattern@1) ->
-   case _acc@1 of
-      [_ | _] -> _acc@1;
-      _ -> []
-   end;
-assign_split([<<>>], _value@1, _acc@1, __pattern@1) ->
-   case _acc@1 of
-      [_ | _] -> [_value@1 | _acc@1];
-      none -> [_value@1];
-      _ -> _acc@1
-   end;
-assign_split([_key@1], _value@1, _acc@1, __pattern@1) ->
-   assign_map(_acc@1, _key@1, _value@1).
 
 authorize(#{socket := _socket@1, username := _un@1, password := _pw@1} = _state@1) ->
    case eVPack:encode([1, 1000, <<"plain">>, _un@1, _pw@1]) of
@@ -179,10 +139,8 @@ body_from(_body@1) -> _body@1.
 build_stream(_message@1) ->
    case chunk_every(_message@1, 30696) of
       [_first_chunk@1 | _rest_chunks@1] ->
-         _n_chunks@1 = erlang:length([_first_chunk@1
-            | _rest_chunks@1]),
-         _msg_length@1 = erlang:byte_size(_message@1) +
-            _n_chunks@1 * 24,
+         _n_chunks@1 = erlang:length([_first_chunk@1 | _rest_chunks@1]),
+         _msg_length@1 = erlang:byte_size(_message@1) + _n_chunks@1 * 24,
          _rest_chunks@2 =
             lists:reverse(lists:flodl(
                fun(_n@1, _@1) ->
@@ -273,13 +231,12 @@ port_for({tcp, __host@1, _port@1}) -> _port@1.
 prepend_chunk(_chunk@1, _chunk_n@1, _is_first@1,
    _msg_id@1, _msg_length@1) ->
    <<(24 + erlang:byte_size(_chunk@1)):32/integer-little,
-      (binary:decode_unsigned(<<_chunk_n@1:31/integer,
-         _is_first@1:1/integer>>,
-         little)):32/integer,
+      (binary:decode_unsigned(<<_chunk_n@1:31/integer, _is_first@1:1/integer-little>>)):32/integer,
       _msg_id@1:64/integer-little,
       _msg_length@1:64/integer-little, _chunk@1/binary>>.
 
 query_for(nil) -> #{}.
+
 
 recv_chunk({_mod@1, _port@1}, _chunk_length@1) ->
    _mod@1:recv(_port@1, _chunk_length@1 - 24).

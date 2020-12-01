@@ -1,5 +1,5 @@
 -module(agAgencyPoolMgrIns).
--include("agHttpCli.hrl").
+-include("agVstCli.hrl").
 
 -compile(inline).
 -compile({inline_size, 128}).
@@ -48,7 +48,7 @@ handleMsg({'$gen_call', From, {miStopPool, Name}}, State) ->
    gen_server:reply(From, ok),
    {ok, State};
 handleMsg(_Msg, State) ->
-   ?WARN(?MODULE, "receive unexpected  msg: ~p", [_Msg]),
+   ?AgWarn(?MODULE, "receive unexpected  msg: ~p", [_Msg]),
    {ok, State}.
 
 terminate(_Reason, _State) ->
@@ -133,13 +133,13 @@ stopChildren([AgencyName | T]) ->
       ok ->
          ok;
       {error, TerReason} ->
-         ?WARN(agAgencyPoolMgrIns, ":terminate_child: ~p error reason: ~p ~n", [AgencyName, TerReason])
+         ?AgWarn(agAgencyPoolMgrIns, ":terminate_child: ~p error reason: ~p ~n", [AgencyName, TerReason])
    end,
    case supervisor:delete_child(agAgencyPool_sup, AgencyName) of
       ok ->
          ok;
       {error, DelReason} ->
-         ?WARN(agAgencyPoolMgrIns, ":delete_child: ~p error reason: ~p ~n", [AgencyName, DelReason])
+         ?AgWarn(agAgencyPoolMgrIns, ":delete_child: ~p error reason: ~p ~n", [AgencyName, DelReason])
    end,
    stopChildren(T);
 stopChildren([]) ->

@@ -1,5 +1,5 @@
 -module(agAgencyUtils).
--include("agHttpCli.hrl").
+-include("agVstCli.hrl").
 
 -compile(inline).
 -compile({inline_size, 128}).
@@ -19,14 +19,14 @@
 dealClose(SrvState, #cliState{requestsIns = RequestsIns, requestsOuts = RequestsOuts, curInfo = CurInfo} = ClientState, Reply) ->
    agencyReply(CurInfo, Reply),
    agencyReplyAll(RequestsOuts, RequestsIns, Reply),
-   reconnectTimer(SrvState, ClientState#cliState{requestsIns = [], requestsOuts = [], backlogNum = 0, status = leisure, curInfo = undefined, recvState = undefined}).
+   reconnectTimer(SrvState, ClientState#cliState{requestsIns = [], requestsOuts = [], backlogNum = 0, revStatus = leisure, curInfo = undefined, recvState = undefined}).
 
 -spec reconnectTimer(srvState(), cliState()) -> {ok, srvState(), cliState()}.
 reconnectTimer(#srvState{reconnectState = undefined} = SrvState, CliState) ->
    {ok, {SrvState#srvState{socket = undefined}, CliState}};
 reconnectTimer(#srvState{reconnectState = ReconnectState} = SrvState, CliState) ->
-   #reconnectState{current = Current} = MewReconnectState = agAgencyUtils:updateReconnectState(ReconnectState),
-   TimerRef = erlang:send_after(Current, self(), ?miDoNetConnect),
+   #reConnState{current = Current} = MewReconnectState = agAgencyUtils:updateReconnectState(ReconnectState),
+   TimerRef = erlang:send_after(Current, self(), ?AgMDoNetConn),
    {ok, SrvState#srvState{reconnectState = MewReconnectState, socket = undefined, timerRef = TimerRef}, CliState}.
 
 -spec agencyReply(term(), term()) -> ok.
@@ -34,24 +34,24 @@ agencyReply({undefined, _RequestId, TimerRef}, _Reply) ->
    agAgencyUtils:cancelTimer(TimerRef);
 agencyReply({PidForm, RequestId, TimerRef}, Reply) ->
    agAgencyUtils:cancelTimer(TimerRef),
-   catch PidForm ! #miRequestRet{requestId = RequestId, reply = Reply},
+   catch PidForm ! #miRequestRet{messageId = RequestId, reply = Reply},
    ok;
 agencyReply(undefined, _RequestRet) ->
    ok.
 
--spec agencyReply(undefined | pid(), requestId(), undefined | reference(), term()) -> ok.
+-spec agencyReply(undefined | pid(), messageId(), undefined | reference(), term()) -> ok.
 agencyReply(undefined, _RequestId, TimerRef, _Reply) ->
    agAgencyUtils:cancelTimer(TimerRef),
    ok;
 agencyReply(FormPid, RequestId, TimerRef, Reply) ->
    agAgencyUtils:cancelTimer(TimerRef),
-   catch FormPid ! #miRequestRet{requestId = RequestId, reply = Reply},
+   catch FormPid ! #miRequestRet{messageId = RequestId, reply = Reply},
    ok.
 
 -spec agencyReplyAll(list(), list(), term()) -> ok.
 agencyReplyAll(RequestsOuts, RequestsIns, Reply) ->
-   [agencyReply(FormPid, RequestId, undefined, Reply) || #miRequest{requestId = RequestId, fromPid = FormPid} <- RequestsOuts],
-   [agencyReply(FormPid, RequestId, undefined, Reply) || #miRequest{requestId = RequestId, fromPid = FormPid} <- lists:reverse(RequestsIns)],
+   [agencyReply(FormPid, RequestId, undefined, Reply) || #miRequest{messageId = RequestId, fromPid = FormPid} <- RequestsOuts],
+   [agencyReply(FormPid, RequestId, undefined, Reply) || #miRequest{messageId = RequestId, fromPid = FormPid} <- lists:reverse(RequestsIns)],
    ok.
 
 -spec cancelTimer(undefined | reference()) -> ok.
@@ -75,19 +75,19 @@ cancelTimer(TimerRef) ->
 initReconnectState(IsReconnect, Min, Max) ->
    case IsReconnect of
       true ->
-         #reconnectState{min = Min, max = Max, current = Min};
+         #reConnState{min = Min, max = Max, current = Min};
       false ->
          undefined
    end.
 
 -spec resetReconnectState(undefined | reconnectState()) -> reconnectState() | undefined.
-resetReconnectState(#reconnectState{min = Min} = ReconnectState) ->
-   ReconnectState#reconnectState{current = Min}.
+resetReconnectState(#reConnState{min = Min} = ReconnectState) ->
+   ReconnectState#reConnState{current = Min}.
 
 -spec updateReconnectState(reconnectState()) -> reconnectState().
-updateReconnectState(#reconnectState{current = Current, max = Max} = ReconnectState) ->
+updateReconnectState(#reConnState{current = Current, max = Max} = ReconnectState) ->
    NewCurrent = Current + Current,
-   ReconnectState#reconnectState{current = minCur(NewCurrent, Max)}.
+   ReconnectState#reConnState{current = minCur(NewCurrent, Max)}.
 
 minCur(A, B) when B >= A ->
    A;
