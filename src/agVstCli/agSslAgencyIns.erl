@@ -14,7 +14,7 @@
 
 -spec init(term()) -> no_return().
 init({PoolName, AgencyName, #agencyOpts{reconnect = Reconnect, backlogSize = BacklogSize, reconnectTimeMin = Min, reconnectTimeMax = Max}}) ->
-   ReconnectState = agAgencyUtils:initReconnectState(Reconnect, Min, Max),
+   ReconnectState = agAgencyUtils:initReConnState(Reconnect, Min, Max),
    self() ! ?AgMDoNetConn,
    {ok, #srvState{poolName = PoolName, serverName = AgencyName, rn = binary:compile_pattern(<<"\r\n">>), rnrn = binary:compile_pattern(<<"\r\n\r\n">>), reconnectState = ReconnectState}, #cliState{backlogSize = BacklogSize}}.
 
@@ -118,7 +118,7 @@ handleMsg(?AgMDoNetConn,
       #dbOpts{host = Host, port = Port, hostname = HostName, dbName = DbName, userPassword = UserPassword, socketOpts = SocketOpts} ->
          case dealConnect(ServerName, HostName, Port, SocketOpts) of
             {ok, Socket} ->
-               NewReconnectState = agAgencyUtils:resetReconnectState(ReconnectState),
+               NewReconnectState = agAgencyUtils:resetReConnState(ReconnectState),
                %% 新建连接之后 需要重置之前的buff之类状态数据
                case RequestsOuts of
                   [] ->
@@ -137,7 +137,7 @@ handleMsg(?AgMDoNetConn,
                      dealQueueRequest(MiRequest, SrvState#srvState{socket = Socket, reconnectState = NewReconnectState}, CliState#cliState{requestsOuts = Outs, revStatus = leisure, curInfo = undefined, recvState = undefined})
                end;
             {error, _Reason} ->
-               agAgencyUtils:reconnectTimer(SrvState, CliState)
+               agAgencyUtils:reConnTimer(SrvState, CliState)
          end;
       _Ret ->
          ?AgWarn(ServerName, "deal connect not found agBeamPool:getv(~p) ret ~p is error ~n", [PoolName, _Ret])

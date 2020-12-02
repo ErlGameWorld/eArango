@@ -7,25 +7,25 @@
 -export([
    cancelTimer/1
    , dealClose/3
-   , reconnectTimer/2
+   , reConnTimer/2
    , agencyReply/2
    , agencyReply/4
-   , initReconnectState/3
-   , resetReconnectState/1
-   , updateReconnectState/1
+   , initReConnState/3
+   , resetReConnState/1
+   , updateReConnState/1
 ]).
 
 -spec dealClose(srvState(), cliState(), term()) -> {ok, srvState(), cliState()}.
 dealClose(SrvState, #cliState{requestsIns = RequestsIns, requestsOuts = RequestsOuts, curInfo = CurInfo} = ClientState, Reply) ->
    agencyReply(CurInfo, Reply),
    agencyReplyAll(RequestsOuts, RequestsIns, Reply),
-   reconnectTimer(SrvState, ClientState#cliState{requestsIns = [], requestsOuts = [], backlogNum = 0, revStatus = leisure, curInfo = undefined, recvState = undefined}).
+   reConnTimer(SrvState, ClientState#cliState{requestsIns = [], requestsOuts = [], backlogNum = 0, revStatus = leisure, curInfo = undefined, recvState = undefined}).
 
--spec reconnectTimer(srvState(), cliState()) -> {ok, srvState(), cliState()}.
-reconnectTimer(#srvState{reconnectState = undefined} = SrvState, CliState) ->
+-spec reConnTimer(srvState(), cliState()) -> {ok, srvState(), cliState()}.
+reConnTimer(#srvState{reconnectState = undefined} = SrvState, CliState) ->
    {ok, {SrvState#srvState{socket = undefined}, CliState}};
-reconnectTimer(#srvState{reconnectState = ReconnectState} = SrvState, CliState) ->
-   #reConnState{current = Current} = MewReconnectState = agAgencyUtils:updateReconnectState(ReconnectState),
+reConnTimer(#srvState{reconnectState = ReconnectState} = SrvState, CliState) ->
+   #reConnState{current = Current} = MewReconnectState = agAgencyUtils:updateReConnState(ReconnectState),
    TimerRef = erlang:send_after(Current, self(), ?AgMDoNetConn),
    {ok, SrvState#srvState{reconnectState = MewReconnectState, socket = undefined, timerRef = TimerRef}, CliState}.
 
@@ -70,8 +70,8 @@ cancelTimer(TimerRef) ->
          ok
    end.
 
--spec initReconnectState(boolean(), pos_integer(), pos_integer()) -> reconnectState() | undefined.
-initReconnectState(IsReconnect, Min, Max) ->
+-spec initReConnState(boolean(), pos_integer(), pos_integer()) -> reconnectState() | undefined.
+initReConnState(IsReconnect, Min, Max) ->
    case IsReconnect of
       true ->
          #reConnState{min = Min, max = Max, current = Min};
@@ -79,12 +79,12 @@ initReconnectState(IsReconnect, Min, Max) ->
          undefined
    end.
 
--spec resetReconnectState(undefined | reconnectState()) -> reconnectState() | undefined.
-resetReconnectState(#reConnState{min = Min} = ReconnectState) ->
+-spec resetReConnState(undefined | reconnectState()) -> reconnectState() | undefined.
+resetReConnState(#reConnState{min = Min} = ReconnectState) ->
    ReconnectState#reConnState{current = Min}.
 
--spec updateReconnectState(reconnectState()) -> reconnectState().
-updateReconnectState(#reConnState{current = Current, max = Max} = ReconnectState) ->
+-spec updateReConnState(reconnectState()) -> reconnectState().
+updateReConnState(#reConnState{current = Current, max = Max} = ReconnectState) ->
    NewCurrent = Current + Current,
    ReconnectState#reConnState{current = minCur(NewCurrent, Max)}.
 

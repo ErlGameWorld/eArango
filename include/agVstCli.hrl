@@ -10,21 +10,15 @@
 -define(AgCBody, 2).                %% Wait One Chunk Body
 -define(AgCDone, 3).                %% Wait One Chunk Receive Over
 -define(AgMDone, 4).                %% Wait One Message Over
-
+-define(AgCBodyStart, 5).           %% Ret Start Wait One Chunk Body
+-define(AgCBodyGoOn, 6).            %% Ret Go On Wait One Chunk Body
 
 %% IMY-todo  考虑多个消息回复的的时候 如果有消息 此时进程自动可能不存在 需要重新订阅获取
 %% pidFrom pid() to reply; undefiend  discard; waitSend 起送定时器等待requester来获取 过期就删除
--record(msgIdCache, {pidFrom, timerRef, chunkCnt, msgBuffer, chunkIdx, chunkSize, chunkBuffer}).
+-record(msgIdCache, {pidFrom, timerRef, chunkCnt, msgBuffer}).
 
--define(AgCBIdx, 7).
--define(AgCSIdx, 6).
--define(AgCIIdx, 5).
 -define(AgMBIdx, 4).
 -define(AgCCIdx, 3).
-
-
-
-
 
 %% 默认选项定义
 -define(AgDefBaseUrl, <<"http://127.0.0.1:8529">>).
@@ -85,8 +79,10 @@
    revStatus = ?AgCUndef :: pos_integer(),
    backlogNum = 0 :: integer(),
    backlogSize = 0 :: integer(),
-   buffer = <<>> :: binary()
-   %% IMY-todo 这里添加一个chunks的接受信息index size  缓存信息
+   messageId = 0 :: pos_integer(),
+   chunkIdx = 0 :: pos_integer(),
+   chunkSize = 0 :: pos_integer(),
+   chunkBuffer = <<>> :: binary()
 }).
 
 -record(dbOpts, {
