@@ -13,10 +13,10 @@
 ]).
 
 -spec init(term()) -> no_return().
-init({PoolName, AgencyName, #agencyOpts{reconnect = Reconnect, backlogSize = BacklogSize, reconnectTimeMin = Min, reconnectTimeMax = Max}}) ->
+init({PoolName, AgencyName, #agencyOpts{reconnect = Reconnect, backlogSize = BacklogSize, reConnTimeMin = Min, reConnTimeMax = Max}}) ->
    ReconnectState = agAgencyUtils:initReConnState(Reconnect, Min, Max),
    self() ! ?AgMDoNetConn,
-   {ok, #srvState{poolName = PoolName, serverName = AgencyName, rn = binary:compile_pattern(<<"\r\n">>), rnrn = binary:compile_pattern(<<"\r\n\r\n">>), reconnectState = ReconnectState}, #cliState{backlogSize = BacklogSize}}.
+   {ok, #srvState{poolName = PoolName, serverName = AgencyName, rn = binary:compile_pattern(<<"\r\n">>), rnrn = binary:compile_pattern(<<"\r\n\r\n">>), reConnState = ReconnectState}, #cliState{backlogSize = BacklogSize}}.
 
 -spec handleMsg(term(), srvState(), cliState()) -> {ok, term(), term()}.
 handleMsg(#agReq{method = Method, path = Path, headers = Headers, body = Body, messageId = RequestId, fromPid = FromPid, overTime = OverTime, isSystem = IsSystem} = MiRequest,
@@ -35,7 +35,7 @@ handleMsg(#agReq{method = Method, path = Path, headers = Headers, body = Body, m
             _ ->
                case Status of
                   leisure -> %% 空闲状态
-                     Request = agVstProtocol:request(IsSystem, Body, Method, Host, DbName, Path, [UserPassWord | Headers]),
+                     Request = agVstProtoPl:request(IsSystem, Body, Method, Host, DbName, Path, [UserPassWord | Headers]),
                      case ssl:send(Socket, Request) of
                         ok ->
                            TimerRef =
@@ -60,7 +60,7 @@ handleMsg(#agReq{method = Method, path = Path, headers = Headers, body = Body, m
 handleMsg({ssl, Socket, Data},
    #srvState{serverName = ServerName, rn = Rn, rnrn = RnRn, socket = Socket} = SrvState,
    #cliState{isHeadMethod = IsHeadMethod, backlogNum = BacklogNum, curInfo = CurInfo, requestsIns = RequestsIns, requestsOuts = RequestsOuts, recvState = RecvState} = CliState) ->
-   try agVstProtocol:response(RecvState, Rn, RnRn, Data, IsHeadMethod) of
+   try agVstProtoPl:response(RecvState, Rn, RnRn, Data, IsHeadMethod) of
       {done, #recvState{statusCode = StatusCode, headers = Headers, body = Body}} ->
          agAgencyUtils:agencyReply(CurInfo, {StatusCode, Body, Headers}),
          case RequestsOuts of
@@ -112,7 +112,7 @@ handleMsg({ssl_error, Socket, Reason},
    ssl:close(Socket),
    agAgencyUtils:dealClose(SrvState, CliState, {error, {ssl_error, Reason}});
 handleMsg(?AgMDoNetConn,
-   #srvState{poolName = PoolName, serverName = ServerName, reconnectState = ReconnectState} = SrvState,
+   #srvState{poolName = PoolName, serverName = ServerName, reConnState = ReconnectState} = SrvState,
    #cliState{requestsIns = RequestsIns, requestsOuts = RequestsOuts} = CliState) ->
    case ?agBeamPool:getv(PoolName) of
       #dbOpts{host = Host, port = Port, hostname = HostName, dbName = DbName, userPassword = UserPassword, socketOpts = SocketOpts} ->
@@ -124,17 +124,17 @@ handleMsg(?AgMDoNetConn,
                   [] ->
                      case RequestsIns of
                         [] ->
-                           {ok, SrvState#srvState{userPassWord = UserPassword, dbName = DbName, host = Host, reconnectState = NewReconnectState, socket = Socket}, CliState#cliState{revStatus = leisure, curInfo = undefined, recvState = undefined}};
+                           {ok, SrvState#srvState{userPassWord = UserPassword, dbName = DbName, host = Host, reConnState = NewReconnectState, socket = Socket}, CliState#cliState{revStatus = leisure, curInfo = undefined, recvState = undefined}};
                         [MiRequest] ->
-                           dealQueueRequest(MiRequest, SrvState#srvState{socket = Socket, reconnectState = NewReconnectState}, CliState#cliState{requestsIns = [], revStatus = leisure, curInfo = undefined, recvState = undefined});
+                           dealQueueRequest(MiRequest, SrvState#srvState{socket = Socket, reConnState = NewReconnectState}, CliState#cliState{requestsIns = [], revStatus = leisure, curInfo = undefined, recvState = undefined});
                         MiRLists ->
                            [MiRequest | Outs] = lists:reverse(MiRLists),
-                           dealQueueRequest(MiRequest, SrvState#srvState{socket = Socket, reconnectState = NewReconnectState}, CliState#cliState{requestsIns = [], requestsOuts = Outs, revStatus = leisure, curInfo = undefined, recvState = undefined})
+                           dealQueueRequest(MiRequest, SrvState#srvState{socket = Socket, reConnState = NewReconnectState}, CliState#cliState{requestsIns = [], requestsOuts = Outs, revStatus = leisure, curInfo = undefined, recvState = undefined})
                      end;
                   [MiRequest] ->
-                     dealQueueRequest(MiRequest, SrvState#srvState{socket = Socket, reconnectState = NewReconnectState}, CliState#cliState{requestsOuts = [], revStatus = leisure, curInfo = undefined, recvState = undefined});
+                     dealQueueRequest(MiRequest, SrvState#srvState{socket = Socket, reConnState = NewReconnectState}, CliState#cliState{requestsOuts = [], revStatus = leisure, curInfo = undefined, recvState = undefined});
                   [MiRequest | Outs] ->
-                     dealQueueRequest(MiRequest, SrvState#srvState{socket = Socket, reconnectState = NewReconnectState}, CliState#cliState{requestsOuts = Outs, revStatus = leisure, curInfo = undefined, recvState = undefined})
+                     dealQueueRequest(MiRequest, SrvState#srvState{socket = Socket, reConnState = NewReconnectState}, CliState#cliState{requestsOuts = Outs, revStatus = leisure, curInfo = undefined, recvState = undefined})
                end;
             {error, _Reason} ->
                agAgencyUtils:reConnTimer(SrvState, CliState)
@@ -204,7 +204,7 @@ overDealQueueRequest(#agReq{method = Method, path = Path, headers = Headers, bod
                overDealQueueRequest(MiRequest, SrvState, CliState#cliState{requestsOuts = Outs, backlogNum = BacklogNum - 1})
          end;
       _ ->
-         Request = agVstProtocol:request(IsSystem, Body, Method, Host, DbName, Path, [UserPassWord | Headers]),
+         Request = agVstProtoPl:request(IsSystem, Body, Method, Host, DbName, Path, [UserPassWord | Headers]),
          case ssl:send(Socket, Request) of
             ok ->
                TimerRef =
@@ -228,7 +228,7 @@ overReceiveSslData(#srvState{poolName = PoolName, serverName = ServerName, rn = 
    #cliState{isHeadMethod = IsHeadMethod, backlogNum = BacklogNum, curInfo = CurInfo, requestsIns = RequestsIns, requestsOuts = RequestsOuts, recvState = RecvState} = CliState) ->
    receive
       {ssl, Socket, Data} ->
-         try agVstProtocol:response(RecvState, Rn, RnRn, Data, IsHeadMethod) of
+         try agVstProtoPl:response(RecvState, Rn, RnRn, Data, IsHeadMethod) of
             {done, #recvState{statusCode = StatusCode, headers = Headers, body = Body}} ->
                agAgencyUtils:agencyReply(CurInfo, {StatusCode, Body, Headers}),
                case RequestsOuts of
@@ -380,7 +380,7 @@ dealQueueRequest(#agReq{method = Method, path = Path, headers = Headers, body = 
                dealQueueRequest(MiRequest, SrvState, CliState#cliState{requestsOuts = Outs, backlogNum = BacklogNum - 1})
          end;
       _ ->
-         Request = agVstProtocol:request(IsSystem, Body, Method, Host, DbName, Path, [UserPassWord | Headers]),
+         Request = agVstProtoPl:request(IsSystem, Body, Method, Host, DbName, Path, [UserPassWord | Headers]),
          case ssl:send(Socket, Request) of
             ok ->
                TimerRef =

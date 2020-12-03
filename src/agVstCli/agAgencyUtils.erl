@@ -22,12 +22,12 @@ dealClose(SrvState, #cliState{requestsIns = RequestsIns, requestsOuts = Requests
    reConnTimer(SrvState, ClientState#cliState{requestsIns = [], requestsOuts = [], backlogNum = 0, revStatus = leisure, curInfo = undefined, recvState = undefined}).
 
 -spec reConnTimer(srvState(), cliState()) -> {ok, srvState(), cliState()}.
-reConnTimer(#srvState{reconnectState = undefined} = SrvState, CliState) ->
+reConnTimer(#srvState{reConnState = undefined} = SrvState, CliState) ->
    {ok, {SrvState#srvState{socket = undefined}, CliState}};
-reConnTimer(#srvState{reconnectState = ReconnectState} = SrvState, CliState) ->
+reConnTimer(#srvState{reConnState = ReconnectState} = SrvState, CliState) ->
    #reConnState{current = Current} = MewReconnectState = agAgencyUtils:updateReConnState(ReconnectState),
    TimerRef = erlang:send_after(Current, self(), ?AgMDoNetConn),
-   {ok, SrvState#srvState{reconnectState = MewReconnectState, socket = undefined, timerRef = TimerRef}, CliState}.
+   {ok, SrvState#srvState{reConnState = MewReconnectState, socket = undefined, timerRef = TimerRef}, CliState}.
 
 -spec agencyReply(term(), term()) -> ok.
 agencyReply({undefined, _RequestId, TimerRef}, _Reply) ->
@@ -70,7 +70,7 @@ cancelTimer(TimerRef) ->
          ok
    end.
 
--spec initReConnState(boolean(), pos_integer(), pos_integer()) -> reconnectState() | undefined.
+-spec initReConnState(boolean(), pos_integer(), pos_integer()) -> reConnState() | undefined.
 initReConnState(IsReconnect, Min, Max) ->
    case IsReconnect of
       true ->
@@ -79,11 +79,11 @@ initReConnState(IsReconnect, Min, Max) ->
          undefined
    end.
 
--spec resetReConnState(undefined | reconnectState()) -> reconnectState() | undefined.
+-spec resetReConnState(undefined | reConnState()) -> reConnState() | undefined.
 resetReConnState(#reConnState{min = Min} = ReconnectState) ->
    ReconnectState#reConnState{current = Min}.
 
--spec updateReConnState(reconnectState()) -> reconnectState().
+-spec updateReConnState(reConnState()) -> reConnState().
 updateReConnState(#reConnState{current = Current, max = Max} = ReconnectState) ->
    NewCurrent = Current + Current,
    ReconnectState#reConnState{current = minCur(NewCurrent, Max)}.

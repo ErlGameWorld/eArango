@@ -62,9 +62,9 @@ dbOpts(DbCfgs) ->
 agencyOpts(AgencyCfgs) ->
    IsReconnect = ?AgGetListKV(reconnect, AgencyCfgs, ?AgDefIsReConn),
    BacklogSize = ?AgGetListKV(backlogSize, AgencyCfgs, ?AgDefBacklogSize),
-   Min = ?AgGetListKV(reconnectTimeMin, AgencyCfgs, ?AgDefReConnMin),
-   Max = ?AgGetListKV(reconnectTimeMax, AgencyCfgs, ?AgDefReConnMax),
-   #agencyOpts{reconnect = IsReconnect, backlogSize = BacklogSize, reconnectTimeMin = Min, reconnectTimeMax = Max}.
+   Min = ?AgGetListKV(reConnTimeMin, AgencyCfgs, ?AgDefReConnMin),
+   Max = ?AgGetListKV(reConnTimeMax, AgencyCfgs, ?AgDefReConnMax),
+   #agencyOpts{reconnect = IsReconnect, backlogSize = BacklogSize, reConnTimeMin = Min, reConnTimeMax = Max}.
 
 -spec getListValue(term(), list(), term()) -> term().
 getListValue(Key, List, Default) ->

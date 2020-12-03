@@ -5,13 +5,11 @@
 -define(agBeamPool, agBeamPool).
 -define(agBeamAgency, agBeamAgency).
 
--define(AgCUndef, 0).               %% Wait One Chunk start
+-define(AgUndef, 0).                %% Wait One Chunk start
 -define(AgCHeader, 1).              %% Wait One Chunk header
 -define(AgCBody, 2).                %% Wait One Chunk Body
--define(AgCDone, 3).                %% Wait One Chunk Receive Over
--define(AgMDone, 4).                %% Wait One Message Over
--define(AgCBodyStart, 5).           %% Ret Start Wait One Chunk Body
--define(AgCBodyGoOn, 6).            %% Ret Go On Wait One Chunk Body
+-define(AgCBodyStart, 3).           %% Ret Start Wait One Chunk Body
+-define(AgCBodyGoOn, 4).            %% Ret Go On Wait One Chunk Body
 
 %% IMY-todo  考虑多个消息回复的的时候 如果有消息 此时进程自动可能不存在 需要重新订阅获取
 %% pidFrom pid() to reply; undefiend  discard; waitSend 起送定时器等待requester来获取 过期就删除
@@ -19,6 +17,8 @@
 
 -define(AgMBIdx, 4).
 -define(AgCCIdx, 3).
+
+-define(AgHeaderSize, 24).
 
 %% 默认选项定义
 -define(AgDefBaseUrl, <<"http://127.0.0.1:8529">>).
@@ -70,16 +70,25 @@
    userPassWord :: binary(),
    host :: binary(),
    dbName :: binary(),
-   reconnectState :: undefined | reconnectState(),
+   reConnState :: undefined | reConnState(),
    socket :: undefined | ssl:sslsocket(),
    timerRef :: undefined | reference()
 }).
 
 -record(cliState, {
-   revStatus = ?AgCUndef :: pos_integer(),
-   backlogNum = 0 :: integer(),
    backlogSize = 0 :: integer(),
+   revStatus = ?AgUndef :: pos_integer(),
+   backlogNum = 0 :: integer(),
    messageId = 0 :: pos_integer(),
+   chunkIdx = 0 :: pos_integer(),
+   chunkSize = 0 :: pos_integer(),
+   chunkBuffer = <<>> :: binary()
+}).
+
+-record(recvState, {
+   revStatus = ?AgUndef :: pos_integer(),
+   messageId = 0 :: pos_integer(),
+   msgBuffer = <<>> :: binary(),
    chunkIdx = 0 :: pos_integer(),
    chunkSize = 0 :: pos_integer(),
    chunkBuffer = <<>> :: binary()
@@ -99,15 +108,15 @@
 -record(agencyOpts, {
    reconnect :: boolean(),
    backlogSize :: backlogSize(),
-   reconnectTimeMin :: pos_integer(),
-   reconnectTimeMax :: pos_integer()
+   reConnTimeMin :: pos_integer(),
+   reConnTimeMax :: pos_integer()
 }).
 
 -type miRequest() :: #agReq{}.
 -type miRequestRet() :: #agReqRet{}.
 -type srvState() :: #srvState{}.
 -type cliState() :: #cliState{}.
--type reconnectState() :: #reConnState{}.
+-type reConnState() :: #reConnState{}.
 
 -type poolName() :: atom().
 -type poolNameOrSocket() :: atom() | socket().
@@ -138,8 +147,8 @@
 -type agencyCfg() ::
 {reconnect, boolean()} |
 {backlogSize, backlogSize()} |
-{reconnectTimeMin, pos_integer()} |
-{reconnectTimeMax, pos_integer()}.
+{reConnTimeMin, pos_integer()} |
+{reConnTimeMax, pos_integer()}.
 
 -type dbCfgs() :: [dbCfg()].
 -type dbOpts() :: #dbOpts{}.
