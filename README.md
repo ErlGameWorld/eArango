@@ -33,7 +33,7 @@
         agMgrDb:curDbInfo(Socket).
     
     Connection pooling mode
-       application:ensure_all_started(erlArango).        %% start app
+       application:ensure_all_started(eArango).        %% start app
        agVstCli:startPool(poolName, [], []).            %% start pool
        %% Then you can then invoke various apis using poolName as the first argument
        agMgrDb:curDbInfo(poolName).  

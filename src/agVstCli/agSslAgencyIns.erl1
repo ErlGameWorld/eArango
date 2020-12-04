@@ -15,7 +15,7 @@
 -spec init(term()) -> no_return().
 init({PoolName, AgencyName, #agencyOpts{reconnect = Reconnect, backlogSize = BacklogSize, reConnTimeMin = Min, reConnTimeMax = Max}}) ->
    ReconnectState = agAgencyUtils:initReConnState(Reconnect, Min, Max),
-   self() ! ?AgMDoNetConn,
+   self() ! ?AgMDoDBConn,
    {ok, #srvState{poolName = PoolName, serverName = AgencyName, rn = binary:compile_pattern(<<"\r\n">>), rnrn = binary:compile_pattern(<<"\r\n\r\n">>), reConnState = ReconnectState}, #cliState{backlogSize = BacklogSize}}.
 
 -spec handleMsg(term(), srvState(), cliState()) -> {ok, term(), term()}.
@@ -97,7 +97,7 @@ handleMsg({timeout, TimerRef, mWaitingOver},
    agAgencyUtils:agencyReply(FromPid, RequestId, undefined, {error, timeout}),
    %% 之前的数据超时之后 要关闭ssl 然后重新建立连接 以免后面该ssl收到该次超时数据 影响后面请求的接收数据 导致数据错乱
    ssl:close(Socket),
-   handleMsg(?AgMDoNetConn, SrvState#srvState{socket = undefined}, CliState#cliState{backlogNum = BacklogNum - 1});
+   handleMsg(?AgMDoDBConn, SrvState#srvState{socket = undefined}, CliState#cliState{backlogNum = BacklogNum - 1});
 handleMsg({ssl_closed, Socket},
    #srvState{socket = Socket, serverName = ServerName} = SrvState,
    CliState) ->
@@ -111,7 +111,7 @@ handleMsg({ssl_error, Socket, Reason},
    ?AgWarn(ServerName, "connection error: ~p~n", [Reason]),
    ssl:close(Socket),
    agAgencyUtils:dealClose(SrvState, CliState, {error, {ssl_error, Reason}});
-handleMsg(?AgMDoNetConn,
+handleMsg(?AgMDoDBConn,
    #srvState{poolName = PoolName, serverName = ServerName, reConnState = ReconnectState} = SrvState,
    #cliState{requestsIns = RequestsIns, requestsOuts = RequestsOuts} = CliState) ->
    case ?agBeamPool:getv(PoolName) of

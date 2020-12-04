@@ -10,21 +10,25 @@
 -define(AgCBody, 2).                %% Wait One Chunk Body
 -define(AgCBodyStart, 3).           %% Ret Start Wait One Chunk Body
 -define(AgCBodyGoOn, 4).            %% Ret Go On Wait One Chunk Body
+-define(AgCDone, 5).                %% receve one Chunk done
+-define(AgMDone, 6).                %% receve one message done
 
-%% IMY-todo  考虑多个消息回复的的时候 如果有消息 此时进程自动可能不存在 需要重新订阅获取
-%% pidFrom pid() to reply; undefiend  discard; waitSend 起送定时器等待requester来获取 过期就删除
+%% pidFrom pid() to reply; undefiend  discard; timeOut 该请求标记为过期了 discard
 -record(msgIdCache, {pidFrom, timerRef, chunkCnt, msgBuffer}).
 
 -define(AgMBIdx, 4).
 -define(AgCCIdx, 3).
+-define(AgTRIdx, 2).
+-define(AgPFIdx, 1).
 
 -define(AgHeaderSize, 24).
 
 %% 默认选项定义
--define(AgDefBaseUrl, <<"http://127.0.0.1:8529">>).
+-define(AgDefBaseUrl, <<"http://192.168.0.88:8529">>).
 -define(AgDefDbName, <<"_system">>).
 -define(AgDefUser, <<"root">>).
 -define(AgDefPassWord, <<"156736">>).
+
 -define(AgDefBacklogSize, 1024).
 -define(AgDefConnTimeout, 5000).
 -define(AgDefPoolSize, 16).
@@ -32,6 +36,8 @@
 -define(AgDefReConnMin, 500).
 -define(AgDefReConnMax, 120000).
 -define(AgDefTimeout, infinity).
+-define(AgDefVstSize, 3145728).
+-define(AgDefAgencySlg, poll).          %% bind rand  poll
 -define(AgDefPid, self()).
 -define(AgDefSocketOpts, [binary, {active, true}, {nodelay, true}, {delay_send, true}, {keepalive, true}, {recbuf, 1048576}, {send_timeout, 5000}, {send_timeout_close, true}]).
 
@@ -39,7 +45,8 @@
 -define(AgGetListKV(Key, List, Default), agMiscUtils:getListValue(Key, List, Default)).
 -define(AgWarn(Tag, Format, Data), agMiscUtils:warnMsg(Tag, Format, Data)).
 
--define(AgMDoNetConn, mDoNetConn).
+-define(AgMDoDBConn, mDoDBConn).
+-define(AgUpgradeInfo, <<"VST/1.1\r\n\r\n">>).
 
 -record(agReq, {
    method :: method()
@@ -67,8 +74,6 @@
 -record(srvState, {
    poolName :: poolName(),
    serverName :: serverName(),
-   userPassWord :: binary(),
-   host :: binary(),
    dbName :: binary(),
    reConnState :: undefined | reConnState(),
    socket :: undefined | ssl:sslsocket(),
@@ -88,6 +93,7 @@
 -record(recvState, {
    revStatus = ?AgUndef :: pos_integer(),
    messageId = 0 :: pos_integer(),
+   chunkCnt = -1 :: integer(),
    msgBuffer = <<>> :: binary(),
    chunkIdx = 0 :: pos_integer(),
    chunkSize = 0 :: pos_integer(),
@@ -101,12 +107,15 @@
    dbName :: binary(),
    protocol :: protocol(),
    poolSize :: poolSize(),
-   userPassword :: binary(),
+   user :: binary(),
+   password :: binary(),
    socketOpts :: socketOpts()
 }).
 
 -record(agencyOpts, {
    reconnect :: boolean(),
+   vstSize :: pos_integer(),
+   agencySlg :: agencySlg(),
    backlogSize :: backlogSize(),
    reConnTimeMin :: pos_integer(),
    reConnTimeMax :: pos_integer()
@@ -117,6 +126,7 @@
 -type srvState() :: #srvState{}.
 -type cliState() :: #cliState{}.
 -type reConnState() :: #reConnState{}.
+-type recvState() :: #recvState{}.
 
 -type poolName() :: atom().
 -type poolNameOrSocket() :: atom() | socket().
@@ -130,6 +140,7 @@
 -type host() :: binary().
 -type hostName() :: string().
 -type poolSize() :: pos_integer().
+-type agencySlg() :: bind | rand | poll.
 -type backlogSize() :: pos_integer() | infinity.
 -type messageId() :: pos_integer().
 -type socket() :: inet:socket() | ssl:sslsocket().
@@ -146,6 +157,8 @@
 
 -type agencyCfg() ::
 {reconnect, boolean()} |
+{vstSize, pos_integer()} |
+{agencySlg, agencySlg()} |
 {backlogSize, backlogSize()} |
 {reConnTimeMin, pos_integer()} |
 {reConnTimeMax, pos_integer()}.
@@ -154,61 +167,3 @@
 -type dbOpts() :: #dbOpts{}.
 -type agencyCfgs() :: [agencyCfg()].
 -type agencyOpts() :: #agencyOpts{}.
-
-%% http header 头
-%% -type header() ::
-%%    'Cache-Control' |
-%%    'Connection' |
-%%    'Date' |
-%%    'Pragma'|
-%%    'Transfer-Encoding' |
-%%    'Upgrade' |
-%%    'Via' |
-%%    'Accept' |
-%%    'Accept-Charset'|
-%%    'Accept-Encoding' |
-%%    'Accept-Language' |
-%%    'Authorization' |
-%%    'From' |
-%%    'Host' |
-%%    'If-Modified-Since' |
-%%    'If-Match' |
-%%    'If-None-Match' |
-%%    'If-Range'|
-%%    'If-Unmodified-Since' |
-%%    'Max-Forwards' |
-%%    'Proxy-Authorization' |
-%%    'Range'|
-%%    'Referer' |
-%%    'User-Agent' |
-%%    'Age' |
-%%    'Location' |
-%%    'Proxy-Authenticate'|
-%%    'Public' |
-%%    'Retry-After' |
-%%    'Server' |
-%%    'Vary' |
-%%    'Warning'|
-%%    'Www-Authenticate' |
-%%    'Allow' |
-%%    'Content-Base' |
-%%    'Content-Encoding'|
-%%    'Content-Language' |
-%%    'Content-Length' |
-%%    'Content-Location'|
-%%    'Content-Md5' |
-%%    'Content-Range' |
-%%    'Content-Type' |
-%%    'Etag'|
-%%    'Expires' |
-%%    'Last-Modified' |
-%%    'Accept-Ranges' |
-%%    'Set-Cookie'|
-%%    'Set-Cookie2' |
-%%    'X-Forwarded-For' |
-%%    'Cookie' |
-%%    'Keep-Alive' |
-%%    'Proxy-Connection' |
-%%    binary() |
-%%    string().
-

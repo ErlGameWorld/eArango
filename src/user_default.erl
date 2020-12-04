@@ -5,11 +5,11 @@
 
 start() ->
    erlSync:run(),
-   application:ensure_all_started(erlArango),
+   application:ensure_all_started(eArango),
    agVstCli:startPool(tt, [{poolSize, 10}], []).
 
 tt(C, N) ->
-   application:ensure_all_started(erlArango),
+   application:ensure_all_started(eArango),
    agVstCli:startPool(tt, [{poolSize, 16}], []),
    StartTime = erlang:system_time(millisecond),
    io:format("IMY**********************  started~n"),
@@ -26,7 +26,7 @@ test(N, StartTime) ->
    test(N - 1, StartTime).
 
 %% tt(C, N) ->
-%%    application:start(erlArango),
+%%    application:start(eArango),
 %%    agHttpCli:startPool(tt, [{poolSize, 1}, {baseUrl, <<"http://localhost:8181">>}], []),
 %%    Request = {<<"GET">>, <<"/_api/database/current">>, [], []},
 %%    io:format("IMY**********************  start time ~p~n",[erlang:system_time(millisecond)]),

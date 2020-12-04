@@ -8,49 +8,51 @@
    cancelTimer/1
    , dealClose/3
    , reConnTimer/2
-   , agencyReply/2
    , agencyReply/4
+   , agencyReTimeout/3
    , initReConnState/3
    , resetReConnState/1
    , updateReConnState/1
 ]).
 
 -spec dealClose(srvState(), cliState(), term()) -> {ok, srvState(), cliState()}.
-dealClose(SrvState, #cliState{requestsIns = RequestsIns, requestsOuts = RequestsOuts, curInfo = CurInfo} = ClientState, Reply) ->
-   agencyReply(CurInfo, Reply),
-   agencyReplyAll(RequestsOuts, RequestsIns, Reply),
-   reConnTimer(SrvState, ClientState#cliState{requestsIns = [], requestsOuts = [], backlogNum = 0, revStatus = leisure, curInfo = undefined, recvState = undefined}).
+dealClose(SrvState, ClientState, Reply) ->
+   agencyReplyAll(Reply),
+   reConnTimer(SrvState, ClientState#cliState{backlogNum = 0, revStatus = ?AgUndef}).
 
 -spec reConnTimer(srvState(), cliState()) -> {ok, srvState(), cliState()}.
 reConnTimer(#srvState{reConnState = undefined} = SrvState, CliState) ->
    {ok, {SrvState#srvState{socket = undefined}, CliState}};
-reConnTimer(#srvState{reConnState = ReconnectState} = SrvState, CliState) ->
-   #reConnState{current = Current} = MewReconnectState = agAgencyUtils:updateReConnState(ReconnectState),
-   TimerRef = erlang:send_after(Current, self(), ?AgMDoNetConn),
-   {ok, SrvState#srvState{reConnState = MewReconnectState, socket = undefined, timerRef = TimerRef}, CliState}.
-
--spec agencyReply(term(), term()) -> ok.
-agencyReply({undefined, _RequestId, TimerRef}, _Reply) ->
-   agAgencyUtils:cancelTimer(TimerRef);
-agencyReply({PidForm, RequestId, TimerRef}, Reply) ->
-   agAgencyUtils:cancelTimer(TimerRef),
-   catch PidForm ! #agReqRet{messageId = RequestId, reply = Reply},
-   ok;
-agencyReply(undefined, _RequestRet) ->
-   ok.
+reConnTimer(#srvState{reConnState = ReConnState} = SrvState, CliState) ->
+   #reConnState{current = Current} = MewReConnState = agAgencyUtils:updateReConnState(ReConnState),
+   TimerRef = erlang:send_after(Current, self(), ?AgMDoDBConn),
+   {ok, SrvState#srvState{reConnState = MewReConnState, socket = undefined, timerRef = TimerRef}, CliState}.
 
 -spec agencyReply(undefined | pid(), messageId(), undefined | reference(), term()) -> ok.
 agencyReply(undefined, MessageId, TimerRef, _Reply) ->
+   erlang:erase(MessageId),
    agAgencyUtils:cancelTimer(TimerRef);
-agencyReply(FormPid, RequestId, TimerRef, Reply) ->
+agencyReply(timeOut, MessageId, TimerRef, _Reply) ->
+   erlang:erase(MessageId),
+   agAgencyUtils:cancelTimer(TimerRef);
+agencyReply(FormPid, MessageId, TimerRef, Reply) ->
+   erlang:erase(MessageId),
    agAgencyUtils:cancelTimer(TimerRef),
-   catch FormPid ! #agReqRet{messageId = RequestId, reply = Reply},
+   catch FormPid ! #agReqRet{messageId = MessageId, reply = Reply},
    ok.
 
--spec agencyReplyAll(list(), list(), term()) -> ok.
-agencyReplyAll(RequestsOuts, RequestsIns, Reply) ->
-   [agencyReply(FormPid, RequestId, undefined, Reply) || #agReq{messageId = RequestId, fromPid = FormPid} <- RequestsOuts],
-   [agencyReply(FormPid, RequestId, undefined, Reply) || #agReq{messageId = RequestId, fromPid = FormPid} <- lists:reverse(RequestsIns)],
+-spec agencyReTimeout(undefined | pid(), messageId(), term()) -> ok.
+agencyReTimeout(undefined, _MessageId, _Reply) ->
+   ok;
+agencyReTimeout(timeOut, _MessageId, _Reply) ->
+   ok;
+agencyReTimeout(FormPid, MessageId, Reply) ->
+   catch FormPid ! #agReqRet{messageId = MessageId, reply = Reply},
+   ok.
+
+-spec agencyReplyAll(term()) -> ok.
+agencyReplyAll(Reply) ->
+   [agencyReply(PidForm, MessageId, TimeRef, Reply) || {MessageId, {PidForm, TimeRef, _, _}} <- erlang:get()],
    ok.
 
 -spec cancelTimer(undefined | reference()) -> ok.
@@ -80,16 +82,11 @@ initReConnState(IsReconnect, Min, Max) ->
    end.
 
 -spec resetReConnState(undefined | reConnState()) -> reConnState() | undefined.
-resetReConnState(#reConnState{min = Min} = ReconnectState) ->
-   ReconnectState#reConnState{current = Min}.
+resetReConnState(#reConnState{min = Min} = ReConnState) ->
+   ReConnState#reConnState{current = Min}.
 
 -spec updateReConnState(reConnState()) -> reConnState().
-updateReConnState(#reConnState{current = Current, max = Max} = ReconnectState) ->
+updateReConnState(#reConnState{current = Current, max = Max} = ReConnState) ->
    NewCurrent = Current + Current,
-   ReconnectState#reConnState{current = minCur(NewCurrent, Max)}.
-
-minCur(A, B) when B >= A ->
-   A;
-minCur(_, B) ->
-   B.
+   ReConnState#reConnState{current = if NewCurrent >= Max -> Max; true -> NewCurrent end}.
 

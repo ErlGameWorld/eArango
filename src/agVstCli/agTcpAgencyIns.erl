@@ -14,7 +14,7 @@
 
 -spec init(term()) -> no_return().
 init({PoolName, AgencyName, #agencyOpts{reconnect = Reconnect, backlogSize = BacklogSize, reConnTimeMin = Min, reConnTimeMax = Max}}) ->
-   self() ! ?AgMDoNetConn,
+   self() ! ?AgMDoDBConn,
    ReConnState = agAgencyUtils:initReConnState(Reconnect, Min, Max),
    {ok, #srvState{poolName = PoolName, serverName = AgencyName, reConnState = ReConnState}, #cliState{backlogSize = BacklogSize}}.
 
@@ -66,7 +66,10 @@ handleMsg({tcp, _Socket, Data}, SrvState,
    end;
 handleMsg({timeout, _TimerRef, {mWaitingOver, MessageId, FromPid}}, SrvState,
    #cliState{backlogNum = BacklogNum} = CliState) ->
-   agAgencyUtils:agencyReply(FromPid, MessageId, undefined, {error, timeout}),
+   MsgCache = erlang:get(MessageId),
+   MsgPF = erlang:setelement(?AgPFIdx, MsgCache, timeOut),
+   erlang:put(MessageId, MsgPF),
+   agAgencyUtils:agencyReTimeout(FromPid, MessageId, {error, timeout}),
    {ok, SrvState, CliState#cliState{backlogNum = BacklogNum - 1}};
 handleMsg({tcp_closed, Socket},
    #srvState{socket = Socket, serverName = ServerName} = SrvState,
@@ -80,15 +83,25 @@ handleMsg({tcp_error, Socket, Reason},
    ?AgWarn(ServerName, "connection error: ~p~n", [Reason]),
    gen_tcp:close(Socket),
    agAgencyUtils:dealClose(SrvState, CliState, {error, {tcp_error, Reason}});
-handleMsg(?AgMDoNetConn,
-   #srvState{poolName = PoolName, serverName = ServerName, reConnState = ReconnectState} = SrvState,
+handleMsg(?AgMDoDBConn,
+   #srvState{poolName = PoolName, serverName = ServerName, reConnState = _ReConnState} = SrvState,
    CliState) ->
    case ?agBeamPool:getv(PoolName) of
-      #dbOpts{host = Host, port = Port, hostname = HostName, dbName = DbName, userPassword = UserPassword, socketOpts = SocketOpts} ->
+      #dbOpts{port = Port, hostname = HostName, dbName = DbName, user = User, password = Password, socketOpts = SocketOpts} ->
          case gen_tcp:connect(HostName, Port, SocketOpts, ?AgDefConnTimeout) of
             {ok, Socket} ->
-               %% IMY-todo 这里进行连接认证信息
-               {ok, Socket};
+               gen_tcp:send(Socket, ?AgUpgradeInfo),
+               AuthInfo = eVPack:encode([1, 1000, <<"plain">>, User, Password]),
+               gen_tcp:send(Socket, AuthInfo),
+               case agVstCli:receiveTcpData(#recvState{}, Socket) of
+                  {ok, MsgBin} ->
+                     Term = eVPack:decode(MsgBin),
+                     ?AgWarn(auth, "connect and auth success: ~p~n", [Term]),
+                     {ok, SrvState#srvState{dbName = DbName, socket = Socket}, CliState};
+                  {error, Reason} ->
+                     ?AgWarn(ServerName, "connect error: ~p~n", [Reason]),
+                     agAgencyUtils:reConnTimer(SrvState, CliState)
+               end;
             {error, Reason} ->
                ?AgWarn(ServerName, "connect error: ~p~n", [Reason]),
                agAgencyUtils:reConnTimer(SrvState, CliState)
@@ -102,12 +115,20 @@ handleMsg(Msg, #srvState{serverName = ServerName} = SrvState, CliState) ->
 
 -spec terminate(term(), srvState(), cliState()) -> ok.
 terminate(_Reason, #srvState{socket = Socket} = SrvState, CliState) ->
-   {ok, NewSrvState, NewCliState} = overAllWork(SrvState, CliState),
+   {ok, NewSrvState, NewCliState} = waitAllReqOver(SrvState, CliState),
    gen_tcp:close(Socket),
    agAgencyUtils:dealClose(NewSrvState, NewCliState, {error, shutdown}),
    ok.
 
--spec overAllWork(srvState(), cliState()) -> {ok, srvState(), cliState()}.
-overAllWork(SrvState, #cliState{backlogNum = BacklogNum} = CliState) ->
-   KVList = erlang:get(),
-   ok.
+-spec waitAllReqOver(srvState(), cliState()) -> {ok, srvState(), cliState()}.
+waitAllReqOver(SrvState, #cliState{backlogNum = BacklogNum} = CliState) ->
+   case BacklogNum > 0 of
+      true ->
+         receive
+            Msg ->
+               {ok, NewSrvState, NewCliState} = handleMsg(Msg, SrvState, CliState),
+               waitAllReqOver(NewSrvState, NewCliState)
+         end;
+      _ ->
+         {ok, SrvState, CliState}
+   end.

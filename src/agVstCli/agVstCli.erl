@@ -7,14 +7,14 @@
 
 -export([
    %% Common Request API
-   callAgency/5
-   , callAgency/6
+   callAgency/6
    , callAgency/7
-   , castAgency/5
+   , callAgency/8
    , castAgency/6
    , castAgency/7
    , castAgency/8
-   , receiveRequestRet/2
+   , castAgency/9
+   , receiveReqRet/2
 
    %% Pools API
    , startPool/2
@@ -22,45 +22,47 @@
    , stopPool/1
 
    %% Single Process DbAPI
-   , connectDb/1
-   , disConnectDb/1
+   , connDb/1
+   , disConnDb/1
    , getCurDbInfo/1
    , useDatabase/2
 
+   ,receiveTcpData/2
+   ,receiveSslData/2
 ]).
 
--spec callAgency(poolNameOrSocket(), method(), path(), headers(), body()) -> term() | {error, term()}.
-callAgency(PoolNameOrSocket, Method, Path, Headers, Body) ->
-   callAgency(PoolNameOrSocket, Method, Path, Headers, Body, false, ?AgDefTimeout).
+-spec callAgency(poolNameOrSocket(), method(), path(), queryPars(), headers(), body()) -> term() | {error, term()}.
+callAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, Body) ->
+   callAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, Body, false, ?AgDefTimeout).
 
--spec callAgency(poolNameOrSocket(), method(), path(), headers(), body(), boolean()) -> term() | {error, atom()}.
-callAgency(PoolNameOrSocket, Method, Path, Headers, Body, IsSystem) ->
-   callAgency(PoolNameOrSocket, Method, Path, Headers, Body, IsSystem, ?AgDefTimeout).
+-spec callAgency(poolNameOrSocket(), method(), path(), queryPars(), headers(), body(), boolean()) -> term() | {error, atom()}.
+callAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, Body, IsSystem) ->
+   callAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, Body, IsSystem, ?AgDefTimeout).
 
--spec callAgency(poolNameOrSocket(), method(), path(), headers(), body(), boolean(), timeout()) -> term() | {error, atom()}.
-callAgency(PoolNameOrSocket, Method, Path, Headers, Body, IsSystem, Timeout) ->
-   case castAgency(PoolNameOrSocket, Method, Path, Headers, Body, self(), IsSystem, Timeout) of
+-spec callAgency(poolNameOrSocket(), method(), path(), queryPars(), headers(), body(), boolean(), timeout()) -> term() | {error, atom()}.
+callAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, Body, IsSystem, Timeout) ->
+   case castAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, Body, self(), IsSystem, Timeout) of
       {waitRRT, RequestId, MonitorRef} ->
-         receiveRequestRet(RequestId, MonitorRef);
+         receiveReqRet(RequestId, MonitorRef);
       {error, _Reason} = Err ->
          Err;
       Ret ->
          Ret
    end.
 
--spec castAgency(poolNameOrSocket(), method(), path(), headers(), body()) -> {ok, messageId()} | {error, atom()}.
-castAgency(PoolNameOrSocket, Method, Path, Headers, Body) ->
-   castAgency(PoolNameOrSocket, Method, Path, Headers, Body, self(), false, ?AgDefTimeout).
+-spec castAgency(poolNameOrSocket(), method(), path(), queryPars(), headers(), body()) -> {ok, messageId()} | {error, atom()}.
+castAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, Body) ->
+   castAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, Body, self(), false, ?AgDefTimeout).
 
--spec castAgency(poolNameOrSocket(), method(), path(), headers(), body(), boolean()) -> {ok, messageId()} | {error, atom()}.
-castAgency(PoolNameOrSocket, Method, Path, Headers, Body, IsSystem) ->
-   castAgency(PoolNameOrSocket, Method, Path, Headers, Body, self(), IsSystem, ?AgDefTimeout).
+-spec castAgency(poolNameOrSocket(), method(), path(), queryPars(), headers(), body(), boolean()) -> {ok, messageId()} | {error, atom()}.
+castAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, Body, IsSystem) ->
+   castAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, Body, self(), IsSystem, ?AgDefTimeout).
 
--spec castAgency(poolNameOrSocket(), method(), path(), headers(), body(), boolean(), timeout()) -> {ok, messageId()} | {error, atom()}.
-castAgency(PoolNameOrSocket, Method, Path, Headers, Body, IsSystem, Timeout) ->
-   castAgency(PoolNameOrSocket, Method, Path, Headers, Body, self(), IsSystem, Timeout).
+-spec castAgency(poolNameOrSocket(), method(), path(), queryPars(), headers(), body(), boolean(), timeout()) -> {ok, messageId()} | {error, atom()}.
+castAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, Body, IsSystem, Timeout) ->
+   castAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, Body, self(), IsSystem, Timeout).
 
--spec castAgency(poolNameOrSocket(), method(), path(), headers(), body(), pid(), boolean(), timeout()) -> {ok, messageId()} | {error, atom()}.
+-spec castAgency(poolNameOrSocket(), method(), path(), queryPars(), headers(), body(), pid(), boolean(), timeout()) -> {ok, messageId()} | {error, atom()}.
 castAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, Body, Pid, IsSystem, Timeout) ->
    OverTime =
       case Timeout of
@@ -89,19 +91,19 @@ castAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, Body, Pid, IsSyst
                   tcp ->
                      case gen_tcp:send(PoolNameOrSocket, Request) of
                         ok ->
-                           receiveTcpData(undefined, PoolNameOrSocket, binary:compile_pattern(<<"\r\n">>), binary:compile_pattern(<<"\r\n\r\n">>), Method == ?AgHead);
+                           receiveTcpData(#recvState{}, PoolNameOrSocket);
                         {error, Reason} = Err ->
                            ?AgWarn(castAgency, ":gen_tcp send error: ~p ~n", [Reason]),
-                           disConnectDb(PoolNameOrSocket),
+                           disConnDb(PoolNameOrSocket),
                            Err
                      end;
                   ssl ->
                      case ssl:send(PoolNameOrSocket, Request) of
                         ok ->
-                           receiveSslData(undefined, PoolNameOrSocket, binary:compile_pattern(<<"\r\n">>), binary:compile_pattern(<<"\r\n\r\n">>), Method == ?AgHead);
+                           receiveSslData(#recvState{}, PoolNameOrSocket);
                         {error, Reason} = Err ->
                            ?AgWarn(castAgency, ":ssl send error: ~p ~n", [Reason]),
-                           disConnectDb(PoolNameOrSocket),
+                           disConnDb(PoolNameOrSocket),
                            Err
                      end
                end;
@@ -110,8 +112,8 @@ castAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, Body, Pid, IsSyst
          end
    end.
 
--spec receiveRequestRet(messageId(), reference()) -> {StatusCode :: non_neg_integer(), Body :: binary(), Headers :: binary()} | {error, term()}.
-receiveRequestRet(RequestId, MonitorRef) ->
+-spec receiveReqRet(messageId(), reference()) -> {StatusCode :: non_neg_integer(), Body :: binary(), Headers :: binary()} | {error, term()}.
+receiveReqRet(RequestId, MonitorRef) ->
    receive
       #agReqRet{messageId = RequestId, reply = Reply} ->
          erlang:demonitor(MonitorRef),
@@ -130,62 +132,48 @@ receiveRequestRet(RequestId, MonitorRef) ->
          {error, {agencyDown, Reason}}
    end.
 
--spec receiveTcpData(recvState() | undefined, socket(), binary:cp(), binary:cp(), boolean()) -> {ok, term(), term()} | {error, term()}.
-receiveTcpData(RecvState, Socket, Rn, RnRn, IsHeadMethod) ->
+-spec receiveTcpData(recvState() | undefined, socket()) -> {ok, term(), term()} | {error, term()}.
+receiveTcpData(RecvState, Socket) ->
    receive
-      {tcp, Socket, Data} ->
-         case agVstProtoSp:response(?AgUndef, _MessageId, _ChunkIdx, _ChunkSize, _ChunkBuffer, DataBuffer) of
-            {done, #recvState{statusCode = StatusCode, headers = Headers, body = Body}} ->
-               case Body of
-                  <<>> ->
-                     {ok, #{}, StatusCode, Headers};
-                  _ ->
-                     {ok, jiffy:decode(Body, [return_maps, copy_strings]), StatusCode, Headers}
-               end;
-            {ok, NewRecvState} ->
-               receiveTcpData(NewRecvState, Socket, Rn, RnRn, IsHeadMethod);
-            {error, Reason} ->
-               ?AgWarn(receiveTcpData, "handle tcp data error: ~p ~n", [Reason]),
-               disConnectDb(Socket),
-               {error, {tcpDataError, Reason}}
+      {tcp, Socket, DataBuffer} ->
+         ?AgWarn(1111, "receove : ~p~n", [DataBuffer]),
+         case agVstProtoSp:response(element(1, RecvState), RecvState, DataBuffer) of
+            {?AgMDone, MsgBin} ->
+               {ok, MsgBin};
+            {?AgCHeader, NewRecvState} ->
+               receiveTcpData(NewRecvState, Socket);
+            {?AgCBodyStart, NewRecvState} ->
+               receiveTcpData(NewRecvState, Socket);
+            {?AgCBodyGoOn, NewRecvState} ->
+               receiveTcpData(NewRecvState, Socket)
          end;
       {tcp_closed, Socket} ->
-         disConnectDb(Socket),
+         disConnDb(Socket),
          {error, tcp_closed};
       {tcp_error, Socket, Reason} ->
-         disConnectDb(Socket),
+         disConnDb(Socket),
          {error, {tcp_error, Reason}}
    end.
 
--spec receiveSslData(recvState() | undefined, socket(), binary:cp(), binary:cp(), boolean()) -> {ok, term(), term()} | {error, term()}.
-receiveSslData(RecvState, Socket, Rn, RnRn, IsHeadMethod) ->
+-spec receiveSslData(recvState() | undefined, socket()) -> {ok, term(), term()} | {error, term()}.
+receiveSslData(RecvState, Socket) ->
    receive
-      {ssl, Socket, Data} ->
-         try agVstProtoPl:response(RecvState, Rn, RnRn, Data, IsHeadMethod) of
-            {done, #recvState{statusCode = StatusCode, headers = Headers, body = Body}} ->
-               case Body of
-                  <<>> ->
-                     {ok, #{}, StatusCode, Headers};
-                  _ ->
-                     {ok, jiffy:decode(Body, [return_maps, copy_strings]), StatusCode, Headers}
-               end;
-            {ok, NewRecvState} ->
-               receiveSslData(NewRecvState, Socket, Rn, RnRn, IsHeadMethod);
-            {error, Reason} ->
-               ?AgWarn(receiveSslData, "handle tcp data error: ~p ~n", [Reason]),
-               disConnectDb(Socket),
-               {error, {sslDataError, Reason}}
-         catch
-            E:R:S ->
-               ?AgWarn(receiveSslData, "handle tcp data crash: ~p:~p~n~p ~n ", [E, R, S]),
-               disConnectDb(Socket),
-               {error, handledataError}
+      {ssl, Socket, DataBuffer} ->
+         case agVstProtoSp:response(element(1, RecvState), RecvState, DataBuffer) of
+            {?AgMDone, MsgBin} ->
+               {ok, MsgBin};
+            {?AgCHeader, NewRecvState} ->
+               receiveTcpData(NewRecvState, Socket);
+            {?AgCBodyStart, NewRecvState} ->
+               receiveTcpData(NewRecvState, Socket);
+            {?AgCBodyGoOn, NewRecvState} ->
+               receiveTcpData(NewRecvState, Socket)
          end;
       {ssl_closed, Socket} ->
-         disConnectDb(Socket),
+         disConnDb(Socket),
          {error, ssl_closed};
       {ssl_error, Socket, Reason} ->
-         disConnectDb(Socket),
+         disConnDb(Socket),
          {error, {ssl_error, Reason}}
    end.
 
@@ -201,47 +189,66 @@ startPool(PoolName, DbCfgs, AgencyCfgs) ->
 stopPool(PoolName) ->
    agAgencyPoolMgrIns:stopPool(PoolName).
 
--spec connectDb(dbCfgs()) -> {ok, socket()} | {error, term()}.
-connectDb(DbCfgs) ->
+-spec connDb(dbCfgs()) -> {ok, socket()} | {error, term()}.
+connDb(DbCfgs) ->
    #dbOpts{
-      host = Host,
       port = Port,
       hostname = HostName,
       dbName = DbName,
       protocol = Protocol,
-      userPassword = UserPassword,
+      user = User,
+      password = Password,
       socketOpts = SocketOpts
    } = agMiscUtils:dbOpts(DbCfgs),
-   case inet:getaddrs(HostName, inet) of
-      {ok, IPList} ->
-         Ip = agMiscUtils:randomElement(IPList),
          case Protocol of
             tcp ->
-               case gen_tcp:connect(Ip, Port, SocketOpts, ?AgDefConnTimeout) of
+               case gen_tcp:connect(HostName, Port, SocketOpts, ?AgDefConnTimeout) of
                   {ok, Socket} ->
-                     setCurDbInfo(Socket, DbName, UserPassword, Host, Protocol),
-                     {ok, Socket};
+                     gen_tcp:send(Socket, ?AgUpgradeInfo),
+                     AuthInfo = eVPack:encode([1, 1000, <<"plain">>, User, Password]),
+                     gen_tcp:send(Socket, AuthInfo),
+                     inet:getopts(Socket, [active]),
+                     AA = inet:getopts(Socket, [active]),
+                     ?AgWarn(auth, "connect opt: ~p~n", [AA]),
+                     case agVstCli:receiveTcpData(#recvState{}, Socket) of
+                        {ok, MsgBin} ->
+                           Term = eVPack:decode(MsgBin),
+                           ?AgWarn(auth, "connect and auth success: ~p~n", [Term]),
+                           setCurDbInfo(Socket, DbName, Protocol),
+                           {ok, Socket};
+                        {error, Reason} = Err ->
+                           ?AgWarn(connectDb, "connect error: ~p~n", [Reason]),
+                           Err
+                     end;
                   {error, Reason} = Err ->
                      ?AgWarn(connectDb, "connect error: ~p~n", [Reason]),
                      Err
                end;
             ssl ->
-               case ssl:connect(Ip, Port, SocketOpts, ?AgDefConnTimeout) of
+               case ssl:connect(HostName, Port, SocketOpts, ?AgDefConnTimeout) of
                   {ok, Socket} ->
-                     setCurDbInfo(Socket, DbName, UserPassword, Host, Protocol),
-                     {ok, Socket};
+                     ssl:send(Socket, ?AgUpgradeInfo),
+                     AuthInfo = eVPack:encode([1, 1000, <<"plain">>, User, Password]),
+                     ssl:send(Socket, AuthInfo),
+                     case agVstCli:receiveSslData(#recvState{}, Socket) of
+                        {ok, MsgBin} ->
+                           Term = eVPack:decode(MsgBin),
+                           ?AgWarn(auth, "connect and auth success: ~p~n", [Term]),
+                           setCurDbInfo(Socket, DbName, Protocol),
+                           {ok, Socket};
+                        {error, Reason} = Err ->
+                           ?AgWarn(connectDb, "connect error: ~p~n", [Reason]),
+                           Err
+                     end;
                   {error, Reason} = Err ->
                      ?AgWarn(connectDb, "connect error: ~p~n", [Reason]),
                      Err
                end
-         end;
-      {error, Reason} = Err ->
-         ?AgWarn(connectDb, "getaddrs error: ~p~n", [Reason]),
-         Err
+
    end.
 
--spec disConnectDb(socket()) -> ok | {error, term()}.
-disConnectDb(Socket) ->
+-spec disConnDb(socket()) -> ok | {error, term()}.
+disConnDb(Socket) ->
    case erlang:erase({'$agDbInfo', Socket}) of
       undefined ->
          ignore;
@@ -254,9 +261,9 @@ disConnectDb(Socket) ->
          end
    end.
 
--spec setCurDbInfo(socket(), binary(), tuple(), host(), protocol()) -> term().
-setCurDbInfo(Socket, DbName, UserPassword, Host, Protocol) ->
-   erlang:put({'$agDbInfo', Socket}, {DbName, UserPassword, Host, Protocol}).
+-spec setCurDbInfo(socket(), binary(), protocol()) -> term().
+setCurDbInfo(Socket, DbName, Protocol) ->
+   erlang:put({'$agDbInfo', Socket}, {DbName, Protocol}).
 
 -spec getCurDbInfo(socket()) -> term().
 getCurDbInfo(Socket) ->
@@ -267,7 +274,7 @@ useDatabase(Socket, NewDbName) ->
    case erlang:get({'$agDbInfo', Socket}) of
       undefined ->
          ignore;
-      {_DbName, UserPassword, Host, Protocol} ->
-         erlang:put({'$agDbInfo', Socket}, {<<"/_db/", NewDbName/binary>>, UserPassword, Host, Protocol})
+      {_DbName, Protocol} ->
+         erlang:put({'$agDbInfo', Socket}, {<<"/_db/", NewDbName/binary>>, Protocol})
    end,
    ok.

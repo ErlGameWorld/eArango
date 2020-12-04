@@ -138,7 +138,7 @@ getTransactions(PoolNameOrSocket) ->
 %    code：HTTP状态码
 %    time：当前系统时间（以Unix时间戳记为单位，服务器以微秒为单位）
 curDbTime(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/time">>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/time">>, #{}, #{}, <<>>).
 
 % 返回当前请求永久链接固定链接
 % 发回所发送的内容，标题，帖子正文等。
