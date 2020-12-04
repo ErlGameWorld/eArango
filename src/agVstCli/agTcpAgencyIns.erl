@@ -33,7 +33,7 @@ handleMsg(#agReq{method = Method, path = Path, queryPars = QueryPars, headers = 
                agAgencyUtils:agencyReply(FromPid, MessageId, undefined, {error, backlogFull}),
                {ok, SrvState, CliState};
             _ ->
-               Request = agVstProtoPl:request(IsSystem, Method, DbName, Path, QueryPars, Headers, Body),
+               Request = agVstProto:request(IsSystem, Method, DbName, Path, QueryPars, Headers, Body),
                case gen_tcp:send(Socket, Request) of
                   ok ->
                      TimerRef = case OverTime of
@@ -54,7 +54,7 @@ handleMsg(#agReq{method = Method, path = Path, queryPars = QueryPars, headers = 
    end;
 handleMsg({tcp, _Socket, Data}, SrvState,
    #cliState{revStatus = RevStatus, backlogNum = BacklogNum, messageId = MessageId, chunkIdx = ChunkIdx,  chunkSize = ChunkSize, chunkBuffer = ChunkBuffer} = CliState) ->
-   case agVstProtoPl:response(RevStatus, 0, MessageId, ChunkIdx, ChunkSize, ChunkBuffer, Data) of
+   case agVstProto:response(RevStatus, 0, MessageId, ChunkIdx, ChunkSize, ChunkBuffer, Data) of
       {?AgUndef, DoneCnt} ->
          {ok, SrvState, CliState#cliState{revStatus = ?AgUndef, backlogNum = BacklogNum - DoneCnt, chunkBuffer = <<>>}};
       {?AgCBodyStart, DoneCnt, MessageId, ChunkIdx, ChunkSize, ChunkBuffer} ->

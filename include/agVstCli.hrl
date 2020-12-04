@@ -37,7 +37,7 @@
 -define(AgDefReConnMax, 120000).
 -define(AgDefTimeout, infinity).
 -define(AgDefVstSize, 3145728).
--define(AgDefAgencySlg, poll).          %% bind rand  poll
+-define(AgDefAgencySlg, poll).          %% bind rand poll
 -define(AgDefPid, self()).
 -define(AgDefSocketOpts, [binary, {active, true}, {nodelay, true}, {delay_send, true}, {keepalive, true}, {recbuf, 1048576}, {send_timeout, 5000}, {send_timeout_close, true}]).
 

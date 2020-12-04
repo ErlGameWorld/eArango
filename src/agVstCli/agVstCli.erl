@@ -86,7 +86,7 @@ castAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, Body, Pid, IsSyst
       _ ->
          case getCurDbInfo(PoolNameOrSocket) of
             {DbName, _UserPassWord, _Host, Protocol} ->
-               Request = agVstProtoPl:request(IsSystem, Method, DbName, Path, QueryPars, Headers, Body),
+               Request = agVstProto:request(IsSystem, Method, DbName, Path, QueryPars, Headers, Body),
                case Protocol of
                   tcp ->
                      case gen_tcp:send(PoolNameOrSocket, Request) of
@@ -137,7 +137,7 @@ receiveTcpData(RecvState, Socket) ->
    receive
       {tcp, Socket, DataBuffer} ->
          ?AgWarn(1111, "receove : ~p~n", [DataBuffer]),
-         case agVstProtoSp:response(element(1, RecvState), RecvState, DataBuffer) of
+         case agVstProto:response(element(1, RecvState), RecvState, DataBuffer) of
             {?AgMDone, MsgBin} ->
                {ok, MsgBin};
             {?AgCHeader, NewRecvState} ->
@@ -159,7 +159,7 @@ receiveTcpData(RecvState, Socket) ->
 receiveSslData(RecvState, Socket) ->
    receive
       {ssl, Socket, DataBuffer} ->
-         case agVstProtoSp:response(element(1, RecvState), RecvState, DataBuffer) of
+         case agVstProto:response(element(1, RecvState), RecvState, DataBuffer) of
             {?AgMDone, MsgBin} ->
                {ok, MsgBin};
             {?AgCHeader, NewRecvState} ->
@@ -207,9 +207,6 @@ connDb(DbCfgs) ->
                      gen_tcp:send(Socket, ?AgUpgradeInfo),
                      AuthInfo = eVPack:encode([1, 1000, <<"plain">>, User, Password]),
                      gen_tcp:send(Socket, AuthInfo),
-                     inet:getopts(Socket, [active]),
-                     AA = inet:getopts(Socket, [active]),
-                     ?AgWarn(auth, "connect opt: ~p~n", [AA]),
                      case agVstCli:receiveTcpData(#recvState{}, Socket) of
                         {ok, MsgBin} ->
                            Term = eVPack:decode(MsgBin),
