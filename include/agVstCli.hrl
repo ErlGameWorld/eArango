@@ -1,9 +1,12 @@
 %% agency 管理进程的名称
 -define(agAgencyPoolMgr, agAgencyPoolMgr).
 
-%% beam cache 模块名
+
 -define(agBeamPool, agBeamPool).
 -define(agBeamAgency, agBeamAgency).
+
+-define(agMessageId, agMessageId).
+-define(agMaxMessageId, 576460752303423486).
 
 -define(AgUndef, 0).                %% Wait One Chunk start
 -define(AgCHeader, 1).              %% Wait One Chunk header
@@ -36,7 +39,7 @@
 -define(AgDefReConnMin, 500).
 -define(AgDefReConnMax, 120000).
 -define(AgDefTimeout, infinity).
--define(AgDefVstSize, 3145728).
+-define(AgDefVstSize, 29976).
 -define(AgDefAgencySlg, poll).          %% bind rand poll
 -define(AgDefPid, self()).
 -define(AgDefSocketOpts, [binary, {active, true}, {nodelay, true}, {delay_send, true}, {keepalive, true}, {recbuf, 1048576}, {send_timeout, 5000}, {send_timeout_close, true}]).
@@ -77,6 +80,7 @@
    dbName :: binary(),
    reConnState :: undefined | reConnState(),
    socket :: undefined | ssl:sslsocket(),
+   vstSize :: pos_integer(),
    timerRef :: undefined | reference()
 }).
 
@@ -109,12 +113,11 @@
    poolSize :: poolSize(),
    user :: binary(),
    password :: binary(),
-   socketOpts :: socketOpts()
+   vstSize :: pos_integer()
 }).
 
 -record(agencyOpts, {
    reconnect :: boolean(),
-   vstSize :: pos_integer(),
    agencySlg :: agencySlg(),
    backlogSize :: backlogSize(),
    reConnTimeMin :: pos_integer(),
@@ -153,11 +156,10 @@
 {user, binary()} |
 {password, binary()} |
 {poolSize, poolSize()} |
-{socketOpts, socketOpts()}.
+{vstSize, pos_integer()}.
 
 -type agencyCfg() ::
 {reconnect, boolean()} |
-{vstSize, pos_integer()} |
 {agencySlg, agencySlg()} |
 {backlogSize, backlogSize()} |
 {reConnTimeMin, pos_integer()} |

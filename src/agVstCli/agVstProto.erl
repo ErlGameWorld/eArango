@@ -5,22 +5,52 @@
 -compile({inline_size, 128}).
 
 -export([
-   request/7
+   request/9
    , response/7
    , response/3
+   , authInfo/2
 ]).
 
-%% IMY-todo 拼装 验证chunk
--spec authInfo() -> ok.
-authInfo() ->
-   ok.
+-spec authInfo(User :: binary(), Password :: binary()) -> ok.
+authInfo(User, Password) ->
+   AuthInfo = eVPack:encodeBin([1, 1000, <<"plain">>, User, Password]),
+   MsgSize = erlang:byte_size(AuthInfo),
+   <<(MsgSize + ?AgHeaderSize):32/integer-little-unsigned, 3:32/integer-little-unsigned, (agVstCli:getMsgId()):64/integer-little-unsigned, MsgSize:64/integer-little-unsigned, AuthInfo/binary>>.
 
-%% IMY-todo 拼装 request chunk
--spec request(boolean(), method(), binary(), path(), queryPars(), headers(), body()) -> iolist().
-request(false, Method, DbName, Path, QueryPars, Headers, Body) ->
-   [eVPack:encode([1, 1, DbName, Method, Path, QueryPars, Headers]), Body];
-request(_, Method, _DbName, Path, QueryPars, Headers, Body) ->
-   [eVPack:encode([1, 1, <<"/_db/_system">>, Method, Path, QueryPars, Headers]), Body].
+-spec request(boolean(), pos_integer(), method(), binary(), path(), queryPars(), headers(), body(), pos_integer()) -> iolist().
+request(IsSystem, MessageId, Method, DbName, Path, QueryPars, Headers, Body, VstSize) ->
+   ReqBin =
+      case IsSystem of
+         false ->
+            eVPack:encodeBin([1, 1, DbName, Method, Path, QueryPars, Headers]);
+
+         _ ->
+            eVPack:encodeBin([1, 1, <<"_system">>, Method, Path, QueryPars, Headers])
+      end,
+
+   MsgBin = <<ReqBin/binary, Body/binary>>,
+   MsgSize = erlang:byte_size(MsgBin),
+   case MsgSize =< VstSize of
+      true ->
+         ?AgWarn(tt, "IMY************** ~p ~p ~p ~p~n", [MsgSize, MessageId, MsgSize, MsgBin]),
+         [<<(MsgSize + ?AgHeaderSize):32/integer-little-unsigned, 3:32/integer-little-unsigned, MessageId:64/integer-little-unsigned, MsgSize:64/integer-little-unsigned>>, MsgBin];
+      _ ->
+         ChunkCnt = erlang:ceil(MsgSize / VstSize),
+         <<ChunkBin:VstSize/binary, LeftBin/binary>> = MsgBin,
+         InitAccList = [ChunkBin, <<(VstSize + ?AgHeaderSize):32/integer-little-unsigned, ChunkCnt:31/integer-little-unsigned, 1:1/integer-little-unsigned, MessageId:64/integer-little-unsigned, MsgSize:64/integer-little-unsigned>>],
+         AccList = buildChunk(2, VstSize, MessageId, MsgSize, MsgSize - VstSize, LeftBin, InitAccList),
+         lists:reverse(AccList)
+   end.
+
+buildChunk(ChunkIdx, VstSize, MessageId, MsgSize, LeftSize, MsgBin, AccList) ->
+   case LeftSize =< VstSize of
+      true ->
+         [MsgBin, <<(LeftSize + ?AgHeaderSize):32/integer-little-unsigned, ChunkIdx:31/integer-little-unsigned, 0:1/integer-little-unsigned, MessageId:64/integer-little-unsigned, MsgSize:64/integer-little-unsigned>> | AccList];
+      _ ->
+         <<ChunkBin:VstSize/binary, LeftBin/binary>> = MsgBin,
+         NewAccList = [ChunkBin, <<(VstSize + ?AgHeaderSize):32/integer-little-unsigned, ChunkIdx:31/integer-little-unsigned, 0:1/integer-little-unsigned, MessageId:64/integer-little-unsigned, MsgSize:64/integer-little-unsigned>> | AccList],
+         buildChunk(ChunkIdx + 1, VstSize, MessageId, MsgSize, LeftSize - VstSize, LeftBin, NewAccList)
+   end.
 
 -spec response(AgStatus :: pos_integer(), DoneCnt :: pos_integer(), MessageId :: pos_integer(), ChunkIdx :: pos_integer(), ChunkSize :: pos_integer(), ChunkBuffer :: binary(), Data :: binary()) ->
    {?AgUndef, DoneCnt :: pos_integer()} |
@@ -34,21 +64,20 @@ response(?AgUndef, DoneCnt, _MessageId, _ChunkIdx, _ChunkSize, _ChunkBuffer, Dat
          ChunkSize = Length - ?AgHeaderSize,
          if
             ByteSize == ChunkSize ->
+               {PidFrom, TimerRef, ChunkCnt, MsgBuffer} = MsgCache = erlang:get(MessageId),
                if
                   IsFirst == ChunkX ->
-                     agAgencyUtils:agencyReply(MessageId, LeftBuffer),
+                     agAgencyUtils:agencyReply(PidFrom, TimerRef, MessageId, LeftBuffer),
                      {?AgUndef, DoneCnt + 1};
                   IsFirst == 1 ->
-                     MsgCache = erlang:get(MessageId),
                      MsgMB = erlang:setelement(?AgMBIdx, MsgCache, LeftBuffer),
                      MsgCC = erlang:setelement(?AgCCIdx, MsgMB, ChunkX),
                      erlang:put(MessageId, MsgCC),
                      {?AgUndef, DoneCnt};
                   true ->
-                     {_PidFrom, _TimerRef, ChunkCnt, MsgBuffer} = MsgCache = erlang:get(MessageId),
-                     case ChunkX >= ChunkCnt  of
+                     case ChunkX >= ChunkCnt of
                         true ->
-                           agAgencyUtils:agencyReply(MessageId, <<MsgBuffer/binary, LeftBuffer/binary>>),
+                           agAgencyUtils:agencyReply(PidFrom, TimerRef, MessageId, <<MsgBuffer/binary, LeftBuffer/binary>>),
                            {?AgUndef, DoneCnt + 1};
                         _ ->
                            MsgMB = erlang:setelement(?AgMBIdx, MsgCache, <<MsgBuffer/binary, LeftBuffer/binary>>),
@@ -67,11 +96,11 @@ response(?AgUndef, DoneCnt, _MessageId, _ChunkIdx, _ChunkSize, _ChunkBuffer, Dat
                      {?AgCBodyStart, DoneCnt, MessageId, ChunkX, ChunkSize, LeftBuffer}
                end;
             true ->
-               {_PidFrom, _TimerRef, ChunkCnt, MsgBuffer} = MsgCache = erlang:get(MessageId),
+               {PidFrom, TimerRef, ChunkCnt, MsgBuffer} = MsgCache = erlang:get(MessageId),
                <<ChunkBin:ChunkSize/binary, NextBuffer/binary>> = LeftBuffer,
                if
                   IsFirst == ChunkX ->
-                     agAgencyUtils:agencyReply(MessageId, ChunkBin),
+                     agAgencyUtils:agencyReply(PidFrom, TimerRef, MessageId, ChunkBin),
                      response(?AgUndef, DoneCnt + 1, 0, 0, 0, <<>>, NextBuffer);
                   IsFirst == 1 ->
                      MsgCache = erlang:get(MessageId),
@@ -80,10 +109,9 @@ response(?AgUndef, DoneCnt, _MessageId, _ChunkIdx, _ChunkSize, _ChunkBuffer, Dat
                      erlang:put(MessageId, MsgCC),
                      response(?AgUndef, DoneCnt, 0, 0, 0, <<>>, NextBuffer);
                   true ->
-                     {_PidFrom, _TimerRef, ChunkCnt, MsgBuffer} = MsgCache = erlang:get(MessageId),
                      case ChunkX >= ChunkCnt of
                         true ->
-                           agAgencyUtils:agencyReply(MessageId, ChunkBin),
+                           agAgencyUtils:agencyReply(PidFrom, TimerRef, MessageId, ChunkBin),
                            response(?AgUndef, DoneCnt + 1, 0, 0, 0, <<>>, NextBuffer);
                         _ ->
                            MsgMB = erlang:setelement(?AgMBIdx, MsgCache, <<MsgBuffer/binary, ChunkBin/binary>>),
@@ -103,21 +131,20 @@ response(?AgCHeader, DoneCnt, _MessageId, _ChunkIdx, _ChunkSize, ChunkBuffer, Da
          ChunkSize = Length - ?AgHeaderSize,
          if
             ByteSize == ChunkSize ->
+               {PidFrom, TimerRef, ChunkCnt, MsgBuffer} = MsgCache = erlang:get(MessageId),
                if
                   IsFirst == ChunkX ->
-                     agAgencyUtils:agencyReply(MessageId, LeftBuffer),
+                     agAgencyUtils:agencyReply(PidFrom, TimerRef, MessageId, LeftBuffer),
                      {?AgUndef, DoneCnt + 1};
                   IsFirst == 1 ->
-                     MsgCache = erlang:get(MessageId),
                      MsgMB = erlang:setelement(?AgMBIdx, MsgCache, LeftBuffer),
                      MsgCC = erlang:setelement(?AgCCIdx, MsgMB, ChunkX),
                      erlang:put(MessageId, MsgCC),
                      {?AgUndef, DoneCnt};
                   true ->
-                     {_PidFrom, _TimerRef, ChunkCnt, MsgBuffer} = MsgCache = erlang:get(MessageId),
-                     case ChunkX >= ChunkCnt  of
+                     case ChunkX >= ChunkCnt of
                         true ->
-                           agAgencyUtils:agencyReply(MessageId, <<MsgBuffer/binary, LeftBuffer/binary>>),
+                           agAgencyUtils:agencyReply(PidFrom, TimerRef, MessageId, <<MsgBuffer/binary, LeftBuffer/binary>>),
                            {?AgUndef, DoneCnt + 1};
                         _ ->
                            MsgMB = erlang:setelement(?AgMBIdx, MsgCache, <<MsgBuffer/binary, LeftBuffer/binary>>),
@@ -136,11 +163,11 @@ response(?AgCHeader, DoneCnt, _MessageId, _ChunkIdx, _ChunkSize, ChunkBuffer, Da
                      {?AgCBodyStart, DoneCnt, MessageId, ChunkX, ChunkSize, LeftBuffer}
                end;
             true ->
-               {_PidFrom, _TimerRef, ChunkCnt, MsgBuffer} = MsgCache = erlang:get(MessageId),
+               {PidFrom, TimerRef, ChunkCnt, MsgBuffer} = MsgCache = erlang:get(MessageId),
                <<ChunkBin:ChunkSize/binary, NextBuffer/binary>> = LeftBuffer,
                if
                   IsFirst == ChunkX ->
-                     agAgencyUtils:agencyReply(MessageId, ChunkBin),
+                     agAgencyUtils:agencyReply(PidFrom, TimerRef, MessageId, ChunkBin),
                      response(?AgUndef, DoneCnt + 1, 0, 0, 0, <<>>, NextBuffer);
                   IsFirst == 1 ->
                      MsgCache = erlang:get(MessageId),
@@ -149,10 +176,9 @@ response(?AgCHeader, DoneCnt, _MessageId, _ChunkIdx, _ChunkSize, ChunkBuffer, Da
                      erlang:put(MessageId, MsgCC),
                      response(?AgUndef, DoneCnt, 0, 0, 0, <<>>, NextBuffer);
                   true ->
-                     {_PidFrom, _TimerRef, ChunkCnt, MsgBuffer} = MsgCache = erlang:get(MessageId),
                      case ChunkX >= ChunkCnt of
                         true ->
-                           agAgencyUtils:agencyReply(MessageId, ChunkBin),
+                           agAgencyUtils:agencyReply(PidFrom, TimerRef, MessageId, ChunkBin),
                            response(?AgUndef, DoneCnt + 1, 0, 0, 0, <<>>, NextBuffer);
                         _ ->
                            MsgMB = erlang:setelement(?AgMBIdx, MsgCache, <<MsgBuffer/binary, ChunkBin/binary>>),
@@ -169,10 +195,10 @@ response(?AgCBody, DoneCnt, MessageId, ChunkIdx, ChunkSize, ChunkBuffer, DataBuf
    ByteSize = erlang:byte_size(NewCkBuffer),
    if
       ChunkSize == ByteSize ->
-         {_PidFrom, _TimerRef, ChunkCnt, MsgBuffer} = MsgCache = erlang:get(MessageId),
+         {PidFrom, TimerRef, ChunkCnt, MsgBuffer} = MsgCache = erlang:get(MessageId),
          if
             ChunkIdx >= ChunkCnt ->
-               agAgencyUtils:agencyReply(MessageId, <<MsgBuffer/binary, NewCkBuffer/binary>>),
+               agAgencyUtils:agencyReply(PidFrom, TimerRef, MessageId, <<MsgBuffer/binary, NewCkBuffer/binary>>),
                {?AgUndef, DoneCnt + 1};
             true ->
                MsgMB = erlang:setelement(?AgMBIdx, MsgCache, <<MsgBuffer/binary, NewCkBuffer/binary>>),
@@ -182,11 +208,11 @@ response(?AgCBody, DoneCnt, MessageId, ChunkIdx, ChunkSize, ChunkBuffer, DataBuf
       ByteSize < ChunkSize ->
          {?AgCBodyGoOn, DoneCnt, NewCkBuffer};
       true ->
-         {_PidFrom, _TimerRef, ChunkCnt, MsgBuffer} = MsgCache = erlang:get(MessageId),
+         {PidFrom, TimerRef, ChunkCnt, MsgBuffer} = MsgCache = erlang:get(MessageId),
          <<ChunkBin:ChunkSize/binary, NextBuffer/binary>> = NewCkBuffer,
          if
             ChunkIdx >= ChunkCnt ->
-               agAgencyUtils:agencyReply(MessageId, <<MsgBuffer/binary, ChunkBin/binary>>),
+               agAgencyUtils:agencyReply(PidFrom, TimerRef, MessageId, <<MsgBuffer/binary, ChunkBin/binary>>),
                response(?AgUndef, DoneCnt + 1, 0, 0, 0, <<>>, NextBuffer);
             true ->
                MsgMB = erlang:setelement(?AgMBIdx, MsgCache, <<MsgBuffer/binary, ChunkBin/binary>>),
@@ -203,6 +229,8 @@ response(?AgCBody, DoneCnt, MessageId, ChunkIdx, ChunkSize, ChunkBuffer, DataBuf
 response(?AgUndef, #recvState{chunkCnt = ChunkCnt, msgBuffer = MsgBuffer} = RecvState, DataBuffer) ->
    case DataBuffer of
       <<Length:32/integer-little-unsigned, ChunkX:31/integer-little-unsigned, IsFirst:1/integer-little-unsigned, MessageId:64/integer-little-unsigned, _MessageLength:64/integer-little-unsigned, LeftBuffer/binary>> ->
+         ?AgWarn(1111, "response 1: ~p ~p ~p ~p ~p ~n", [ChunkX, IsFirst, MessageId, Length, _MessageLength]),
+
          ByteSize = erlang:byte_size(LeftBuffer),
          ChunkSize = Length - ?AgHeaderSize,
          if
@@ -214,7 +242,7 @@ response(?AgUndef, #recvState{chunkCnt = ChunkCnt, msgBuffer = MsgBuffer} = Recv
                   IsFirst == 1 ->
                      {?AgCDone, #recvState{revStatus = ?AgUndef, messageId = MessageId, chunkCnt = ChunkX, msgBuffer = LeftBuffer}};
                   true ->
-                     case ChunkX >= ChunkCnt  of
+                     case ChunkX >= ChunkCnt of
                         true ->
                            {?AgMDone, <<MsgBuffer/binary, LeftBuffer/binary>>};
                         _ ->
@@ -247,7 +275,7 @@ response(?AgCHeader, #recvState{chunkCnt = ChunkCnt, msgBuffer = MsgBuffer, chun
                   IsFirst == 1 ->
                      {?AgCDone, #recvState{revStatus = ?AgUndef, messageId = MessageId, chunkCnt = ChunkX, msgBuffer = LeftBuffer}};
                   true ->
-                     case ChunkX >= ChunkCnt  of
+                     case ChunkX >= ChunkCnt of
                         true ->
                            {?AgMDone, <<MsgBuffer/binary, LeftBuffer/binary>>};
                         _ ->

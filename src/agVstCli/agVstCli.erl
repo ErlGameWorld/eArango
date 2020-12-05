@@ -27,8 +27,10 @@
    , getCurDbInfo/1
    , useDatabase/2
 
-   ,receiveTcpData/2
-   ,receiveSslData/2
+   , initMsgId/0
+   , getMsgId/0
+   , receiveTcpData/2
+   , receiveSslData/2
 ]).
 
 -spec callAgency(poolNameOrSocket(), method(), path(), queryPars(), headers(), body()) -> term() | {error, term()}.
@@ -79,14 +81,14 @@ castAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, Body, Pid, IsSyst
                {error, undefined_server};
             AgencyName ->
                MonitorRef = erlang:monitor(process, AgencyName),
-               RequestId = {AgencyName, MonitorRef},
-               catch AgencyName ! #agReq{method = Method, path = Path, queryPars = QueryPars, headers = Headers, body = Body, messageId = RequestId, fromPid = Pid, overTime = OverTime, isSystem = IsSystem},
-               {waitRRT, RequestId, MonitorRef}
+               MessageId = getMsgId(),
+               catch AgencyName ! #agReq{method = Method, path = Path, queryPars = QueryPars, headers = Headers, body = Body, messageId = MessageId, fromPid = Pid, overTime = OverTime, isSystem = IsSystem},
+               {waitRRT, MessageId, MonitorRef}
          end;
       _ ->
          case getCurDbInfo(PoolNameOrSocket) of
-            {DbName, _UserPassWord, _Host, Protocol} ->
-               Request = agVstProto:request(IsSystem, Method, DbName, Path, QueryPars, Headers, Body),
+            {DbName, VstSize, Protocol} ->
+               Request = agVstProto:request(IsSystem, Method, DbName, Path, QueryPars, Headers, Body, VstSize),
                case Protocol of
                   tcp ->
                      case gen_tcp:send(PoolNameOrSocket, Request) of
@@ -117,27 +119,17 @@ receiveReqRet(RequestId, MonitorRef) ->
    receive
       #agReqRet{messageId = RequestId, reply = Reply} ->
          erlang:demonitor(MonitorRef),
-         case Reply of
-            {_StatusCode, Body, _Headers} ->
-               case Body of
-                  <<>> ->
-                     erlang:setelement(2, Reply, #{});
-                  _ ->
-                     erlang:setelement(2, Reply, jiffy:decode(Body, [return_maps, copy_strings]))
-               end;
-            _ ->
-               Reply
-         end;
+         Reply;
       {'DOWN', MonitorRef, process, _Pid, Reason} ->
          {error, {agencyDown, Reason}}
    end.
 
--spec receiveTcpData(recvState() | undefined, socket()) -> {ok, term(), term()} | {error, term()}.
+-spec receiveTcpData(recvState(), socket()) -> {ok, term(), term()} | {error, term()}.
 receiveTcpData(RecvState, Socket) ->
    receive
       {tcp, Socket, DataBuffer} ->
-         ?AgWarn(1111, "receove : ~p~n", [DataBuffer]),
-         case agVstProto:response(element(1, RecvState), RecvState, DataBuffer) of
+         ?AgWarn(1111, "IMY************receove 1: ~p ~p ~n", [erlang:byte_size(DataBuffer), DataBuffer]),
+         case agVstProto:response(element(2, RecvState), RecvState, DataBuffer) of
             {?AgMDone, MsgBin} ->
                {ok, MsgBin};
             {?AgCHeader, NewRecvState} ->
@@ -155,11 +147,11 @@ receiveTcpData(RecvState, Socket) ->
          {error, {tcp_error, Reason}}
    end.
 
--spec receiveSslData(recvState() | undefined, socket()) -> {ok, term(), term()} | {error, term()}.
+-spec receiveSslData(recvState(), socket()) -> {ok, term(), term()} | {error, term()}.
 receiveSslData(RecvState, Socket) ->
    receive
       {ssl, Socket, DataBuffer} ->
-         case agVstProto:response(element(1, RecvState), RecvState, DataBuffer) of
+         case agVstProto:response(element(2, RecvState), RecvState, DataBuffer) of
             {?AgMDone, MsgBin} ->
                {ok, MsgBin};
             {?AgCHeader, NewRecvState} ->
@@ -198,50 +190,59 @@ connDb(DbCfgs) ->
       protocol = Protocol,
       user = User,
       password = Password,
-      socketOpts = SocketOpts
+      vstSize = VstSize
    } = agMiscUtils:dbOpts(DbCfgs),
-         case Protocol of
-            tcp ->
-               case gen_tcp:connect(HostName, Port, SocketOpts, ?AgDefConnTimeout) of
-                  {ok, Socket} ->
-                     gen_tcp:send(Socket, ?AgUpgradeInfo),
-                     AuthInfo = eVPack:encode([1, 1000, <<"plain">>, User, Password]),
-                     gen_tcp:send(Socket, AuthInfo),
-                     case agVstCli:receiveTcpData(#recvState{}, Socket) of
-                        {ok, MsgBin} ->
-                           Term = eVPack:decode(MsgBin),
-                           ?AgWarn(auth, "connect and auth success: ~p~n", [Term]),
-                           setCurDbInfo(Socket, DbName, Protocol),
+   case Protocol of
+      tcp ->
+         case gen_tcp:connect(HostName, Port, ?AgDefSocketOpts, ?AgDefConnTimeout) of
+            {ok, Socket} ->
+               gen_tcp:send(Socket, ?AgUpgradeInfo),
+               AuthInfo = agVstProto:authInfo(User, Password),
+               gen_tcp:send(Socket, AuthInfo),
+               case agVstCli:receiveTcpData(#recvState{}, Socket) of
+                  {ok, MsgBin} ->
+                     case eVPack:decode(MsgBin) of
+                        [1, 2, 200, _] ->
+                           ?AgWarn(connDb_tcp, "connect and auth success~n", []),
+                           setCurDbInfo(Socket, DbName, VstSize, Protocol),
                            {ok, Socket};
-                        {error, Reason} = Err ->
-                           ?AgWarn(connectDb, "connect error: ~p~n", [Reason]),
-                           Err
+                        _Err ->
+                           ?AgWarn(connDb_tcp, "auth error: ~p~n", [_Err]),
+                           {error, _Err}
                      end;
                   {error, Reason} = Err ->
-                     ?AgWarn(connectDb, "connect error: ~p~n", [Reason]),
+                     ?AgWarn(connDb_tcp, "recv error: ~p~n", [Reason]),
                      Err
                end;
-            ssl ->
-               case ssl:connect(HostName, Port, SocketOpts, ?AgDefConnTimeout) of
-                  {ok, Socket} ->
-                     ssl:send(Socket, ?AgUpgradeInfo),
-                     AuthInfo = eVPack:encode([1, 1000, <<"plain">>, User, Password]),
-                     ssl:send(Socket, AuthInfo),
-                     case agVstCli:receiveSslData(#recvState{}, Socket) of
-                        {ok, MsgBin} ->
-                           Term = eVPack:decode(MsgBin),
-                           ?AgWarn(auth, "connect and auth success: ~p~n", [Term]),
-                           setCurDbInfo(Socket, DbName, Protocol),
+            {error, Reason} = Err ->
+               ?AgWarn(connDb_tcp, "connect error: ~p~n", [Reason]),
+               Err
+         end;
+      ssl ->
+         case ssl:connect(HostName, Port, ?AgDefSocketOpts, ?AgDefConnTimeout) of
+            {ok, Socket} ->
+               ssl:send(Socket, ?AgUpgradeInfo),
+               AuthInfo = agVstProto:authInfo(User, Password),
+               ssl:send(Socket, AuthInfo),
+               case agVstCli:receiveSslData(#recvState{}, Socket) of
+                  {ok, MsgBin} ->
+                     case eVPack:decode(MsgBin) of
+                        [1, 2, 200, _] ->
+                           ?AgWarn(connDb_ssl, "connect and auth success~n", []),
+                           setCurDbInfo(Socket, DbName, VstSize, Protocol),
                            {ok, Socket};
-                        {error, Reason} = Err ->
-                           ?AgWarn(connectDb, "connect error: ~p~n", [Reason]),
-                           Err
+                        _Err ->
+                           ?AgWarn(connDb_ssl, "auth error: ~p~n", [_Err]),
+                           {error, _Err}
                      end;
                   {error, Reason} = Err ->
-                     ?AgWarn(connectDb, "connect error: ~p~n", [Reason]),
+                     ?AgWarn(connDb_ssl, "recv error: ~p~n", [Reason]),
                      Err
-               end
-
+               end;
+            {error, Reason} = Err ->
+               ?AgWarn(connDb_ssl, "connect error: ~p~n", [Reason]),
+               Err
+         end
    end.
 
 -spec disConnDb(socket()) -> ok | {error, term()}.
@@ -249,7 +250,7 @@ disConnDb(Socket) ->
    case erlang:erase({'$agDbInfo', Socket}) of
       undefined ->
          ignore;
-      {_DbName, _UserPassword, _Host, Protocol} ->
+      {_DbName, _VstSize, Protocol} ->
          case Protocol of
             tcp ->
                gen_tcp:close(Socket);
@@ -258,9 +259,9 @@ disConnDb(Socket) ->
          end
    end.
 
--spec setCurDbInfo(socket(), binary(), protocol()) -> term().
-setCurDbInfo(Socket, DbName, Protocol) ->
-   erlang:put({'$agDbInfo', Socket}, {DbName, Protocol}).
+-spec setCurDbInfo(socket(), binary(), pos_integer(), protocol()) -> term().
+setCurDbInfo(Socket, DbName, VstSize, Protocol) ->
+   erlang:put({'$agDbInfo', Socket}, {DbName, VstSize, Protocol}).
 
 -spec getCurDbInfo(socket()) -> term().
 getCurDbInfo(Socket) ->
@@ -271,7 +272,30 @@ useDatabase(Socket, NewDbName) ->
    case erlang:get({'$agDbInfo', Socket}) of
       undefined ->
          ignore;
-      {_DbName, Protocol} ->
-         erlang:put({'$agDbInfo', Socket}, {<<"/_db/", NewDbName/binary>>, Protocol})
+      {_DbName, VstSize, Protocol} ->
+         erlang:put({'$agDbInfo', Socket}, {NewDbName, VstSize, Protocol})
    end,
    ok.
+
+initMsgId() ->
+   case persistent_term:get(agMessageId, undefined) of
+      undefined ->
+         Ref = atomics:new(1, [{signed, false}]),
+         InitId = rand:uniform(10000),
+         atomics:put(Ref, 1, InitId),
+         persistent_term:put(agMessageId, Ref);
+      _ ->
+         ignore
+   end.
+
+getMsgId() ->
+   Ref = persistent_term:get(agMessageId, undefined),
+   MessageId = atomics:add_get(Ref, 1, 1),
+   if
+      MessageId >= ?agMaxMessageId ->
+         InitId = rand:uniform(10000),
+         atomics:put(Ref, 1, InitId),
+         InitId;
+      true ->
+         MessageId
+   end.

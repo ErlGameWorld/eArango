@@ -20,20 +20,20 @@ init({PoolName, AgencyName, #agencyOpts{reconnect = Reconnect, backlogSize = Bac
 
 -spec handleMsg(term(), srvState(), cliState()) -> {ok, term(), term()}.
 handleMsg(#agReq{method = Method, path = Path, queryPars = QueryPars, headers = Headers, body = Body, messageId = MessageId, fromPid = FromPid, overTime = OverTime, isSystem = IsSystem},
-   #srvState{serverName = ServerName, dbName = DbName, socket = Socket} = SrvState,
+   #srvState{serverName = ServerName, dbName = DbName, socket = Socket, vstSize = VstSize} = SrvState,
    #cliState{backlogNum = BacklogNum, backlogSize = BacklogSize} = CliState) ->
    case Socket of
       undefined ->
-         agAgencyUtils:agencyReply(FromPid, MessageId, undefined, {error, noSocket}),
+         agAgencyUtils:agencyReply(FromPid, undefined, MessageId, {error, noSocket}),
          {ok, SrvState, CliState};
       _ ->
          case BacklogNum >= BacklogSize of
             true ->
                ?AgWarn(ServerName, ":backlog full curNum:~p Total: ~p ~n", [BacklogNum, BacklogSize]),
-               agAgencyUtils:agencyReply(FromPid, MessageId, undefined, {error, backlogFull}),
+               agAgencyUtils:agencyReply(FromPid, undefined, MessageId, {error, backlogFull}),
                {ok, SrvState, CliState};
             _ ->
-               Request = agVstProto:request(IsSystem, Method, DbName, Path, QueryPars, Headers, Body),
+               Request = agVstProto:request(IsSystem, MessageId, Method, DbName, Path, QueryPars, Headers, Body, VstSize),
                case gen_tcp:send(Socket, Request) of
                   ok ->
                      TimerRef = case OverTime of
@@ -47,7 +47,7 @@ handleMsg(#agReq{method = Method, path = Path, queryPars = QueryPars, headers = 
                   {error, Reason} ->
                      ?AgWarn(ServerName, ":send error: ~p ~p ~p ~n", [Reason, FromPid, MessageId]),
                      gen_tcp:close(Socket),
-                     agAgencyUtils:agencyReply(FromPid, MessageId, undefined, {error, {socketSendError, Reason}}),
+                     agAgencyUtils:agencyReply(FromPid, undefined, MessageId, {error, {socketSendError, Reason}}),
                      agAgencyUtils:dealClose(SrvState, CliState, {error, {socketSendError, Reason}})
                end
          end
@@ -87,20 +87,25 @@ handleMsg(?AgMDoDBConn,
    #srvState{poolName = PoolName, serverName = ServerName, reConnState = _ReConnState} = SrvState,
    CliState) ->
    case ?agBeamPool:getv(PoolName) of
-      #dbOpts{port = Port, hostname = HostName, dbName = DbName, user = User, password = Password, socketOpts = SocketOpts} ->
-         case gen_tcp:connect(HostName, Port, SocketOpts, ?AgDefConnTimeout) of
+      #dbOpts{port = Port, hostname = HostName, dbName = DbName, user = User, password = Password, vstSize = VstSize} ->
+         case gen_tcp:connect(HostName, Port, ?AgDefSocketOpts, ?AgDefConnTimeout) of
             {ok, Socket} ->
                gen_tcp:send(Socket, ?AgUpgradeInfo),
-               AuthInfo = eVPack:encode([1, 1000, <<"plain">>, User, Password]),
+               AuthInfo = agVstProto:authInfo(User, Password),
                gen_tcp:send(Socket, AuthInfo),
                case agVstCli:receiveTcpData(#recvState{}, Socket) of
                   {ok, MsgBin} ->
-                     Term = eVPack:decode(MsgBin),
-                     ?AgWarn(auth, "connect and auth success: ~p~n", [Term]),
-                     {ok, SrvState#srvState{dbName = DbName, socket = Socket}, CliState};
-                  {error, Reason} ->
-                     ?AgWarn(ServerName, "connect error: ~p~n", [Reason]),
-                     agAgencyUtils:reConnTimer(SrvState, CliState)
+                     case eVPack:decode(MsgBin) of
+                        [1, 2, 200, _] ->
+                           ?AgWarn(ServerName, "connect and auth success~n", []),
+                           {ok, SrvState#srvState{dbName = DbName, socket = Socket, vstSize = VstSize}, CliState};
+                        _Err ->
+                           ?AgWarn(ServerName, "auth error: ~p~n", [_Err]),
+                           agAgencyUtils:reConnTimer(SrvState, CliState)
+                     end;
+                  {error, Reason} = Err ->
+                     ?AgWarn(ServerName, "recv auth error: ~p~n", [Reason]),
+                     Err
                end;
             {error, Reason} ->
                ?AgWarn(ServerName, "connect error: ~p~n", [Reason]),

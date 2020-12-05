@@ -28,14 +28,12 @@ reConnTimer(#srvState{reConnState = ReConnState} = SrvState, CliState) ->
    TimerRef = erlang:send_after(Current, self(), ?AgMDoDBConn),
    {ok, SrvState#srvState{reConnState = MewReConnState, socket = undefined, timerRef = TimerRef}, CliState}.
 
--spec agencyReply(undefined | pid(), messageId(), undefined | reference(), term()) -> ok.
-agencyReply(undefined, MessageId, TimerRef, _Reply) ->
-   erlang:erase(MessageId),
-   agAgencyUtils:cancelTimer(TimerRef);
-agencyReply(timeOut, MessageId, TimerRef, _Reply) ->
-   erlang:erase(MessageId),
-   agAgencyUtils:cancelTimer(TimerRef);
-agencyReply(FormPid, MessageId, TimerRef, Reply) ->
+-spec agencyReply(undefined | pid(),  undefined | reference(), messageId(), term()) -> ok.
+agencyReply(undefined, _TimerRef, MessageId, _Reply) ->
+   erlang:erase(MessageId);
+agencyReply(timeOut, _TimerRef, MessageId, _Reply) ->
+   erlang:erase(MessageId);
+agencyReply(FormPid, TimerRef, MessageId, Reply) ->
    erlang:erase(MessageId),
    agAgencyUtils:cancelTimer(TimerRef),
    catch FormPid ! #agReqRet{messageId = MessageId, reply = Reply},
@@ -52,7 +50,7 @@ agencyReTimeout(FormPid, MessageId, Reply) ->
 
 -spec agencyReplyAll(term()) -> ok.
 agencyReplyAll(Reply) ->
-   [agencyReply(PidForm, MessageId, TimeRef, Reply) || {MessageId, {PidForm, TimeRef, _, _}} <- erlang:get()],
+   [agencyReply(PidForm, TimeRef, MessageId, Reply) || {MessageId, {PidForm, TimeRef, _, _}} <- erlang:get()],
    ok.
 
 -spec cancelTimer(undefined | reference()) -> ok.

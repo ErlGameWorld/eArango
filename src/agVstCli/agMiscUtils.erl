@@ -53,19 +53,18 @@ dbOpts(DbCfgs) ->
    User = ?AgGetListKV(user, DbCfgs, ?AgDefUser),
    Password = ?AgGetListKV(password, DbCfgs, ?AgDefPassWord),
    PoolSize = ?AgGetListKV(poolSize, DbCfgs, ?AgDefPoolSize),
-   SocketOpts = ?AgGetListKV(socketOpts, DbCfgs, ?AgDefSocketOpts),
+   VstSize = ?AgGetListKV(vstSize, DbCfgs, ?AgDefVstSize),
    DbOpts = agMiscUtils:parseUrl(BaseUrl),
-   DbOpts#dbOpts{dbName = <<"/_db/", DbName/binary>>, user = User, password = Password, poolSize = PoolSize, socketOpts = SocketOpts}.
+   DbOpts#dbOpts{dbName = DbName, user = User, password = Password, poolSize = PoolSize, vstSize = VstSize}.
 
 -spec agencyOpts(list()) -> agencyOpts().
 agencyOpts(AgencyCfgs) ->
    IsReconnect = ?AgGetListKV(reconnect, AgencyCfgs, ?AgDefIsReConn),
-   VstSize = ?AgGetListKV(vstSize, AgencyCfgs, ?AgDefVstSize),
    AgencySlg = ?AgGetListKV(agencySlg, AgencyCfgs, ?AgDefAgencySlg),
    BacklogSize = ?AgGetListKV(backlogSize, AgencyCfgs, ?AgDefBacklogSize),
    Min = ?AgGetListKV(reConnTimeMin, AgencyCfgs, ?AgDefReConnMin),
    Max = ?AgGetListKV(reConnTimeMax, AgencyCfgs, ?AgDefReConnMax),
-   #agencyOpts{reconnect = IsReconnect, vstSize = VstSize, agencySlg = AgencySlg, backlogSize = BacklogSize, reConnTimeMin = Min, reConnTimeMax = Max}.
+   #agencyOpts{reconnect = IsReconnect, agencySlg = AgencySlg, backlogSize = BacklogSize, reConnTimeMin = Min, reConnTimeMax = Max}.
 
 -spec getListValue(term(), list(), term()) -> term().
 getListValue(Key, List, Default) ->

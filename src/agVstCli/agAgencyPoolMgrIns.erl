@@ -33,6 +33,7 @@
 
 -spec init(Args :: term()) -> ok.
 init(_Args) ->
+   agVstCli:initMsgId(),
    ets:new(?ETS_AG_Pool, [named_table, set, protected]),
    ets:new(?ETS_AG_Agency, [named_table, set, protected]),
    agKvsToBeam:load(?agBeamPool, []),
