@@ -119,7 +119,7 @@ receiveReqRet(RequestId, MonitorRef) ->
    receive
       #agReqRet{messageId = RequestId, reply = Reply} ->
          erlang:demonitor(MonitorRef),
-         Reply;
+         eVpack:decode(Reply);
       {'DOWN', MonitorRef, process, _Pid, Reason} ->
          {error, {agencyDown, Reason}}
    end.
@@ -128,7 +128,7 @@ receiveReqRet(RequestId, MonitorRef) ->
 receiveTcpData(RecvState, Socket) ->
    receive
       {tcp, Socket, DataBuffer} ->
-         ?AgWarn(1111, "IMY************receove 1: ~p ~p ~n", [erlang:byte_size(DataBuffer), DataBuffer]),
+         %% ?AgWarn(1111, "IMY************receove 1: ~p ~p ~n", [erlang:byte_size(DataBuffer), DataBuffer]),
          case agVstProto:response(element(2, RecvState), RecvState, DataBuffer) of
             {?AgMDone, MsgBin} ->
                {ok, MsgBin};
@@ -203,7 +203,6 @@ connDb(DbCfgs) ->
                   {ok, MsgBin} ->
                      case eVPack:decode(MsgBin) of
                         [1, 2, 200, _] ->
-                           ?AgWarn(connDb_tcp, "connect and auth success~n", []),
                            setCurDbInfo(Socket, DbName, VstSize, Protocol),
                            {ok, Socket};
                         _Err ->
@@ -228,7 +227,6 @@ connDb(DbCfgs) ->
                   {ok, MsgBin} ->
                      case eVPack:decode(MsgBin) of
                         [1, 2, 200, _] ->
-                           ?AgWarn(connDb_ssl, "connect and auth success~n", []),
                            setCurDbInfo(Socket, DbName, VstSize, Protocol),
                            {ok, Socket};
                         _Err ->

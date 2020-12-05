@@ -97,7 +97,6 @@ handleMsg(?AgMDoDBConn,
                   {ok, MsgBin} ->
                      case eVPack:decode(MsgBin) of
                         [1, 2, 200, _] ->
-                           ?AgWarn(ServerName, "connect and auth success~n", []),
                            {ok, SrvState#srvState{dbName = DbName, socket = Socket, vstSize = VstSize}, CliState};
                         _Err ->
                            ?AgWarn(ServerName, "auth error: ~p~n", [_Err]),

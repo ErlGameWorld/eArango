@@ -32,7 +32,7 @@ request(IsSystem, MessageId, Method, DbName, Path, QueryPars, Headers, Body, Vst
    MsgSize = erlang:byte_size(MsgBin),
    case MsgSize =< VstSize of
       true ->
-         ?AgWarn(tt, "IMY************** ~p ~p ~p ~p~n", [MsgSize, MessageId, MsgSize, MsgBin]),
+         %% ?AgWarn(tt, "IMY************** ~p ~p ~p ~p~n", [MsgSize, MessageId, MsgSize, MsgBin]),
          [<<(MsgSize + ?AgHeaderSize):32/integer-little-unsigned, 3:32/integer-little-unsigned, MessageId:64/integer-little-unsigned, MsgSize:64/integer-little-unsigned>>, MsgBin];
       _ ->
          ChunkCnt = erlang:ceil(MsgSize / VstSize),
