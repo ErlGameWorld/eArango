@@ -28,7 +28,7 @@
 %    403：如果您没有访问服务器访问级别，则返回。
 %    409：如果已经存在同名用户，则返回。
 newUser(PoolNameOrSocket, MapData) ->
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/user">>, [], BodyStr).
 
 % 设置数据库访问级别。
@@ -48,7 +48,7 @@ newUser(PoolNameOrSocket, MapData) ->
 %    403：如果您没有访问服务器访问级别，则返回。
 setUserDbAccessLevel(PoolNameOrSocket, UserName, DbName, MapData) ->
    Path = <<"/_api/user/", UserName/binary, "/database/", DbName/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
 
 % 设置收集访问级别。
@@ -70,7 +70,7 @@ setUserDbAccessLevel(PoolNameOrSocket, UserName, DbName, MapData) ->
 %    403：如果您没有访问服务器访问级别，则返回。
 setUserCollAccessLevel(PoolNameOrSocket, UserName, DbName, CollName, MapData) ->
    Path = <<"/_api/user/", UserName/binary, "/database/", DbName/binary, "/", CollName/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
 
 % 清除数据库访问级别，恢复为默认访问级别
@@ -174,7 +174,7 @@ getUserCollAccessLevel(PoolNameOrSocket, UserName, DbName, CollName) ->
 %    404：指定的用户不存在
 replaceUser(PoolNameOrSocket, UserName, MapData) ->
    Path = <<"/_api/user/", UserName/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
 
 % 修改现有用户的属性
@@ -194,7 +194,7 @@ replaceUser(PoolNameOrSocket, UserName, MapData) ->
 %    404：指定的用户不存在
 updateUser(PoolNameOrSocket, UserName, MapData) ->
    Path = <<"/_api/user/", UserName/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, [], BodyStr).
 
 % 永久删除用户。

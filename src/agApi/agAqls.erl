@@ -85,8 +85,8 @@
 % 404：如果查询中访问了不存在的集合，服务器将以HTTP 404进行响应。
 % 405：如果使用了不受支持的HTTP方法，则服务器将以HTTP 405进行响应。
 newCursor(PoolNameOrSocket, MapData) ->
-   BodyStr = jiffy:encode(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/cursor">>, [], BodyStr).
+   BodyStr = eVPack:encodeBin(MapData),
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/cursor">>, ?AgDefQuery, ?AgDefHeader, BodyStr).
 
 
 % 从现有游标返回下一个结果
@@ -105,7 +105,7 @@ newCursor(PoolNameOrSocket, MapData) ->
 % 404：如果找不到具有指定标识符的游标，则服务器将使用HTTP 404进行响应。
 nextCursor(PoolNameOrSocket, CursorId) ->
    Path = <<"/_api/cursor/", (agMiscUtils:toBinary(CursorId))/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path).
 
 % 删除光标永
 % DELETE /_api/cursor/{cursor-identifier}
@@ -119,7 +119,7 @@ nextCursor(PoolNameOrSocket, CursorId) ->
 %    404：如果服务器不知道游标，则返回404。如果在销毁游标后使用了游标，也将返回该值。
 delCursor(PoolNameOrSocket, CursorId) ->
    Path = <<"/_api/cursor/", (agMiscUtils:toBinary(CursorId))/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path).
 
 % AQL查询的HTTP接口
 %
@@ -154,8 +154,8 @@ delCursor(PoolNameOrSocket, CursorId) ->
 %    400：如果请求格式错误或查询包含解析错误，服务器将以HTTP 400响应。响应的正文将包含嵌入在JSON对象中的错误详细信息。如果查询引用任何变量，则忽略绑定变量也会导致HTTP 400错误。
 %    404：如果查询中访问了不存在的集合，服务器将以HTTP 404进行响应。
 explainQuery(PoolNameOrSocket, MapData) ->
-   BodyStr = jiffy:encode(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/explain">>, [], BodyStr).
+   BodyStr = eVPack:encodeBin(MapData),
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/explain">>, ?AgDefQuery, ?AgDefHeader, BodyStr).
 
 % 解析一个AQL查询并返回有关它的信息
 % POST /_api/query
@@ -166,8 +166,8 @@ explainQuery(PoolNameOrSocket, MapData) ->
 %    200：如果查询有效，服务器将使用HTTP 200进行响应，并在响应的bindVars属性中返回在查询中找到的绑定参数的名称（如果有）。它还将在collections属性中返回查询中使用的collections的数组。如果查询可以成功解析，则返回的JSON 的ast属性将包含查询的抽象语法树表示形式。ast的格式在将来的ArangoDB版本中可能会发生变化，但是可以用来检查ArangoDB如何解释给定查询。请注意，将在不对其应用任何优化的情况下返回抽象语法树。
 %    400：如果请求格式错误或查询包含解析错误，服务器将以HTTP 400响应。响应的正文将包含嵌入在JSON对象中的错误详细信息。
 parseQuery(PoolNameOrSocket, MapData) ->
-   BodyStr = jiffy:encode(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/query">>, [], BodyStr).
+   BodyStr = eVPack:encodeBin(MapData),
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/query">>, ?AgDefQuery, ?AgDefHeader, BodyStr).
 
 % 查询跟踪固定链接
 % ArangoDB具有HTTP接口，用于检索当前正在执行的AQL查询列表和慢速AQL查询列表。为了有意义地使用这些API，需要在执行HTTP请求的数据库中启用查询跟踪。
@@ -185,7 +185,7 @@ parseQuery(PoolNameOrSocket, MapData) ->
 % 200：如果成功检索到属性，则返回。
 % 400：如果请求格式错误，服务器将以HTTP 400进行响应，
 getQueryProps(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/query/properties">>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/query/properties">>).
 
 % 更改AQL查询跟踪的配置
 % PUT /_api/query/properties
@@ -202,8 +202,8 @@ getQueryProps(PoolNameOrSocket) ->
 %     200：如果属性更改成功，则返回。
 %     400：如果请求格式错误，服务器将以HTTP 400进行响应，
 changeQueryProps(PoolNameOrSocket, MapData) ->
-   BodyStr = jiffy:encode(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/query/properties">>, [], BodyStr).
+   BodyStr = eVPack:encodeBin(MapData),
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/query/properties">>, ?AgDefQuery, ?AgDefHeader, BodyStr).
 
 % 返回当前正在运行的AQL查询的列表
 % GET /_api/query/current
@@ -219,7 +219,7 @@ changeQueryProps(PoolNameOrSocket, MapData) ->
 %    200：可以成功检索查询列表时返回。
 %    400：如果请求格式错误，服务器将以HTTP 400进行响应，
 currentQuery(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/query/current">>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/query/current">>).
 
 
 % 返回运行缓慢的AQL查询的列表
@@ -237,7 +237,7 @@ currentQuery(PoolNameOrSocket) ->
 %     200：可以成功检索查询列表时返回。
 %     400：如果请求格式错误，服务器将以HTTP 400进行响应，
 getSlowQuery(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/query/slow">>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/query/slow">>).
 
 % 清除慢速AQL查询列表
 % DELETE /_api/query/slow
@@ -246,7 +246,7 @@ getSlowQuery(PoolNameOrSocket) ->
 % 200：成功清除查询列表后，服务器将以HTTP 200响应。
 % 400：如果请求格式错误，服务器将使用HTTP 400进行响应。
 delSlowQuery(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, <<"/_api/query/slow">>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, <<"/_api/query/slow">>).
 
 
 % 杀死查询永久链接
@@ -263,7 +263,7 @@ delSlowQuery(PoolNameOrSocket) ->
 %     404：当找不到指定ID的查询时，服务器将以HTTP 404响应。
 killQuery(PoolNameOrSocket, QueryId) ->
    Path = <<"/_api/query/", (agMiscUtils:toBinary(QueryId))/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path).
 
 % AQL查询结果缓存的HTTP接口
 % 本节介绍用于控制AQL查询结果缓存的API方法。
@@ -284,7 +284,7 @@ killQuery(PoolNameOrSocket, QueryId) ->
 %    200：可以成功检索结果列表时返回。
 %    400：如果请求格式错误，服务器将以HTTP 400进行响应，
 getQueryCaches(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/query-cache/entries">>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/query-cache/entries">>).
 
 % 清除AQL查询结果缓存中的所有结果
 % DELETE /_api/query-cache
@@ -293,7 +293,7 @@ getQueryCaches(PoolNameOrSocket) ->
 %    200：成功清除缓存后，服务器将以HTTP 200响应。
 %    400：如果请求格式错误，服务器将使用HTTP 400进行响应。
 clearQueryCaches(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, <<"/_api/query-cache">>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, <<"/_api/query-cache">>).
 
 % 返回AQL查询结果缓存的全局配置
 % GET /_api/query-cache/properties
@@ -307,7 +307,7 @@ clearQueryCaches(PoolNameOrSocket) ->
 %    200：如果可以成功检索属性，则返回。
 %    400：如果请求格式错误，服务器将以HTTP 400进行响应，
 getQCacheProps(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/query-cache/properties">>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/query-cache/properties">>).
 
 % 全局调整AQL查询结果缓存属性
 % PUT /_api/query-cache/properties
@@ -323,8 +323,8 @@ getQCacheProps(PoolNameOrSocket) ->
 % 200：如果属性更改成功，则返回。
 % 400：如果请求格式错误，服务器将以HTTP 400进行响应，
 changeQCacheProps(PoolNameOrSocket, MapData) ->
-   BodyStr = jiffy:encode(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/query-cache/properties">>, [], BodyStr).
+   BodyStr = eVPack:encodeBin(MapData),
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/query-cache/properties">>, ?AgDefQuery, ?AgDefHeader, BodyStr).
 
 % AQL用户功能管理固定链接
 % 这是用于管理AQL用户功能的ArangoDB HTTP接口的简介。AQL用户功能是一种使用用户定义的JavaScript代码扩展ArangoDB查询语言（AQL）功能的方法。
@@ -353,8 +353,8 @@ changeQCacheProps(PoolNameOrSocket, MapData) ->
 %    errorNum：服务器错误号
 %    errorMessage：描述性错误消息
 newUserFun(PoolNameOrSocket, MapData) ->
-   BodyStr = jiffy:encode(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/aqlfunction">>, [], BodyStr).
+   BodyStr = eVPack:encodeBin(MapData),
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/aqlfunction">>, ?AgDefQuery, ?AgDefHeader, BodyStr).
 
 % 删除现有的AQL用户功能
 % DELETE /_api/aqlfunction/{name}
@@ -381,12 +381,11 @@ newUserFun(PoolNameOrSocket, MapData) ->
 %     errorMessage：描述性错误消息
 delUserFun(PoolNameOrSocket, UserFunName) ->
    Path = <<"/_api/aqlfunction/", (agMiscUtils:toBinary(UserFunName))/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path).
 
 delUserFun(PoolNameOrSocket, UserFunName, QueryPars) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   Path = <<"/_api/aqlfunction/", (agMiscUtils:toBinary(UserFunName))/binary, QueryBinary/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, [], undefined).
+   Path = <<"/_api/aqlfunction/", (agMiscUtils:toBinary(UserFunName))/binary>>,
+   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, QueryPars, ?AgDefHeader, ?AgDefBody).
 
 % 返回注册的AQL用户功能
 % GET /_api/aqlfunction
@@ -407,12 +406,10 @@ delUserFun(PoolNameOrSocket, UserFunName, QueryPars) ->
 %     errorNum：服务器错误号
 %     errorMessage：描述性错误消息
 getUserFuns(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/aqlfunction">>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/aqlfunction">>).
 
 getUserFuns(PoolNameOrSocket, QueryPars) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   Path = <<"/_api/aqlfunction", QueryBinary/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/aqlfunction">>, QueryPars, ?AgDefHeader, ?AgDefBody).
 
 
 

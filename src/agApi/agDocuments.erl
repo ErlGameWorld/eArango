@@ -168,13 +168,13 @@ getDocHead(PoolNameOrSocket, CollName, Key, Headers) ->
 % 409：如果在索引属性中具有相同限定词的文档与现有文档发生冲突并因此违反了该唯一约束，则在单个文档的情况下返回409。在这种情况下，响应主体包含一个错误文档。
 newDoc(PoolNameOrSocket, CollName, MapData) ->
    Path = <<"/_api/document/", CollName/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).
 
 newDoc(PoolNameOrSocket, CollName, MapData, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/document/", CollName/binary, QueryBinary/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).
 
 % 替换文档
@@ -212,19 +212,19 @@ newDoc(PoolNameOrSocket, CollName, MapData, QueryPars) ->
 % 412：如果违反了前提条件，则返回。该响应还将在_rev 属性中包含找到的文档的当前修订。此外，将返回属性_id和_key。
 replaceDoc(PoolNameOrSocket, CollName, Key, MapData) ->
    Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
 
 replaceDoc(PoolNameOrSocket, CollName, Key, MapData, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary, QueryBinary/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
 
 replaceDoc(PoolNameOrSocket, CollName, Key, MapData, QueryPars, Headers) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary, QueryBinary/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, Headers, BodyStr).
 
 % 更新文档
@@ -265,19 +265,19 @@ replaceDoc(PoolNameOrSocket, CollName, Key, MapData, QueryPars, Headers) ->
 % 412：如果违反了前提条件，则返回。该响应还将在_rev 属性中包含找到的文档的当前修订。此外，将返回属性_id和_key。
 updateDoc(PoolNameOrSocket, CollName, Key, MapData) ->
    Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, [], BodyStr).
 
 updateDoc(PoolNameOrSocket, CollName, Key, MapData, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary, QueryBinary/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, [], BodyStr).
 
 updateDoc(PoolNameOrSocket, CollName, Key, MapData, QueryPars, Headers) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary, QueryBinary/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, Headers, BodyStr).
 
 % 删除文档
@@ -337,7 +337,7 @@ delDoc(PoolNameOrSocket, CollName, Key, QueryPars, Headers) ->
 getDocs(PoolNameOrSocket, CollName, KeyOrMapDataList) ->
    QueryBinary = agMiscUtils:spellQueryPars([{onlyget, true}]),
    Path = <<"/_api/document/", CollName/binary, QueryBinary/binary>>,
-   BodyStr = jiffy:encode(KeyOrMapDataList),
+   BodyStr = eVPack:encodeBin(KeyOrMapDataList),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
 
 getDocs(PoolNameOrSocket, CollName, KeyOrMapDataList, QueryPars) ->
@@ -350,7 +350,7 @@ getDocs(PoolNameOrSocket, CollName, KeyOrMapDataList, QueryPars) ->
       end,
    QueryBinary = agMiscUtils:spellQueryPars(LastQueryPars),
    Path = <<"/_api/document/", CollName/binary, QueryBinary/binary>>,
-   BodyStr = jiffy:encode(KeyOrMapDataList),
+   BodyStr = eVPack:encodeBin(KeyOrMapDataList),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
 
 % 创建多个文档
@@ -385,13 +385,13 @@ getDocs(PoolNameOrSocket, CollName, KeyOrMapDataList, QueryPars) ->
 % 按照MapDataList的顺序返回执行结果 正确或者错误
 newDocs(PoolNameOrSocket, CollName, MapDataList) ->
    Path = <<"/_api/document/", CollName/binary>>,
-   BodyStr = jiffy:encode(MapDataList),
+   BodyStr = eVPack:encodeBin(MapDataList),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).
 
 newDocs(PoolNameOrSocket, CollName, MapDataList, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/document/", CollName/binary, QueryBinary/binary>>,
-   BodyStr = jiffy:encode(MapDataList),
+   BodyStr = eVPack:encodeBin(MapDataList),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).
 
 % 替换多个文件
@@ -421,13 +421,13 @@ newDocs(PoolNameOrSocket, CollName, MapDataList, QueryPars) ->
 % 404：如果找不到集合，则返回。
 replaceDocs(PoolNameOrSocket, CollName, MapDataList) ->
    Path = <<"/_api/document/", CollName/binary>>,
-   BodyStr = jiffy:encode(MapDataList),
+   BodyStr = eVPack:encodeBin(MapDataList),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
 
 replaceDocs(PoolNameOrSocket, CollName, MapDataList, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/document/", CollName/binary, QueryBinary/binary>>,
-   BodyStr = jiffy:encode(MapDataList),
+   BodyStr = eVPack:encodeBin(MapDataList),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
 
 % 更新多个文件
@@ -460,13 +460,13 @@ replaceDocs(PoolNameOrSocket, CollName, MapDataList, QueryPars) ->
 % 404：如果找不到集合，则返回。
 updateDocs(PoolNameOrSocket, CollName, MapDataList) ->
    Path = <<"/_api/document/", CollName/binary>>,
-   BodyStr = jiffy:encode(MapDataList),
+   BodyStr = eVPack:encodeBin(MapDataList),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, [], BodyStr).
 
 updateDocs(PoolNameOrSocket, CollName, MapDataList, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/document/", CollName/binary, QueryBinary/binary>>,
-   BodyStr = jiffy:encode(MapDataList),
+   BodyStr = eVPack:encodeBin(MapDataList),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, [], BodyStr).
 
 % 删除多个文件
@@ -490,11 +490,11 @@ updateDocs(PoolNameOrSocket, CollName, MapDataList, QueryPars) ->
 % 404：如果找不到集合，则返回。在这种情况下，响应主体包含一个错误文档。
 delDocs(PoolNameOrSocket, CollName, KeyOrMapDataList) ->
    Path = <<"/_api/document/", CollName/binary, "/">>,
-   BodyStr = jiffy:encode(KeyOrMapDataList),
+   BodyStr = eVPack:encodeBin(KeyOrMapDataList),
    agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, [], BodyStr).
 
 delDocs(PoolNameOrSocket, CollName, KeyOrMapDataList, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/document/", CollName/binary, QueryBinary/binary>>,
-   BodyStr = jiffy:encode(KeyOrMapDataList),
+   BodyStr = eVPack:encodeBin(KeyOrMapDataList),
    agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, [], BodyStr).

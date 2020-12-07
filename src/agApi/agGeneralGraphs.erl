@@ -77,13 +77,13 @@ graphList(PoolNameOrSocket) ->
 % errorNum：发生错误的ArangoDB错误号。
 % errorMessage：为此错误创建的消息。
 newGraph(PoolNameOrSocket, MapData) ->
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/gharial">>, [], BodyStr).
 
 newGraph(PoolNameOrSocket, MapData, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/gharial", QueryBinary/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).
 
 % 获取图表
@@ -185,7 +185,7 @@ vertexCollList(PoolNameOrSocket, GraphName) ->
 %% MapData = #{"collection" => "otherVertices"}
 addVertexColl(PoolNameOrSocket, GraphName, MapData) ->
    Path = <<"/_api/gharial/", GraphName/binary, "/vertex">>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).
 
 % 从图形中删除额外顶点集合。
@@ -283,7 +283,7 @@ edgeDefList(PoolNameOrSocket, GraphName) ->
 %    errorMessage：为此错误创建的消息。
 addEdgeDef(PoolNameOrSocket, GraphName, MapData) ->
    Path = <<"/_api/gharial/", GraphName/binary, "/edge">>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).
 
 % 替换现有的边缘定义
@@ -327,13 +327,13 @@ addEdgeDef(PoolNameOrSocket, GraphName, MapData) ->
 % EdgeDefName 名字 要在定义列表中存在 MapData中的collection 也要存在 只是替换 from to 中的集合
 replaceEdgeDef(PoolNameOrSocket, GraphName, EdgeDefName, MapData) ->
    Path = <<"/_api/gharial/", GraphName/binary, "/edge/", EdgeDefName/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
 
 replaceEdgeDef(PoolNameOrSocket, GraphName, EdgeDefName, MapData, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/gharial/", GraphName/binary, "/edge/", EdgeDefName/binary, QueryBinary/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
 
 % 从图形中删除边缘定义
@@ -409,13 +409,13 @@ delEdgeDef(PoolNameOrSocket, GraphName, EdgeDefName, QueryPars) ->
 %     errorMessage：为此错误创建的消息。
 newVertex(PoolNameOrSocket, GraphName, CollName, MapData) ->
    Path = <<"/_api/gharial/", GraphName/binary, "/vertex/", CollName/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).
 
 newVertex(PoolNameOrSocket, GraphName, CollName, MapData, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/gharial/", GraphName/binary, "/vertex/", CollName/binary, QueryBinary/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).
 
 % 获取现有顶点
@@ -523,19 +523,19 @@ getVertex(PoolNameOrSocket, GraphName, CollName, VertexKey, QueryPars, Headers) 
 %     errorMessage：为此错误创建的消息。
 updateVertex(PoolNameOrSocket, GraphName, CollName, VertexKey, MapData) ->
    Path = <<"/_api/gharial/", GraphName/binary, "/vertex/", CollName/binary, "/", (agMiscUtils:toBinary(VertexKey))/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, [], BodyStr).
 
 updateVertex(PoolNameOrSocket, GraphName, CollName, VertexKey, MapData, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/gharial/", GraphName/binary, "/vertex/", CollName/binary, "/", (agMiscUtils:toBinary(VertexKey))/binary, QueryBinary/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, [], BodyStr).
 
 updateVertex(PoolNameOrSocket, GraphName, CollName, VertexKey, MapData, QueryPars, Headers) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/gharial/", GraphName/binary, "/vertex/", CollName/binary, "/", (agMiscUtils:toBinary(VertexKey))/binary, QueryBinary/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, Headers, BodyStr).
 
 % 替换现有的顶点
@@ -588,19 +588,19 @@ updateVertex(PoolNameOrSocket, GraphName, CollName, VertexKey, MapData, QueryPar
 %     errorMessage：为此错误创建的消息。
 replaceVertex(PoolNameOrSocket, GraphName, CollName, VertexKey, MapData) ->
    Path = <<"/_api/gharial/", GraphName/binary, "/vertex/", CollName/binary, "/", (agMiscUtils:toBinary(VertexKey))/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
 
 replaceVertex(PoolNameOrSocket, GraphName, CollName, VertexKey, MapData, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/gharial/", GraphName/binary, "/vertex/", CollName/binary, "/", (agMiscUtils:toBinary(VertexKey))/binary, QueryBinary/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
 
 replaceVertex(PoolNameOrSocket, GraphName, CollName, VertexKey, MapData, QueryPars, Headers) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/gharial/", GraphName/binary, "/vertex/", CollName/binary, "/", (agMiscUtils:toBinary(VertexKey))/binary, QueryBinary/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, Headers, BodyStr).
 
 % 从图中删除顶点
@@ -704,13 +704,13 @@ delVertex(PoolNameOrSocket, GraphName, CollName, VertexKey, QueryPars, Headers) 
 %     errorMessage：为此错误创建的消息。
 newEdge(PoolNameOrSocket, GraphName, CollName, MapData) ->
    Path = <<"/_api/gharial/", GraphName/binary, "/edge/", CollName/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).
 
 newEdge(PoolNameOrSocket, GraphName, CollName, MapData, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/gharial/", GraphName/binary, "/edge/", CollName/binary, QueryBinary/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).
 
 % 获得边
@@ -819,19 +819,19 @@ getEdge(PoolNameOrSocket, GraphName, CollName, EdgeKey, QueryPars, Headers) ->
 %     errorMessage：为此错误创建的消息。
 updateEdge(PoolNameOrSocket, GraphName, CollName, EdgeKey, MapData) ->
    Path = <<"/_api/gharial/", GraphName/binary, "/edge/", CollName/binary, "/", (agMiscUtils:toBinary(EdgeKey))/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, [], BodyStr).
 
 updateEdge(PoolNameOrSocket, GraphName, CollName, EdgeKey, MapData, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/gharial/", GraphName/binary, "/edge/", CollName/binary, "/", (agMiscUtils:toBinary(EdgeKey))/binary, QueryBinary/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, [], BodyStr).
 
 updateEdge(PoolNameOrSocket, GraphName, CollName, EdgeKey, MapData, Headers, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/gharial/", GraphName/binary, "/edge/", CollName/binary, "/", (agMiscUtils:toBinary(EdgeKey))/binary, QueryBinary/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, Headers, BodyStr).
 
 
@@ -887,19 +887,19 @@ updateEdge(PoolNameOrSocket, GraphName, CollName, EdgeKey, MapData, Headers, Que
 %     errorMessage：为此错误创建的消息。
 replaceEdge(PoolNameOrSocket, GraphName, CollName, EdgeKey, MapData) ->
    Path = <<"/_api/gharial/", GraphName/binary, "/edge/", CollName/binary, "/", (agMiscUtils:toBinary(EdgeKey))/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
 
 replaceEdge(PoolNameOrSocket, GraphName, CollName, EdgeKey, MapData, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/gharial/", GraphName/binary, "/edge/", CollName/binary, "/", (agMiscUtils:toBinary(EdgeKey))/binary, QueryBinary/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
 
 replaceEdge(PoolNameOrSocket, GraphName, CollName, EdgeKey, MapData, QueryPars, Headers) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/gharial/", GraphName/binary, "/edge/", CollName/binary, "/", (agMiscUtils:toBinary(EdgeKey))/binary, QueryBinary/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, Headers, BodyStr).
 
 % 从图形中删除边

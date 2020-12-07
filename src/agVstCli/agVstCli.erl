@@ -7,7 +7,8 @@
 
 -export([
    %% Common Request API
-   callAgency/6
+   callAgency/3
+   , callAgency/6
    , callAgency/7
    , callAgency/8
    , castAgency/6
@@ -33,6 +34,11 @@
    , receiveSslData/2
 ]).
 
+
+-spec callAgency(poolNameOrSocket(), method(), path()) -> term() | {error, term()}.
+callAgency(PoolNameOrSocket, Method, Path) ->
+   callAgency(PoolNameOrSocket, Method, Path, #{}, #{}, <<>>, false, ?AgDefTimeout).
+
 -spec callAgency(poolNameOrSocket(), method(), path(), queryPars(), headers(), body()) -> term() | {error, term()}.
 callAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, Body) ->
    callAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, Body, false, ?AgDefTimeout).
@@ -43,7 +49,7 @@ callAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, Body, IsSystem) -
 
 -spec callAgency(poolNameOrSocket(), method(), path(), queryPars(), headers(), body(), boolean(), timeout()) -> term() | {error, atom()}.
 callAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, Body, IsSystem, Timeout) ->
-   case castAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, Body, self(), IsSystem, Timeout) of
+   case castAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, eVPack:encodeBin(Body), self(), IsSystem, Timeout) of
       {waitRRT, RequestId, MonitorRef} ->
          receiveReqRet(RequestId, MonitorRef);
       {error, _Reason} = Err ->
@@ -123,6 +129,7 @@ receiveReqRet(RequestId, MonitorRef) ->
             {error, Err} ->
                Err;
             _ ->
+               ?AgWarn(tt, "IMY*************~p~n", [Reply]),
                {[1, 2, StatusCode, HeaderMap], BodyMap} = eVPack:decodeAll(Reply),
                {StatusCode, BodyMap, HeaderMap}
          end;

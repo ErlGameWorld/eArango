@@ -68,7 +68,7 @@
 %    404：如果找不到或已经从作业结果列表中删除或提取了作业，则返回404。在这种情况下，不会返回x-arango-async-id HTTP标头。
 getAsyncJobRet(PoolNameOrSocket, JodId) ->
    Path = <<"/_api/job/", (agMiscUtils:toBinary(JodId))/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path).
 
 
 % 取消异步作业
@@ -82,7 +82,7 @@ getAsyncJobRet(PoolNameOrSocket, JodId) ->
 % 404：如果找不到或已经从作业结果列表中删除或提取了作业，则返回404。在这种情况下，不会返回x-arango-async-id HTTP标头。
 cancelAsyncJob(PoolNameOrSocket, JodId) ->
    Path = <<"/_api/job/", (agMiscUtils:toBinary(JodId))/binary, "/cancel">>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path).
 
 % 删除异步作业结果
 % DELETE /_api/job/{type}#by-type
@@ -100,12 +100,11 @@ cancelAsyncJob(PoolNameOrSocket, JodId) ->
 %     404：如果type为job-id，但未找到具有指定id的异步作业，则返回404。
 delAsyncJobRet(PoolNameOrSocket, TypeOrJodId) ->
    Path = <<"/_api/job/", (agMiscUtils:toBinary(TypeOrJodId))/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path).
 
 delAsyncJobRet(PoolNameOrSocket, TypeOrJodId, QueryPars) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   Path = <<"/_api/job/", (agMiscUtils:toBinary(TypeOrJodId))/binary, QueryBinary/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, [], undefined).
+   Path = <<"/_api/job/", (agMiscUtils:toBinary(TypeOrJodId))/binary>>,
+   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, QueryPars, ?AgDefHeader, ?AgDefBody).
 
 % 返回特定作业的状态
 % GET /_api/job/{job-id}
@@ -118,7 +117,7 @@ delAsyncJobRet(PoolNameOrSocket, TypeOrJodId, QueryPars) ->
 %     404：如果找不到或已经从作业结果列表中删除或提取了作业，则返回404。
 getAsyncJobStatus(PoolNameOrSocket, JodId) ->
    Path = <<"/_api/job/", (agMiscUtils:toBinary(JodId))/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path).
 
 % 返回具有特定状态的工作结果ID
 % GET /_api/job/{type}#by-type
@@ -132,9 +131,9 @@ getAsyncJobStatus(PoolNameOrSocket, JodId) ->
 %     400：如果未指定type或值无效，则返回。
 getAsyncJobList(PoolNameOrSocket, Type) ->
    Path = <<"/_api/job/", (agMiscUtils:toBinary(Type))/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path).
 
 getAsyncJobList(PoolNameOrSocket, Type, Count) ->
    Path = <<"/_api/job/", (agMiscUtils:toBinary(Type))/binary, "?count=", (agMiscUtils:toBinary(Count))/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path).
 

@@ -57,9 +57,9 @@
 %    500：如果服务器无法为没有用户定义密钥的文档自动生成文档密钥（密钥错误），则返回500。
 docImport(PoolNameOrSocket, ListOfList, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   Path = <<"/_api/import", QueryBinary/binary>>,
-   BodyStr = <<<<(jiffy:encode(OneList))/binary, "\n">> || OneList <- ListOfList>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).
+   Path = <<"/_api/import">>,
+   BodyStr = <<<<(eVPack:encodeBin(OneList))/binary, "\n">> || OneList <- ListOfList>>,
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, QueryPars, ?AgDefHeader, BodyStr).
 
 % 从JSON导入文档
 % POST /_api/import#json
@@ -101,9 +101,9 @@ docImport(PoolNameOrSocket, ListOfList, QueryPars) ->
 jsonImport(PoolNameOrSocket, MapDataList, QueryPars) ->
    case lists:keyfind(type, 1, QueryPars) of
       {type, list} ->
-         BodyStr = jiffy:encode(MapDataList);
+         BodyStr = eVPack:encodeBin(MapDataList);
       {type, documents} ->
-         BodyStr = <<<<(jiffy:encode(OneList))/binary, "\n">> || OneList <- MapDataList>>;
+         BodyStr = <<<<(eVPack:encodeBin(OneList))/binary, "\n">> || OneList <- MapDataList>>;
       _ ->
          BodyStr = MapDataList
    end,
@@ -229,5 +229,5 @@ jsonImport(PoolNameOrSocket, MapDataList, QueryPars) ->
 %    501：如果在群集协调器上调用此API，则服务器将使用HTTP 501进行响应。
 docExport(PoolNameOrSocket, CollName, MapData) ->
    Path = <<"/_api/export?collection=", CollName/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).

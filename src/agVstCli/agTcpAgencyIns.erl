@@ -52,9 +52,9 @@ handleMsg(#agReq{method = Method, path = Path, queryPars = QueryPars, headers = 
                end
          end
    end;
-handleMsg({tcp, _Socket, Data}, SrvState,
-   #cliState{revStatus = RevStatus, backlogNum = BacklogNum, messageId = MessageId, chunkIdx = ChunkIdx,  chunkSize = ChunkSize, chunkBuffer = ChunkBuffer} = CliState) ->
-   case agVstProto:response(RevStatus, 0, MessageId, ChunkIdx, ChunkSize, ChunkBuffer, Data) of
+handleMsg({tcp, _Socket, DataBuffer}, SrvState,
+   #cliState{revStatus = RevStatus, backlogNum = BacklogNum, messageId = OldMessageId, chunkIdx = OldChunkIdx,  chunkSize = OldChunkSize, chunkBuffer = OldChunkBuffer} = CliState) ->
+   case agVstProto:response(RevStatus, 0, OldMessageId, OldChunkIdx, OldChunkSize, OldChunkBuffer, DataBuffer) of
       {?AgUndef, DoneCnt} ->
          {ok, SrvState, CliState#cliState{revStatus = ?AgUndef, backlogNum = BacklogNum - DoneCnt, chunkBuffer = <<>>}};
       {?AgCBodyStart, DoneCnt, MessageId, ChunkIdx, ChunkSize, ChunkBuffer} ->

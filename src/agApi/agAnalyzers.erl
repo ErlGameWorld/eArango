@@ -25,8 +25,8 @@
 %    400：缺少一个或多个必需参数，或者一个或多个参数无效。
 %    403：用户无权使用此配置创建和分析器。
 newAnalyzer(PoolNameOrSocket, MapData) ->
-   BodyStr = jiffy:encode(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/analyzer">>, [], BodyStr).
+   BodyStr = eVPack:encodeBin(MapData),
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/analyzer">>, ?AgDefQuery, ?AgDefHeader, BodyStr).
 
 % 返回分析器定义
 % GET /_api/analyzer/{analyzer-name}
@@ -42,7 +42,7 @@ newAnalyzer(PoolNameOrSocket, MapData) ->
 %   404：不存在这种分析器配置。
 getAnalyzer(PoolNameOrSocket, AnalyzerName) ->
    Path = <<"/_api/analyzer/", AnalyzerName/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path).
 
 % 返回可用的分析器定义列表
 % GET /_api/analyzer
@@ -54,7 +54,7 @@ getAnalyzer(PoolNameOrSocket, AnalyzerName) ->
 % 返回码
 % 200：分析器定义已成功检索。
 getAnalyzerList(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/analyzer">>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/analyzer">>).
 
 % 删除分析仪配置
 % DELETE /_api/analyzer/{analyzer-name}
@@ -74,9 +74,8 @@ getAnalyzerList(PoolNameOrSocket) ->
 %    409：指定的分析器配置仍在使用中，并且省略了强制或 指定了错误。。
 delAnalyzer(PoolNameOrSocket, AnalyzerName) ->
    Path = <<"/_api/analyzer/", AnalyzerName/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path).
 
 delAnalyzer(PoolNameOrSocket, AnalyzerName, QueryPars) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   Path = <<"/_api/analyzer/", AnalyzerName/binary, QueryBinary/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, [], undefined).
+   Path = <<"/_api/analyzer/", AnalyzerName/binary>>,
+   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, QueryPars, ?AgDefHeader, ?AgDefBody).

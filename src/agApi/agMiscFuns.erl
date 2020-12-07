@@ -115,7 +115,7 @@ getWalProps(PoolNameOrSocket) ->
 %    200：操作成功返回。
 %    405：使用无效的HTTP方法时返回。
 setWalProps(PoolNameOrSocket, MapData) ->
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_admin/wal/properties">>, BodyStr, undefined).
 
 % 返回有关当前正在运行的事务的信息
@@ -171,7 +171,7 @@ curDbTime(PoolNameOrSocket) ->
 %    path：此请求的相对路径
 %    rawRequestBody：已发送字符的数字列表
 echo(PoolNameOrSocket, MapData) ->
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_admin/echo">>, [], BodyStr).
 
 % 返回数据库的版本。

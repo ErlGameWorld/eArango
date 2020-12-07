@@ -87,7 +87,7 @@ getIndexInfo(PoolNameOrSocket, IndexId) ->
 %    404：如果集合未知，则返回HTTP 404。
 newIndex(PoolNameOrSocket, CollName, MapData) ->
    Path = <<"/_api/index?collection=", CollName/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).
 
 % 删除索引
@@ -139,11 +139,11 @@ newIndexOfHash(PoolNameOrSocket, CollName, MapData) ->
    case MapData of
       #{type := <<"hash">>} ->
          Path = <<"/_api/index?collection=", CollName/binary>>,
-         BodyStr = jiffy:encode(MapData),
+         BodyStr = eVPack:encodeBin(MapData),
          agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
       #{<<"type">> := <<"hash">>} ->
          Path = <<"/_api/index?collection=", CollName/binary>>,
-         BodyStr = jiffy:encode(MapData),
+         BodyStr = eVPack:encodeBin(MapData),
          agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
       _ ->
          {error, param}
@@ -208,11 +208,11 @@ newIndexOfSkipList(PoolNameOrSocket, CollName, MapData) ->
    case MapData of
       #{type := <<"skiplist">>} ->
          Path = <<"/_api/index?collection=", CollName/binary>>,
-         BodyStr = jiffy:encode(MapData),
+         BodyStr = eVPack:encodeBin(MapData),
          agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
       #{<<"type">> := <<"skiplist">>} ->
          Path = <<"/_api/index?collection=", CollName/binary>>,
-         BodyStr = jiffy:encode(MapData),
+         BodyStr = eVPack:encodeBin(MapData),
          agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
       _ ->
          {error, param}
@@ -243,11 +243,11 @@ newIndexOfPersistent(PoolNameOrSocket, CollName, MapData) ->
    case MapData of
       #{type := <<"persistent">>} ->
          Path = <<"/_api/index?collection=", CollName/binary>>,
-         BodyStr = jiffy:encode(MapData),
+         BodyStr = eVPack:encodeBin(MapData),
          agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
       #{<<"type">> := <<"persistent">>} ->
          Path = <<"/_api/index?collection=", CollName/binary>>,
-         BodyStr = jiffy:encode(MapData),
+         BodyStr = eVPack:encodeBin(MapData),
          agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
       _ ->
          {error, param}
@@ -273,11 +273,11 @@ newIndexOfTtl(PoolNameOrSocket, CollName, MapData) ->
    case MapData of
       #{type := <<"ttl">>} ->
          Path = <<"/_api/index?collection=", CollName/binary>>,
-         BodyStr = jiffy:encode(MapData),
+         BodyStr = eVPack:encodeBin(MapData),
          agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
       #{<<"type">> := <<"ttl">>} ->
          Path = <<"/_api/index?collection=", CollName/binary>>,
-         BodyStr = jiffy:encode(MapData),
+         BodyStr = eVPack:encodeBin(MapData),
          agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
       _ ->
          {error, param}
@@ -305,11 +305,11 @@ newIndexOfGeo(PoolNameOrSocket, CollName, MapData) ->
    case MapData of
       #{type := <<"geo">>} ->
          Path = <<"/_api/index?collection=", CollName/binary>>,
-         BodyStr = jiffy:encode(MapData),
+         BodyStr = eVPack:encodeBin(MapData),
          agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
       #{<<"type">> := <<"geo">>} ->
          Path = <<"/_api/index?collection=", CollName/binary>>,
-         BodyStr = jiffy:encode(MapData),
+         BodyStr = eVPack:encodeBin(MapData),
          agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
       _ ->
          {error, param}
@@ -377,11 +377,11 @@ newIndexOfFulltext(PoolNameOrSocket, CollName, MapData) ->
    case MapData of
       #{type := <<"fulltext">>} ->
          Path = <<"/_api/index?collection=", CollName/binary>>,
-         BodyStr = jiffy:encode(MapData),
+         BodyStr = eVPack:encodeBin(MapData),
          agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
       #{<<"type">> := <<"fulltext">>} ->
          Path = <<"/_api/index?collection=", CollName/binary>>,
-         BodyStr = jiffy:encode(MapData),
+         BodyStr = eVPack:encodeBin(MapData),
          agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
       _ ->
          {error, param}

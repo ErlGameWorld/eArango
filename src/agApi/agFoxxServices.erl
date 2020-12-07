@@ -85,7 +85,7 @@ getFoxxService(PoolNameOrSocket, Mount) ->
 installFoxx(PoolNameOrSocket, MapData, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/foxx", QueryBinary/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).
 
 % 卸载服务
@@ -130,7 +130,7 @@ uninstallFoxx(PoolNameOrSocket, QueryPars) ->
 replaceFoxx(PoolNameOrSocket, MapData, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/foxx/service", QueryBinary/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
 
 % 升级服务
@@ -161,7 +161,7 @@ replaceFoxx(PoolNameOrSocket, MapData, QueryPars) ->
 upgradeFoxx(PoolNameOrSocket, MapData, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/foxx/service", QueryBinary/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, [], BodyStr).
 
 % Foxx服务配置/依赖关系
@@ -193,7 +193,7 @@ getFoxxConfig(PoolNameOrSocket, QueryPars) ->
 updateFoxxConfig(PoolNameOrSocket, MapData, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/foxx/configuration", QueryBinary/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, [], BodyStr).
 
 % 替换配置选项
@@ -209,7 +209,7 @@ updateFoxxConfig(PoolNameOrSocket, MapData, QueryPars) ->
 replaceFoxxConfig(PoolNameOrSocket, MapData, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/foxx/configuration", QueryBinary/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
 
 % 获取依赖项选项
@@ -239,7 +239,7 @@ getFoxxDependencies(PoolNameOrSocket, QueryPars) ->
 updateFoxxDependencies(PoolNameOrSocket, MapData, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/foxx/dependencies", QueryBinary/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, [], BodyStr).
 
 % 替换依赖项选项
@@ -255,7 +255,7 @@ updateFoxxDependencies(PoolNameOrSocket, MapData, QueryPars) ->
 replaceFoxxDependencies(PoolNameOrSocket, MapData, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/foxx/dependencies", QueryBinary/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
 
 % Foxx服务杂项
@@ -288,7 +288,7 @@ getFoxxScripts(PoolNameOrSocket, QueryPars) ->
 runFoxxScripts(PoolNameOrSocket, ScriptName, MapData, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/foxx/scripts/", ScriptName/binary, QueryBinary/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).
 
 % 运行服务测试

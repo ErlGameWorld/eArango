@@ -79,7 +79,7 @@ allDbs(PoolNameOrSocket) ->
 % 403：如果请求未在_system数据库中执行，则返回。
 % 409：如果具有指定名称的数据库已经存在，则返回。
 newDb(PoolNameOrSocket, MapData) ->
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/database">>, [], BodyStr, true).
 
 % 删除现有数据库

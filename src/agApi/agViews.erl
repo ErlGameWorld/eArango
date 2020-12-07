@@ -64,7 +64,7 @@
 %    400：如果name或type属性丢失或无效，则 返回HTTP 400错误。
 %    409：如果已经存在一个名为name的视图，则返回HTTP 409错误。
 newView(PoolNameOrSocket, MapData) ->
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/view">>, [], BodyStr).
 
 % 返回一个视图
@@ -140,7 +140,7 @@ getViewProps(PoolNameOrSocket, ViewName) ->
 %    404：如果视图名称未知，则返回HTTP 404。
 changeViewAllProps(PoolNameOrSocket, ViewName, MapData) ->
    Path = <<"/_api/view/", ViewName/binary, "/properties">>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
 
 % 部分更改ArangoSearch视图的属性
@@ -178,7 +178,7 @@ changeViewAllProps(PoolNameOrSocket, ViewName, MapData) ->
 %    404：如果视图名称未知，则返回HTTP 404。
 changeViewPartProps(PoolNameOrSocket, ViewName, MapData) ->
    Path = <<"/_api/view/", ViewName/binary, "/properties">>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, [], BodyStr).
 
 % 重命名视图
@@ -197,7 +197,7 @@ changeViewPartProps(PoolNameOrSocket, ViewName, MapData) ->
 %     404：如果视图名称未知，则返回HTTP 404。
 renameView(PoolNameOrSocket, ViewName, NewViewName) ->
    Path = <<"/_api/view/", ViewName/binary, "/rename">>,
-   NameStr = jiffy:encode(NewViewName),
+   NameStr = eVPack:encodeBin(NewViewName),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], <<"{\"name\":", NameStr/binary, "}">>).
 
 % 删除视图

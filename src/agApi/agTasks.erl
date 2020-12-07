@@ -54,7 +54,7 @@ getTask(PoolNameOrSocket, TaskId) ->
 %    error：在这种情况下为false
 %    400：如果帖子正文不正确，则返回HTTP 400。
 newTask(PoolNameOrSocket, MapData) ->
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/tasks">>, [], BodyStr).
 
 % 注册具有预定义ID的新任务；与负载均衡器不兼容
@@ -72,7 +72,7 @@ newTask(PoolNameOrSocket, MapData) ->
 %    400：如果任务ID已经存在或其余主体不正确，则返回HTTP 400。
 newTask(PoolNameOrSocket, TaskId, MapData) ->
    Path = <<"/_api/tasks/", (agMiscUtils:toBinary(TaskId))/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
 
 % 删除一个当前活动的服务器任务

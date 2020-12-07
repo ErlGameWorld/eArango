@@ -92,13 +92,13 @@
 %   HTTP 200
 
 newColl(PoolNameOrSocket, MapData) ->
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/collection">>, [], BodyStr).
 
 newColl(PoolNameOrSocket, MapData, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/collection", QueryBinary/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).
 
 % 删除收藏
@@ -231,7 +231,7 @@ collFigures(PoolNameOrSocket, CollName) ->
 % eg: MapData = #{'_key' => testkey, value => 23}
 collResponsibleShard(PoolNameOrSocket, CollName, MapData) ->
    Path = <<"/_api/collection/", CollName/binary, "/responsibleShard">>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], BodyStr).
 
 % 返回集合的分片ID
@@ -351,7 +351,7 @@ loadColl(PoolNameOrSocket, CollName) ->
    agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], undefined).
 
 loadColl(PoolNameOrSocket, CollName, MapData) ->
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/collection/", CollName/binary, "/load">>, [], BodyStr).
 
 % 卸载集合
@@ -421,7 +421,7 @@ collLoadIndexesIntoMemory(PoolNameOrSocket, CollName) ->
 % 404：如果集合名称未知，则 返回HTTP 404。
 collChangeProps(PoolNameOrSocket, CollName, MapData) ->
    Path = <<"/_api/collection/", CollName/binary, "/properties">>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
 
 % 重命名集合
@@ -446,7 +446,7 @@ collChangeProps(PoolNameOrSocket, CollName, MapData) ->
 % 404：如果集合名称未知，则 返回HTTP 404。
 renameColl(PoolNameOrSocket, OldName, NewName) ->
    Path = <<"/_api/collection/", OldName/binary, "/rename">>,
-   NameStr = jiffy:encode(NewName),
+   NameStr = eVPack:encodeBin(NewName),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], <<"{\"name\":", NameStr/binary, "}">>).
 
 % 旋转收藏夹的日记

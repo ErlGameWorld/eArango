@@ -72,7 +72,7 @@ getRepInventory(PoolNameOrSocket, QueryPars) ->
 %    400：如果ttl值无效，或者在Coordinator上未指定DBserver属性或该属性非法，则返回400 。
 %    405：使用无效的HTTP方法时返回。
 newRepBatch(PoolNameOrSocket, MapData) ->
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/replication/batch">>, [], BodyStr).
 
 % 删除现有的转储批次固定链接
@@ -111,7 +111,7 @@ delRepBatch(PoolNameOrSocket, BatchId) ->
 % 为了获得相同的数据状态，复制客户端应按照提供的顺序使用转储结果的各个部分。
 prolongRepBatch(PoolNameOrSocket, BatchId, MapData) ->
    Path = <<"/_api/replication/batch/", (agMiscUtils:toBinary(BatchId))/binary>>,
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
 
 % 返回集合的数据
@@ -277,7 +277,7 @@ getRepDoc(PoolNameOrSocket, QueryPars) ->
 %    500：如果同步期间发生错误，则返回。
 %    501：在集群中的协调器上调用此操作时返回。
 startRepSync(PoolNameOrSocket, MapData) ->
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/sync">>, [], BodyStr).
 
 % 返回集合和索引的集群清单
@@ -474,12 +474,12 @@ getRepApplierConfig(PoolNameOrSocket, QueryPars) ->
 % 405：使用无效的HTTP方法时返回。
 % 500：如果组装响应时发生错误，则返回500。
 setRepApplierConfig(PoolNameOrSocket, MapData) ->
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/applier-config">>, [], BodyStr).
 
 setRepApplierConfig(PoolNameOrSocket, MapData, QueryPars) ->
    QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/applier-config", QueryBinary/binary>>, [], BodyStr).
 
 % 启动复制应用程序
@@ -631,7 +631,7 @@ getRepApplierState(PoolNameOrSocket, QueryPars) ->
 % 500：如果在同步过程中或开始连续复制时发生错误，则返回。
 % 501：在集群中的协调器上调用此操作时返回。
 changeRepMakeSlave(PoolNameOrSocket, MapData) ->
-   BodyStr = jiffy:encode(MapData),
+   BodyStr = eVPack:encodeBin(MapData),
    agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/make-slave">>, [], BodyStr).
 
 %其他复制命令
