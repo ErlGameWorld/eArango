@@ -95,7 +95,7 @@ handleMsg(?AgMDoDBConn,
                gen_tcp:send(Socket, AuthInfo),
                case agVstCli:receiveTcpData(#recvState{}, Socket) of
                   {ok, MsgBin} ->
-                     case eVPack:decode(MsgBin) of
+                     case eVPack:decodeHeader(MsgBin) of
                         [1, 2, 200, _] ->
                            {ok, SrvState#srvState{dbName = DbName, socket = Socket, vstSize = VstSize}, CliState};
                         _Err ->

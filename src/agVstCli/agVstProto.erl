@@ -23,7 +23,6 @@ request(IsSystem, MessageId, Method, DbName, Path, QueryPars, Headers, Body, Vst
       case IsSystem of
          false ->
             eVPack:encodeBin([1, 1, DbName, Method, Path, QueryPars, Headers]);
-
          _ ->
             eVPack:encodeBin([1, 1, <<"_system">>, Method, Path, QueryPars, Headers])
       end,

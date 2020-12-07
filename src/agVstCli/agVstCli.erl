@@ -114,12 +114,18 @@ castAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, Body, Pid, IsSyst
          end
    end.
 
--spec receiveReqRet(messageId(), reference()) -> {StatusCode :: non_neg_integer(), Body :: binary(), Headers :: binary()} | {error, term()}.
+-spec receiveReqRet(messageId(), reference()) -> {StatusCode :: non_neg_integer(), Body :: map(), Headers :: map()} | {error, term()}.
 receiveReqRet(RequestId, MonitorRef) ->
    receive
       #agReqRet{messageId = RequestId, reply = Reply} ->
          erlang:demonitor(MonitorRef),
-         eVpack:decode(Reply);
+         case Reply of
+            {error, Err} ->
+               Err;
+            _ ->
+               {[1, 2, StatusCode, HeaderMap], BodyMap} = eVPack:decodeAll(Reply),
+               {StatusCode, BodyMap, HeaderMap}
+         end;
       {'DOWN', MonitorRef, process, _Pid, Reason} ->
          {error, {agencyDown, Reason}}
    end.
@@ -201,7 +207,7 @@ connDb(DbCfgs) ->
                gen_tcp:send(Socket, AuthInfo),
                case agVstCli:receiveTcpData(#recvState{}, Socket) of
                   {ok, MsgBin} ->
-                     case eVPack:decode(MsgBin) of
+                     case eVPack:decodeHeader(MsgBin) of
                         [1, 2, 200, _] ->
                            setCurDbInfo(Socket, DbName, VstSize, Protocol),
                            {ok, Socket};
@@ -225,7 +231,7 @@ connDb(DbCfgs) ->
                ssl:send(Socket, AuthInfo),
                case agVstCli:receiveSslData(#recvState{}, Socket) of
                   {ok, MsgBin} ->
-                     case eVPack:decode(MsgBin) of
+                     case eVPack:decodeHeader(MsgBin) of
                         [1, 2, 200, _] ->
                            setCurDbInfo(Socket, DbName, VstSize, Protocol),
                            {ok, Socket};

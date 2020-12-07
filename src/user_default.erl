@@ -4,7 +4,7 @@
 -compile([export_all, nowarn_export_all]).
 
 start() ->
-   erlSync:run(),
+   eSync:run(),
    application:ensure_all_started(eArango),
    agVstCli:startPool(tt, [{poolSize, 10}], []).
 
