@@ -102,11 +102,11 @@
 % 412：如果给出“ If-Match”标头并且找到的文档具有不同版本，则返回412。响应还将在_rev属性中包含找到的文档的当前修订。此外，将返回属性_id和_key。
 getDoc(PoolNameOrSocket, CollName, Key) ->
    Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path).
 
 getDoc(PoolNameOrSocket, CollName, Key, Headers) ->
    Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, Headers, undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, ?AgDefQuery, Headers, ?AgDefBody).
 
 % 读取单个文档头
 % HEAD /_api/document/{collection}/{key}
@@ -124,11 +124,11 @@ getDoc(PoolNameOrSocket, CollName, Key, Headers) ->
 % 412：如果给出“ If-Match”标头并且找到的文档具有不同版本，则返回412。响应还将在Etag标头中包含找到的文档的当前版本。
 getDocHead(PoolNameOrSocket, CollName, Key) ->
    Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgHead, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgHead, Path).
 
 getDocHead(PoolNameOrSocket, CollName, Key, Headers) ->
    Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgHead, Path, Headers, undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgHead, Path, ?AgDefQuery, Headers, ?AgDefBody).
 
 % 创建文档
 % POST /_api/document/{collection}
@@ -169,13 +169,12 @@ getDocHead(PoolNameOrSocket, CollName, Key, Headers) ->
 newDoc(PoolNameOrSocket, CollName, MapData) ->
    Path = <<"/_api/document/", CollName/binary>>,
    BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, ?AgDefQuery, ?AgDefHeader, BodyStr).
 
 newDoc(PoolNameOrSocket, CollName, MapData, QueryPars) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   Path = <<"/_api/document/", CollName/binary, QueryBinary/binary>>,
+   Path = <<"/_api/document/", CollName/binary>>,
    BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, QueryPars, ?AgDefHeader, BodyStr).
 
 % 替换文档
 % PUT /_api/document/{collection}/{key}
@@ -213,19 +212,17 @@ newDoc(PoolNameOrSocket, CollName, MapData, QueryPars) ->
 replaceDoc(PoolNameOrSocket, CollName, Key, MapData) ->
    Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary>>,
    BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, ?AgDefQuery, ?AgDefHeader, BodyStr).
 
 replaceDoc(PoolNameOrSocket, CollName, Key, MapData, QueryPars) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary, QueryBinary/binary>>,
+   Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary>>,
    BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, QueryPars, ?AgDefHeader, BodyStr).
 
 replaceDoc(PoolNameOrSocket, CollName, Key, MapData, QueryPars, Headers) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary, QueryBinary/binary>>,
+   Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary>>,
    BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, Headers, BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, QueryPars, Headers, BodyStr).
 
 % 更新文档
 % PATCH /_api/document/{collection}/{key}
@@ -266,19 +263,17 @@ replaceDoc(PoolNameOrSocket, CollName, Key, MapData, QueryPars, Headers) ->
 updateDoc(PoolNameOrSocket, CollName, Key, MapData) ->
    Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary>>,
    BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, ?AgDefQuery, ?AgDefHeader, BodyStr).
 
 updateDoc(PoolNameOrSocket, CollName, Key, MapData, QueryPars) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary, QueryBinary/binary>>,
+   Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary>>,
    BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, QueryPars, ?AgDefHeader, BodyStr).
 
 updateDoc(PoolNameOrSocket, CollName, Key, MapData, QueryPars, Headers) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary, QueryBinary/binary>>,
+   Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary>>,
    BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, Headers, BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, QueryPars, Headers, BodyStr).
 
 % 删除文档
 % DELETE /_api/document/{collection}/{key}

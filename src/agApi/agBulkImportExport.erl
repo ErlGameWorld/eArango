@@ -5,6 +5,8 @@
 -compile({inline_size, 128}).
 -compile([export_all, nowarn_export_all]).
 
+%% IMY-todo 这个文档需要修改 需要引入json
+
 % doc_address:https://www.arangodb.com/docs/stable/http/bulk-imports.html
 
 % 批量导入的HTTP接口

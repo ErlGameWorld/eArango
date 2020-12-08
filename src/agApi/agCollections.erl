@@ -93,13 +93,11 @@
 
 newColl(PoolNameOrSocket, MapData) ->
    BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/collection">>, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/collection">>, ?AgDefQuery, ?AgDefHeader, BodyStr).
 
 newColl(PoolNameOrSocket, MapData, QueryPars) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   Path = <<"/_api/collection", QueryBinary/binary>>,
    BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/collection">>, QueryPars, ?AgDefHeader, BodyStr).
 
 % 删除收藏
 % DELETE /_api/collection/{collection-name}
@@ -117,17 +115,11 @@ newColl(PoolNameOrSocket, MapData, QueryPars) ->
 % 404：如果集合名称未知，则返回HTTP 404。
 delColl(PoolNameOrSocket, CollName) ->
    Path = <<"/_api/collection/", CollName/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path).
 
-delColl(PoolNameOrSocket, CollName, IsSystem) ->
-   case IsSystem of
-      true ->
-         Path = <<"/_api/collection/", CollName/binary, "?isSystem=true">>,
-         agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, [], undefined);
-      _ ->
-         Path = <<"/_api/collection/", CollName/binary>>,
-         agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, [], undefined)
-   end.
+delColl(PoolNameOrSocket, CollName, QueryPars) ->
+   Path = <<"/_api/collection/", CollName/binary>>,
+   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, QueryPars, ?AgDefHeader, ?AgDefBody).
 
 % 清除集合
 % PUT /_api/collection/{collection-name}/truncate
@@ -140,7 +132,7 @@ delColl(PoolNameOrSocket, CollName, IsSystem) ->
 % 404：如果集合名称未知，则 返回HTTP 404。
 clearColl(PoolNameOrSocket, CollName) ->
    Path = <<"/_api/collection/", CollName/binary, "/truncate">>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path).
 
 % 返回有关集合的信息
 % GET /_api/collection/{collection-name}
@@ -166,7 +158,7 @@ clearColl(PoolNameOrSocket, CollName) ->
 %    404：如果集合名称未知，则返回HTTP 404。
 collInfo(PoolNameOrSocket, CollName) ->
    Path = <<"/_api/collection/", CollName/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path).
 
 
 % 读取指定集合的属性
@@ -179,7 +171,7 @@ collInfo(PoolNameOrSocket, CollName) ->
 % HTTP 200
 collProps(PoolNameOrSocket, CollName) ->
    Path = <<"/_api/collection/", (CollName)/binary, "/properties">>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path).
 
 % 计算集合中的文档数量
 % GET /_api/collection/{collection-name}/count
@@ -193,7 +185,7 @@ collProps(PoolNameOrSocket, CollName) ->
 % 404：如果集合名称未知，则 返回HTTP 404。
 collCount(PoolNameOrSocket, CollName) ->
    Path = <<"/_api/collection/", CollName/binary, "/count">>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path).
 
 % 获取集合的统计信息
 % GET /_api/collection/{collection-name}/figures
@@ -211,7 +203,7 @@ collCount(PoolNameOrSocket, CollName) ->
 % 404：如果集合名称未知，则 返回HTTP 404。
 collFigures(PoolNameOrSocket, CollName) ->
    Path = <<"/_api/collection/", CollName/binary, "/figures">>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path).
 
 % 返回负责文档的分片
 % PUT /_api/collection/{collection-name}/responsibleShard
@@ -232,7 +224,7 @@ collFigures(PoolNameOrSocket, CollName) ->
 collResponsibleShard(PoolNameOrSocket, CollName, MapData) ->
    Path = <<"/_api/collection/", CollName/binary, "/responsibleShard">>,
    BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, ?AgDefQuery, ?AgDefHeader, BodyStr).
 
 % 返回集合的分片ID
 % GET /_api/collection/{collection-name}/shards
@@ -250,17 +242,11 @@ collResponsibleShard(PoolNameOrSocket, CollName, MapData) ->
 % 501：如果在单个服务器上调用该方法，则返回HTTP 501。
 collShards(PoolNameOrSocket, CollName) ->
    Path = <<"/_api/collection/", CollName/binary, "/shards">>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path).
 
-collShards(PoolNameOrSocket, CollName, IsDetails) ->
-   case IsDetails of
-      true ->
-         Path = <<"/_api/collection/", CollName/binary, "/shards?details=true">>,
-         agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined);
-      _ ->
-         Path = <<"/_api/collection/", CollName/binary, "/shards">>,
-         agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined)
-   end.
+collShards(PoolNameOrSocket, CollName, QueryPars) ->
+   Path = <<"/_api/collection/", CollName/binary, "/shards">>,
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, QueryPars, ?AgDefHeader, ?AgDefBody).
 
 % 返回集合修订版ID
 % GET /_api/collection/{collection-name}/revision
@@ -274,7 +260,7 @@ collShards(PoolNameOrSocket, CollName, IsDetails) ->
 % 404：如果集合名称未知，则 返回HTTP 404。
 collRev(PoolNameOrSocket, CollName) ->
    Path = <<"/_api/collection/", CollName/binary, "/revision">>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path).
 
 % 返回指定集合的校验和
 % GET /_api/collection/{collection-name}/checksum
@@ -298,12 +284,11 @@ collRev(PoolNameOrSocket, CollName) ->
 % 404：如果集合名称未知，则 返回HTTP 404。
 collChecksum(PoolNameOrSocket, CollName) ->
    Path = <<"/_api/collection/", CollName/binary, "/checksum">>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path).
 
 collChecksum(PoolNameOrSocket, CollName, QueryPars) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   Path = <<"/_api/collection/", CollName/binary, "/checksum", QueryBinary/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
+   Path = <<"/_api/collection/", CollName/binary, "/checksum">>,
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, QueryPars, ?AgDefHeader, ?AgDefBody).
 
 % 返回所有集合列表
 % GET /_api/collection
@@ -315,16 +300,10 @@ collChecksum(PoolNameOrSocket, CollName, QueryPars) ->
 % 返回码
 % 200：收藏列表
 collList(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/collection">>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/collection">>).
 
-collList(PoolNameOrSocket, IsExcludeSystem) ->
-   case IsExcludeSystem of
-      false ->
-         agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/collection">>, [], undefined);
-      _ ->
-         Path = <<"/_api/collection?excludeSystem=true">>,
-         agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined)
-   end.
+collList(PoolNameOrSocket, QueryPars) ->
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/collection">>, QueryPars, ?AgDefHeader, ?AgDefBody).
 
 % 加载集合
 % PUT /_api/collection/{collection-name}/load
@@ -348,11 +327,11 @@ collList(PoolNameOrSocket, IsExcludeSystem) ->
 % 404：如果集合名称未知，则 返回HTTP 404。
 loadColl(PoolNameOrSocket, CollName) ->
    Path = <<"/_api/collection/", CollName/binary, "/load">>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path).
 
 loadColl(PoolNameOrSocket, CollName, MapData) ->
    BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/collection/", CollName/binary, "/load">>, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/collection/", CollName/binary, "/load">>, ?AgDefQuery, ?AgDefHeader, BodyStr).
 
 % 卸载集合
 % PUT /_api/collection/{collection-name}/unload
@@ -371,7 +350,7 @@ loadColl(PoolNameOrSocket, CollName, MapData) ->
 % 404：如果集合名称未知，则返回HTTP 404。
 unloadColl(PoolNameOrSocket, CollName) ->
    Path = <<"/_api/collection/", CollName/binary, "/unload">>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path).
 
 % 将索引加载到内存中
 % PUT /_api/collection/{collection-name}/loadIndexesIntoMemory
@@ -387,7 +366,7 @@ unloadColl(PoolNameOrSocket, CollName) ->
 % 404：如果集合名称未知，则返回HTTP 404。
 collLoadIndexesIntoMemory(PoolNameOrSocket, CollName) ->
    Path = <<"/_api/collection/", CollName/binary, "/loadIndexesIntoMemory">>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path).
 
 % 更改集合的属性
 % PUT /_api/collection/{collection-name}/properties
@@ -422,7 +401,7 @@ collLoadIndexesIntoMemory(PoolNameOrSocket, CollName) ->
 collChangeProps(PoolNameOrSocket, CollName, MapData) ->
    Path = <<"/_api/collection/", CollName/binary, "/properties">>,
    BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, ?AgDefQuery, ?AgDefHeader, BodyStr).
 
 % 重命名集合
 % PUT /_api/collection/{collection-name}/rename
@@ -444,10 +423,10 @@ collChangeProps(PoolNameOrSocket, CollName, MapData) ->
 % 返回码
 % 400：如果缺少集合名称，则返回HTTP 400。
 % 404：如果集合名称未知，则 返回HTTP 404。
-renameColl(PoolNameOrSocket, OldName, NewName) ->
+renameColl(PoolNameOrSocket, OldName, MapData) ->
    Path = <<"/_api/collection/", OldName/binary, "/rename">>,
-   NameStr = eVPack:encodeBin(NewName),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], <<"{\"name\":", NameStr/binary, "}">>).
+   BodyStr = eVPack:encodeBin(MapData),
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, ?AgDefQuery, ?AgDefQuery, BodyStr).
 
 % 旋转收藏夹的日记
 % PUT /_api/collection/{collection-name}/rotate
@@ -464,7 +443,7 @@ renameColl(PoolNameOrSocket, OldName, NewName) ->
 % 3.7中删掉了该方法
 collRotate(PoolNameOrSocket, CollName) ->
    Path = <<"/_api/collection/", CollName/binary, "/rotate">>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path).
 
 % 重新计算集合的文档数
 % PUT /_api/collection/{collection-name}/recalculateCount
@@ -479,4 +458,4 @@ collRotate(PoolNameOrSocket, CollName) ->
 % 404：如果集合名称未知，则返回HTTP 404。
 collRecount(PoolNameOrSocket, CollName) ->
    Path = <<"/_api/collection/", CollName/binary, "/recalculateCount">>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path).
