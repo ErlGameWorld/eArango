@@ -56,8 +56,7 @@ srvVersion(PoolNameOrSocket) ->
    agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/version">>).
 
 srvVersion(PoolNameOrSocket, QueryPars) ->
-   Path = <<"/_api/version", QueryBinary/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/version">>, QueryPars, ?AgDefHeader, ?AgDefBody).
 
 % 返回运行服务器的引擎类型
 % GET /_api/engine
