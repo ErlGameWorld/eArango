@@ -294,7 +294,7 @@ collChecksum(PoolNameOrSocket, CollName, QueryPars) ->
 % GET /_api/collection
 % 从版本3.4.0开始，不建议使用按其数字ID访问集合。您应该通过它们的名称来引用它们。
 % 查询参数
-%    excludeSystem（可选）：是否应从结果中排除系统集合。
+%    e（可选）：是否应从结果中排除系统集合。
 % 返回带有属性集合的对象，该属性集合包含所有集合描述的数组。在名称中还可以使用对象作为对象，在集合名称中作为键使用相同的信息。
 % 通过为可选查询参数excludeSystem提供值为true的值， 将从响应中排除所有系统集合。
 % 返回码

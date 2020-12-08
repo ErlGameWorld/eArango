@@ -53,10 +53,9 @@
 %       mode：我们作为-[ 服务器，控制台，脚本 ]中的一种运行的模式
 %       host：主机ID
 srvVersion(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/version">>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/version">>).
 
 srvVersion(PoolNameOrSocket, QueryPars) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/version", QueryBinary/binary>>,
    agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
 
@@ -172,7 +171,7 @@ curDbTime(PoolNameOrSocket) ->
 %    rawRequestBody：已发送字符的数字列表
 echo(PoolNameOrSocket, MapData) ->
    BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_admin/echo">>, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_admin/echo">>, ?AgDefQuery, ?AgDefHeader, BodyStr).
 
 % 返回数据库的版本。
 % GET /_admin/database/target-version

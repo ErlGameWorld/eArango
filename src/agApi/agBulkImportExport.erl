@@ -58,7 +58,6 @@
 %    409：如果导入会触发唯一键冲突，complete则返回，并将 其设置为true。
 %    500：如果服务器无法为没有用户定义密钥的文档自动生成文档密钥（密钥错误），则返回500。
 docImport(PoolNameOrSocket, ListOfList, QueryPars) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
    Path = <<"/_api/import">>,
    BodyStr = <<<<(eVPack:encodeBin(OneList))/binary, "\n">> || OneList <- ListOfList>>,
    agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, QueryPars, ?AgDefHeader, BodyStr).

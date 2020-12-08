@@ -129,7 +129,6 @@ receiveReqRet(RequestId, MonitorRef) ->
             {error, Err} ->
                Err;
             _ ->
-               ?AgWarn(tt, "IMY*************~p~n", [Reply]),
                {[1, 2, StatusCode, HeaderMap], BodyMap} = eVPack:decodeAll(Reply),
                {StatusCode, BodyMap, HeaderMap}
          end;
