@@ -143,7 +143,11 @@ getBin(3) ->
    eVPack:encodeBin(Map);
 getBin(4) ->
    Map = jiffy:decode(getBin(2), [return_maps]),
-   eVPack:encodeBin(Map).
+   eVPack:encodeBin(Map);
+getBin(5) ->
+   Header = eVPack:encodeBin([1, 2, 200, #{aaa => bbbb}]),
+   <<Header/binary, (getBin(4))/binary>>.
+
 
 jd(N, Fun, Type) ->
    jd1(N, Fun, getBin(Type)).
@@ -161,13 +165,42 @@ decodeJy2(Bin) ->
    jiffy:decode(Bin, [return_maps, copy_strings]).
 
 decodeVp(Bin) ->
-   jiffy:decode(Bin, [return_maps]).
-
-decodeVp(Bin) ->
-   jiffy:decode(Bin, [return_maps, copy_strings]).
+   eVPack:decodeAll(Bin).
 
 decodeJx1(Bin) ->
    jsx:decode(Bin, [return_maps]).
 
 decodeJx2(Bin) ->
    jsx:decode(Bin, []).
+
+decodeVp1(Bin) ->
+   {Header, BodyBin} = eVPack:decoder(Bin),
+   {BodyTerm, _} = eVPack:decoder(BodyBin),
+   [_, _, S, H] = Header,
+   {S, BodyTerm, H}.
+
+decodeVp2(Bin) ->
+   {[_, _, S, H], BodyTerm} = eVPack:decoderAll(Bin),
+   {S, BodyTerm, H}.
+
+decodeVp3(Bin) ->
+   {Header, BodyTerm} = eVPack:decoderAll(Bin),
+   [_, _, S, H] = Header,
+   {S, BodyTerm, H}.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
