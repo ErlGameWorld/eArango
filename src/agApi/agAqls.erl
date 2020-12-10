@@ -385,7 +385,7 @@ delUserFun(PoolNameOrSocket, UserFunName) ->
 
 delUserFun(PoolNameOrSocket, UserFunName, QueryPars) ->
    Path = <<"/_api/aqlfunction/", (agMiscUtils:toBinary(UserFunName))/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, QueryPars, ?AgDefHeader, ?AgDefBody).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, QueryPars).
 
 % 返回注册的AQL用户功能
 % GET /_api/aqlfunction
@@ -409,7 +409,7 @@ getUserFuns(PoolNameOrSocket) ->
    agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/aqlfunction">>).
 
 getUserFuns(PoolNameOrSocket, QueryPars) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/aqlfunction">>, QueryPars, ?AgDefHeader, ?AgDefBody).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/aqlfunction">>, QueryPars).
 
 
 

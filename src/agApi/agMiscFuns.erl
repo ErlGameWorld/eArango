@@ -56,7 +56,7 @@ srvVersion(PoolNameOrSocket) ->
    agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/version">>).
 
 srvVersion(PoolNameOrSocket, QueryPars) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/version">>, QueryPars, ?AgDefHeader, ?AgDefBody).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/version">>, QueryPars).
 
 % 返回运行服务器的引擎类型
 % GET /_api/engine
@@ -64,7 +64,7 @@ srvVersion(PoolNameOrSocket, QueryPars) ->
 % 在所有情况下均返回HTTP 200。
 % 名称：将是mmfiles或rocksdb
 srvEngine(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/engine">>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/engine">>).
 
 % 将WAL同步到磁盘。
 % PUT /_admin/wal/flush
@@ -76,12 +76,10 @@ srvEngine(PoolNameOrSocket) ->
 %    200：操作成功返回。
 %    405：使用无效的HTTP方法时返回。
 flushWal(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_admin/wal/flush">>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_admin/wal/flush">>).
 
 flushWal(PoolNameOrSocket, QueryPars) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   Path = <<"/_admin/wal/flush", QueryBinary/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_admin/wal/flush">>, QueryPars).
 
 % 获取当前配置。
 % GET /_admin/wal/properties
@@ -97,7 +95,7 @@ flushWal(PoolNameOrSocket, QueryPars) ->
 %    200：操作成功返回。
 %    405：使用无效的HTTP方法时返回。
 getWalProps(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/wal/properties">>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/wal/properties">>).
 
 % 配置Wal的参数
 % PUT /_admin/wal/properties
@@ -114,7 +112,7 @@ getWalProps(PoolNameOrSocket) ->
 %    405：使用无效的HTTP方法时返回。
 setWalProps(PoolNameOrSocket, MapData) ->
    BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_admin/wal/properties">>, BodyStr, undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_admin/wal/properties">>, ?AgDefQuery, ?AgDefHeader, BodyStr).
 
 % 返回有关当前正在运行的事务的信息
 % GET /_admin/wal/transactions
@@ -126,7 +124,7 @@ setWalProps(PoolNameOrSocket, MapData) ->
 %    200：操作成功返回。
 %    405：使用无效的HTTP方法时返回。
 getTransactions(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/wal/transactions">>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/wal/transactions">>).
 
 % 获取系统的当前时间
 % GET /_admin/time
@@ -136,7 +134,7 @@ getTransactions(PoolNameOrSocket) ->
 %    code：HTTP状态码
 %    time：当前系统时间（以Unix时间戳记为单位，服务器以微秒为单位）
 curDbTime(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/time">>, #{}, #{}, <<>>).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/time">>).
 
 % 返回当前请求永久链接固定链接
 % 发回所发送的内容，标题，帖子正文等。
@@ -178,7 +176,7 @@ echo(PoolNameOrSocket, MapData) ->
 % 返回码
 % 200：在所有情况下均返回。
 targetVersion(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/database/target-version">>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/database/target-version">>).
 
 % 启动关机序列
 % DELETE /_admin/shutdown
@@ -186,7 +184,7 @@ targetVersion(PoolNameOrSocket) ->
 % 返回码
 % 200：在所有情况下OK都将返回，成功时将在结果缓冲区中返回。
 shutDown(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, <<"/_admin/shutdown">>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, <<"/_admin/shutdown">>).
 
 
 % 在服务器上执行脚本。
@@ -201,7 +199,7 @@ shutDown(PoolNameOrSocket) ->
 % 403：如果ArangoDB不在集群模式下运行，则返回。
 % 404：如果未为群集操作编译ArangoDB，则返回404。
 execute(PoolNameOrSocket, BodyStr) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_admin/execute">>, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_admin/execute">>, ?AgDefQuery, ?AgDefHeader, BodyStr).
 
 % 返回服务器的状态信息。
 % GET /_admin/status
@@ -235,5 +233,5 @@ execute(PoolNameOrSocket, BodyStr) ->
 % 返回码
 %    200：状态信息返回成功
 dbStatus(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/status">>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/status">>).
 

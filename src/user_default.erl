@@ -156,7 +156,7 @@ jd1(0, Fun, Bin) ->
    ?MODULE:Fun(Bin);
 jd1(N, Fun, Bin) ->
    ?MODULE:Fun(Bin),
-   jd1(N - 1, Fun).
+   jd1(N - 1, Fun, Bin).
 
 decodeJy1(Bin) ->
    jiffy:decode(Bin, [return_maps]).

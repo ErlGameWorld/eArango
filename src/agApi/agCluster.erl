@@ -54,7 +54,7 @@ serverRole(PoolNameOrSocket) ->
 %    400：数据库服务器的ID
 %    403：
 clusterStats(PoolNameOrSocket, QueryPars) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/clusterStatistics">>, QueryPars, ?AgDefHeader, ?AgDefBody).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/clusterStatistics">>, QueryPars).
 
 % 返回监督（机构）评估的集群的运行状况
 % GET /_admin/cluster/health

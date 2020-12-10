@@ -37,7 +37,7 @@ getAdminLog(PoolNameOrSocket) ->
    agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/log">>).
 
 getAdminLog(PoolNameOrSocket, QueryPars) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/log">>, QueryPars, ?AgDefHeader, ?AgDefBody).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/log">>, QueryPars).
 
 % 返回当前的日志级别设置
 % GET /_admin/log/level

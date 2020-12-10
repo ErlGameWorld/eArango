@@ -31,11 +31,10 @@
 % 返回码
 %    200：如果请求成功，则返回。
 getFoxxList(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/foxx">>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/foxx">>).
 
 getFoxxList(PoolNameOrSocket, QueryPars) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/foxx", QueryBinary/binary>>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/foxx">>, QueryPars).
 
 % 服务说明
 % 服务元数据
@@ -55,9 +54,8 @@ getFoxxList(PoolNameOrSocket, QueryPars) ->
 % 返回码
 % 200：如果请求成功，则返回。
 % 400：如果安装路径未知，则返回。
-getFoxxService(PoolNameOrSocket, Mount) ->
-   Path = <<"/_api/foxx/service?mount=", (agMiscUtils:toBinary(Mount))/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
+getFoxxService(PoolNameOrSocket, QueryPars) ->
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/foxx/service">>, QueryPars).
 
 % 安装新服务
 % POST /_api/foxx
@@ -83,10 +81,8 @@ getFoxxService(PoolNameOrSocket, Mount) ->
 % 返回码
 %    201：如果请求成功，则返回。
 installFoxx(PoolNameOrSocket, MapData, QueryPars) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   Path = <<"/_api/foxx", QueryBinary/binary>>,
    BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/foxx">>, QueryPars, ?AgDefHeader, BodyStr).
 
 % 卸载服务
 % DELETE /_api/foxx/service
@@ -98,9 +94,7 @@ installFoxx(PoolNameOrSocket, MapData, QueryPars) ->
 % 返回码
 %     204：如果请求成功，则返回。
 uninstallFoxx(PoolNameOrSocket, QueryPars) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   Path = <<"/_api/foxx/service", QueryBinary/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, <<"/_api/foxx/service">>, QueryPars).
 
 % 更换服务
 % PUT /_api/foxx/service
@@ -128,10 +122,8 @@ uninstallFoxx(PoolNameOrSocket, QueryPars) ->
 % 返回码
 %    200：如果请求成功，则返回。
 replaceFoxx(PoolNameOrSocket, MapData, QueryPars) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   Path = <<"/_api/foxx/service", QueryBinary/binary>>,
    BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/foxx/service">>, QueryPars, ?AgDefHeader, BodyStr).
 
 % 升级服务
 % PATCH /_api/foxx/service
@@ -159,10 +151,8 @@ replaceFoxx(PoolNameOrSocket, MapData, QueryPars) ->
 % 返回码
 % 200：如果请求成功，则返回。
 upgradeFoxx(PoolNameOrSocket, MapData, QueryPars) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   Path = <<"/_api/foxx/service", QueryBinary/binary>>,
    BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, <<"/_api/foxx/service">>, QueryPars, ?AgDefHeader, BodyStr).
 
 % Foxx服务配置/依赖关系
 % 这是用于管理Foxx服务配置和依赖关系的ArangoDB HTTP接口的简介。
@@ -176,9 +166,7 @@ upgradeFoxx(PoolNameOrSocket, MapData, QueryPars) ->
 % 返回码
 % 200：如果请求成功，则返回。
 getFoxxConfig(PoolNameOrSocket, QueryPars) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   Path = <<"/_api/foxx/configuration", QueryBinary/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/foxx/configuration">>, QueryPars).
 
 % 更新配置选项
 % PATCH /_api/foxx/configuration
@@ -191,10 +179,8 @@ getFoxxConfig(PoolNameOrSocket, QueryPars) ->
 % 返回码
 % 200：如果请求成功，则返回。
 updateFoxxConfig(PoolNameOrSocket, MapData, QueryPars) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   Path = <<"/_api/foxx/configuration", QueryBinary/binary>>,
    BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, <<"/_api/foxx/configuration">>, QueryPars, ?AgDefHeader, BodyStr).
 
 % 替换配置选项
 % PUT /_api/foxx/configuration
@@ -207,10 +193,8 @@ updateFoxxConfig(PoolNameOrSocket, MapData, QueryPars) ->
 % 返回码
 %     200：如果请求成功，则返回。
 replaceFoxxConfig(PoolNameOrSocket, MapData, QueryPars) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   Path = <<"/_api/foxx/configuration", QueryBinary/binary>>,
    BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/foxx/configuration">>, QueryPars, ?AgDefHeader, BodyStr).
 
 % 获取依赖项选项
 % GET /_api/foxx/dependencies
@@ -221,9 +205,7 @@ replaceFoxxConfig(PoolNameOrSocket, MapData, QueryPars) ->
 % 返回码
 % 200：如果请求成功，则返回。
 getFoxxDependencies(PoolNameOrSocket, QueryPars) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   Path = <<"/_api/foxx/dependencies", QueryBinary/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/foxx/dependencies">>, QueryPars).
 
 
 % 更新依赖项选项
@@ -237,10 +219,8 @@ getFoxxDependencies(PoolNameOrSocket, QueryPars) ->
 % 返回码
 %     200：如果请求成功，则返回。
 updateFoxxDependencies(PoolNameOrSocket, MapData, QueryPars) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   Path = <<"/_api/foxx/dependencies", QueryBinary/binary>>,
    BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch,  <<"/_api/foxx/dependencies">>, QueryPars, ?AgDefHeader, BodyStr).
 
 % 替换依赖项选项
 % PUT /_api/foxx/dependencies
@@ -253,10 +233,8 @@ updateFoxxDependencies(PoolNameOrSocket, MapData, QueryPars) ->
 % 返回码
 % 200：如果请求成功，则返回。
 replaceFoxxDependencies(PoolNameOrSocket, MapData, QueryPars) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   Path = <<"/_api/foxx/dependencies", QueryBinary/binary>>,
    BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/foxx/dependencies">>, QueryPars, ?AgDefHeader, BodyStr).
 
 % Foxx服务杂项
 %
@@ -269,9 +247,7 @@ replaceFoxxDependencies(PoolNameOrSocket, MapData, QueryPars) ->
 % 返回码
 %     200：如果请求成功，则返回。
 getFoxxScripts(PoolNameOrSocket, QueryPars) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   Path = <<"/_api/foxx/scripts", QueryBinary/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/foxx/scripts">>, QueryPars).
 
 % 运行服务脚本
 % POST /_api/foxx/scripts/{name}
@@ -286,10 +262,9 @@ getFoxxScripts(PoolNameOrSocket, QueryPars) ->
 % 返回码
 %     200：如果请求成功，则返回。
 runFoxxScripts(PoolNameOrSocket, ScriptName, MapData, QueryPars) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   Path = <<"/_api/foxx/scripts/", ScriptName/binary, QueryBinary/binary>>,
+   Path = <<"/_api/foxx/scripts/", ScriptName/binary>>,
    BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, QueryPars, ?AgDefHeader, BodyStr).
 
 % 运行服务测试
 % POST /_api/foxx/tests
@@ -313,9 +288,7 @@ runFoxxScripts(PoolNameOrSocket, ScriptName, MapData, QueryPars) ->
 % 返回码
 %     200：如果请求成功，则返回。
 runFoxxTest(PoolNameOrSocket, QueryPars) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   Path = <<"/_api/foxx/tests", QueryBinary/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/foxx/tests">>, QueryPars).
 
 % 启用开发模式
 % POST /_api/foxx/development
@@ -327,9 +300,7 @@ runFoxxTest(PoolNameOrSocket, QueryPars) ->
 % 返回码
 %  200：如果请求成功，则返回。
 enableFoxxDevelopment(PoolNameOrSocket, QueryPars) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   Path = <<"/_api/foxx/development", QueryBinary/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/foxx/development">>, QueryPars).
 
 % 禁用开发模式
 % DELETE /_api/foxx/development
@@ -340,9 +311,7 @@ enableFoxxDevelopment(PoolNameOrSocket, QueryPars) ->
 % 返回码
 % 200：如果请求成功，则返回。
 disableFoxxDevelopment(PoolNameOrSocket, QueryPars) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   Path = <<"/_api/foxx/development", QueryBinary/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, <<"/_api/foxx/development">>, QueryPars).
 
 % 服务自述文件
 % GET /_api/foxx/readme
@@ -353,9 +322,7 @@ disableFoxxDevelopment(PoolNameOrSocket, QueryPars) ->
 %     200：如果请求成功，则返回。
 %     204：如果未找到自述文件，则返回。
 getFoxxReadme(PoolNameOrSocket, QueryPars) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   Path = <<"/_api/foxx/readme", QueryBinary/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/foxx/readme">>, QueryPars).
 
 % 招摇说明
 % GET /_api/foxx/swagger
@@ -366,9 +333,7 @@ getFoxxReadme(PoolNameOrSocket, QueryPars) ->
 % 返回码
 % 200：如果请求成功，则返回。
 getFoxxSwagger(PoolNameOrSocket, QueryPars) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   Path = <<"/_api/foxx/swagger", QueryBinary/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/foxx/swagger">>, QueryPars).
 
 % 下载服务包
 % POST /_api/foxx/download
@@ -381,9 +346,7 @@ getFoxxSwagger(PoolNameOrSocket, QueryPars) ->
 %     200：如果请求成功，则返回。
 %     400：如果安装路径未知，则返回。
 downloadFoxxBundle(PoolNameOrSocket, QueryPars) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   Path = <<"/_api/foxx/download", QueryBinary/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/foxx/download">>, QueryPars).
 
 % 提交本地服务状态
 % POST /_api/foxx/commit
@@ -394,6 +357,4 @@ downloadFoxxBundle(PoolNameOrSocket, QueryPars) ->
 % 返回码
 %     204：如果请求成功，则返回。
 commitFoxxState(PoolNameOrSocket, QueryPars) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   Path = <<"/_api/foxx/commit", QueryBinary/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/foxx/commit">>, QueryPars).

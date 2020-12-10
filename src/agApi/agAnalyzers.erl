@@ -78,4 +78,4 @@ delAnalyzer(PoolNameOrSocket, AnalyzerName) ->
 
 delAnalyzer(PoolNameOrSocket, AnalyzerName, QueryPars) ->
    Path = <<"/_api/analyzer/", AnalyzerName/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, QueryPars, ?AgDefHeader, ?AgDefBody).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, QueryPars).

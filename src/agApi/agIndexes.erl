@@ -58,7 +58,7 @@
 %    404：如果索引不存在，则 返回HTTP 404。
 getIndexInfo(PoolNameOrSocket, IndexId) ->
    Path = <<"/_api/index/", (agMiscUtils:toBinary(IndexId))/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path).
 
 % 创建一个索引
 % POST /_api/index#general
@@ -85,10 +85,9 @@ getIndexInfo(PoolNameOrSocket, IndexId) ->
 %    201：如果索引尚不存在并且可以创建，则 返回HTTP 201。
 %    400：如果发布了无效的索引描述或使用了目标索引不支持的属性，则返回HTTP 400。
 %    404：如果集合未知，则返回HTTP 404。
-newIndex(PoolNameOrSocket, CollName, MapData) ->
-   Path = <<"/_api/index?collection=", CollName/binary>>,
+newIndex(PoolNameOrSocket, MapData, QueryPars) ->
    BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/index">>, QueryPars, ?AgDefHeader, BodyStr).
 
 % 删除索引
 % DELETE /_api/index/{index-id}
@@ -100,7 +99,7 @@ newIndex(PoolNameOrSocket, CollName, MapData) ->
 %    404：如果index-id未知，则返回HTTP 404。
 delIndex(PoolNameOrSocket, IndexId) ->
    Path = <<"/_api/index/", (agMiscUtils:toBinary(IndexId))/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path).
 
 % 返回集合的所有索引
 % GET /_api/index
@@ -109,9 +108,8 @@ delIndex(PoolNameOrSocket, IndexId) ->
 % 返回一个对象，该对象的属性索引包含给定集合的所有索引描述的数组。在标识符中还可以使用与索引句柄作为键的对象相同的信息。
 % 返回码
 %    200：返回一个JSON对象，其中包含该集合的索引列表。
-getIndexList(PoolNameOrSocket, CollName) ->
-   Path = <<"/_api/index?collection=", CollName/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
+getIndexList(PoolNameOrSocket, QueryPars) ->
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/index">>, QueryPars).
 
 % 使用哈希索引
 % 如果存在合适的哈希索引，/_api/simple/by-example则将使用该索引执行示例查询。
@@ -135,19 +133,10 @@ getIndexList(PoolNameOrSocket, CollName) ->
 %    201：如果索引尚不存在并且可以创建，则 返回HTTP 201。
 %    400：如果集合中已经包含文档，并且您尝试创建唯一哈希索引以使某些文档违反唯一性，则返回HTTP 400。
 %    404：如果集合名称未知，则返回HTTP 404。
-newIndexOfHash(PoolNameOrSocket, CollName, MapData) ->
-   case MapData of
-      #{type := <<"hash">>} ->
-         Path = <<"/_api/index?collection=", CollName/binary>>,
-         BodyStr = eVPack:encodeBin(MapData),
-         agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
-      #{<<"type">> := <<"hash">>} ->
-         Path = <<"/_api/index?collection=", CollName/binary>>,
-         BodyStr = eVPack:encodeBin(MapData),
-         agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
-      _ ->
-         {error, param}
-   end.
+newIndexOfHash(PoolNameOrSocket, MapData, QueryPars) ->
+      BodyStr = eVPack:encodeBin(MapData),
+         agVstCli:callAgency(PoolNameOrSocket, ?AgPost,  <<"/_api/index">>, QueryPars, ?AgDefHeader, BodyStr).
+
 
 % 返回与给定示例匹配的集合的所有文档
 % PUT /_api/simple/by-example
@@ -204,19 +193,9 @@ newIndexOfHash(PoolNameOrSocket, CollName, MapData) ->
 %    201：如果索引尚不存在并且可以创建，则 返回HTTP 201。
 %    400：如果集合中已经包含文档，并且您尝试以存在违反唯一性的文档的方式创建唯一的跳过列表索引，则返回HTTP 400。
 %    404：如果集合名称未知，则返回HTTP 404。
-newIndexOfSkipList(PoolNameOrSocket, CollName, MapData) ->
-   case MapData of
-      #{type := <<"skiplist">>} ->
-         Path = <<"/_api/index?collection=", CollName/binary>>,
+newIndexOfSkipList(PoolNameOrSocket, MapData, QueryPars) ->
          BodyStr = eVPack:encodeBin(MapData),
-         agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
-      #{<<"type">> := <<"skiplist">>} ->
-         Path = <<"/_api/index?collection=", CollName/binary>>,
-         BodyStr = eVPack:encodeBin(MapData),
-         agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
-      _ ->
-         {error, param}
-   end.
+         agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/index">>,QueryPars, ?AgDefHeader, BodyStr).
 
 % 使用持久索引
 % 如果存在合适的持久索引，则/_api/simple/range其他操作将使用该索引执行查询。
@@ -239,19 +218,9 @@ newIndexOfSkipList(PoolNameOrSocket, CollName, MapData) ->
 %     201：如果索引尚不存在并且可以创建，则 返回HTTP 201。
 %     400：如果集合中已经包含文档，并且您尝试以存在违反唯一性的文档的方式创建唯一的持久索引，那么将返回HTTP 400。
 %     404：如果集合名称未知，则返回HTTP 404。
-newIndexOfPersistent(PoolNameOrSocket, CollName, MapData) ->
-   case MapData of
-      #{type := <<"persistent">>} ->
-         Path = <<"/_api/index?collection=", CollName/binary>>,
-         BodyStr = eVPack:encodeBin(MapData),
-         agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
-      #{<<"type">> := <<"persistent">>} ->
-         Path = <<"/_api/index?collection=", CollName/binary>>,
-         BodyStr = eVPack:encodeBin(MapData),
-         agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
-      _ ->
-         {error, param}
-   end.
+newIndexOfPersistent(PoolNameOrSocket, MapData, QueryPars) ->
+   BodyStr = eVPack:encodeBin(MapData),
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/index">>,QueryPars, ?AgDefHeader, BodyStr).
 
 % 使用TTL（生存时间）索引
 %
@@ -269,19 +238,9 @@ newIndexOfPersistent(PoolNameOrSocket, CollName, MapData) ->
 %     201：如果索引尚不存在并且可以创建，则 返回HTTP 201。
 %     400：如果集合已经包含另一个TTL索引，则返回HTTP 400，因为每个集合最多可以有一个TTL索引。
 %     404：如果集合名称未知，则返回HTTP 404。
-newIndexOfTtl(PoolNameOrSocket, CollName, MapData) ->
-   case MapData of
-      #{type := <<"ttl">>} ->
-         Path = <<"/_api/index?collection=", CollName/binary>>,
-         BodyStr = eVPack:encodeBin(MapData),
-         agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
-      #{<<"type">> := <<"ttl">>} ->
-         Path = <<"/_api/index?collection=", CollName/binary>>,
-         BodyStr = eVPack:encodeBin(MapData),
-         agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
-      _ ->
-         {error, param}
-   end.
+newIndexOfTtl(PoolNameOrSocket,  MapData, QueryPars) ->
+   BodyStr = eVPack:encodeBin(MapData),
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/index">>,QueryPars, ?AgDefHeader, BodyStr).
 
 % 创建地理索引
 % POST /_api/index#geo
@@ -301,19 +260,9 @@ newIndexOfTtl(PoolNameOrSocket, CollName, MapData) ->
 %    200：如果索引已经存在，则返回HTTP 200。
 %    201：如果索引尚不存在并且可以创建，则 返回HTTP 201。
 %    404：如果集合名称未知，则返回HTTP 404。
-newIndexOfGeo(PoolNameOrSocket, CollName, MapData) ->
-   case MapData of
-      #{type := <<"geo">>} ->
-         Path = <<"/_api/index?collection=", CollName/binary>>,
-         BodyStr = eVPack:encodeBin(MapData),
-         agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
-      #{<<"type">> := <<"geo">>} ->
-         Path = <<"/_api/index?collection=", CollName/binary>>,
-         BodyStr = eVPack:encodeBin(MapData),
-         agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
-      _ ->
-         {error, param}
-   end.
+newIndexOfGeo(PoolNameOrSocket,  MapData, QueryPars) ->
+   BodyStr = eVPack:encodeBin(MapData),
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/index">>,QueryPars, ?AgDefHeader, BodyStr).
 
 %返回给定位置附近集合的所有文档
 %PUT /_api/simple/near
@@ -373,19 +322,9 @@ newIndexOfGeo(PoolNameOrSocket, CollName, MapData) ->
 %       200：如果索引已经存在，则返回HTTP 200。
 %       201：如果索引尚不存在并且可以创建，则 返回HTTP 201。
 %       404：如果集合名称未知，则返回HTTP 404。
-newIndexOfFulltext(PoolNameOrSocket, CollName, MapData) ->
-   case MapData of
-      #{type := <<"fulltext">>} ->
-         Path = <<"/_api/index?collection=", CollName/binary>>,
-         BodyStr = eVPack:encodeBin(MapData),
-         agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
-      #{<<"type">> := <<"fulltext">>} ->
-         Path = <<"/_api/index?collection=", CollName/binary>>,
-         BodyStr = eVPack:encodeBin(MapData),
-         agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr);
-      _ ->
-         {error, param}
-   end.
+newIndexOfFulltext(PoolNameOrSocket,  MapData, QueryPars) ->
+   BodyStr = eVPack:encodeBin(MapData),
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/index">>,QueryPars, ?AgDefHeader, BodyStr).
 
 % 全文索引查询
 % 通过全文查询返回集合的文档

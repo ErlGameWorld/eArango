@@ -104,7 +104,7 @@ delAsyncJobRet(PoolNameOrSocket, TypeOrJodId) ->
 
 delAsyncJobRet(PoolNameOrSocket, TypeOrJodId, QueryPars) ->
    Path = <<"/_api/job/", (agMiscUtils:toBinary(TypeOrJodId))/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, QueryPars, ?AgDefHeader, ?AgDefBody).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, QueryPars).
 
 % 返回特定作业的状态
 % GET /_api/job/{job-id}

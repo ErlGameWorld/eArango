@@ -296,17 +296,15 @@ updateDoc(PoolNameOrSocket, CollName, Key, MapData, QueryPars, Headers) ->
 % 412：如果“如果-match”标头或返回转，并给出找到的文件有不同的版本。响应还将在_rev属性中包含找到的文档的当前修订。此外，将返回属性_id和_key。
 delDoc(PoolNameOrSocket, CollName, Key) ->
    Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path).
 
 delDoc(PoolNameOrSocket, CollName, Key, QueryPars) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary, QueryBinary/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, [], undefined).
+   Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary>>,
+   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, QueryPars).
 
 delDoc(PoolNameOrSocket, CollName, Key, QueryPars, Headers) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary, QueryBinary/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, Headers, undefined).
+   Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary>>,
+   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, QueryPars, Headers, ?AgDefBody).
 
 % 批量文件操作
 % ArangoDB支持批量处理文档。批量操作影响 单个集合。使用此API变体可使客户端分摊整批文档中的单个请求的开销。不能保证批量操作可以串行执行，ArangoDB 可以并行执行这些操作。这可以转化为大幅的性能提升，尤其是在集群部署中。
@@ -330,23 +328,15 @@ delDoc(PoolNameOrSocket, CollName, Key, QueryPars, Headers) ->
 % 404：如果找不到集合，则返回。
 % 对于该操作的返回 列表 如果文档不存在 或者_rev条件不满足 则返回列表的中包含相关的错误 可能需要在使用的时候过滤正确和非正确的返回文档
 getDocs(PoolNameOrSocket, CollName, KeyOrMapDataList) ->
-   QueryBinary = agMiscUtils:spellQueryPars([{onlyget, true}]),
-   Path = <<"/_api/document/", CollName/binary, QueryBinary/binary>>,
+   Path = <<"/_api/document/", CollName/binary>>,
    BodyStr = eVPack:encodeBin(KeyOrMapDataList),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, #{<<"onlyget">> => <<"true">>}, ?AgDefHeader, BodyStr).
 
 getDocs(PoolNameOrSocket, CollName, KeyOrMapDataList, QueryPars) ->
-   LastQueryPars =
-      case lists:keyfind(onlyget, 1, QueryPars) of
-         {onlyget, true} ->
-            QueryPars;
-         _ ->
-            lists:keystore(onlyget, 1, QueryPars, {onlyget, true})
-      end,
-   QueryBinary = agMiscUtils:spellQueryPars(LastQueryPars),
-   Path = <<"/_api/document/", CollName/binary, QueryBinary/binary>>,
+   LastQueryPars = QueryPars#{<<"onlyget">> => <<"true">>},
+   Path = <<"/_api/document/", CollName/binary>>,
    BodyStr = eVPack:encodeBin(KeyOrMapDataList),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, LastQueryPars, ?AgDefHeader, BodyStr).
 
 % 创建多个文档
 % POST /_api/document/{collection}#multiple
@@ -381,13 +371,12 @@ getDocs(PoolNameOrSocket, CollName, KeyOrMapDataList, QueryPars) ->
 newDocs(PoolNameOrSocket, CollName, MapDataList) ->
    Path = <<"/_api/document/", CollName/binary>>,
    BodyStr = eVPack:encodeBin(MapDataList),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, ?AgDefQuery, ?AgDefHeader, BodyStr).
 
 newDocs(PoolNameOrSocket, CollName, MapDataList, QueryPars) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   Path = <<"/_api/document/", CollName/binary, QueryBinary/binary>>,
+   Path = <<"/_api/document/", CollName/binary>>,
    BodyStr = eVPack:encodeBin(MapDataList),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, QueryPars, ?AgDefHeader, BodyStr).
 
 % 替换多个文件
 % PUT /_api/document/{collection}
@@ -417,13 +406,12 @@ newDocs(PoolNameOrSocket, CollName, MapDataList, QueryPars) ->
 replaceDocs(PoolNameOrSocket, CollName, MapDataList) ->
    Path = <<"/_api/document/", CollName/binary>>,
    BodyStr = eVPack:encodeBin(MapDataList),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, ?AgDefQuery, ?AgDefHeader, BodyStr).
 
 replaceDocs(PoolNameOrSocket, CollName, MapDataList, QueryPars) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   Path = <<"/_api/document/", CollName/binary, QueryBinary/binary>>,
+   Path = <<"/_api/document/", CollName/binary>>,
    BodyStr = eVPack:encodeBin(MapDataList),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, QueryPars, ?AgDefHeader, BodyStr).
 
 % 更新多个文件
 % PATCH /_api/document/{collection}
@@ -456,13 +444,12 @@ replaceDocs(PoolNameOrSocket, CollName, MapDataList, QueryPars) ->
 updateDocs(PoolNameOrSocket, CollName, MapDataList) ->
    Path = <<"/_api/document/", CollName/binary>>,
    BodyStr = eVPack:encodeBin(MapDataList),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, ?AgDefQuery, ?AgDefHeader, BodyStr).
 
 updateDocs(PoolNameOrSocket, CollName, MapDataList, QueryPars) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   Path = <<"/_api/document/", CollName/binary, QueryBinary/binary>>,
+   Path = <<"/_api/document/", CollName/binary>>,
    BodyStr = eVPack:encodeBin(MapDataList),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, QueryPars, ?AgDefHeader, BodyStr).
 
 % 删除多个文件
 % DELETE /_api/document/{collection}
@@ -486,10 +473,9 @@ updateDocs(PoolNameOrSocket, CollName, MapDataList, QueryPars) ->
 delDocs(PoolNameOrSocket, CollName, KeyOrMapDataList) ->
    Path = <<"/_api/document/", CollName/binary, "/">>,
    BodyStr = eVPack:encodeBin(KeyOrMapDataList),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, ?AgDefQuery, ?AgDefQuery, BodyStr).
 
 delDocs(PoolNameOrSocket, CollName, KeyOrMapDataList, QueryPars) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   Path = <<"/_api/document/", CollName/binary, QueryBinary/binary>>,
+   Path = <<"/_api/document/", CollName/binary>>,
    BodyStr = eVPack:encodeBin(KeyOrMapDataList),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, QueryPars, ?AgDefHeader, BodyStr).

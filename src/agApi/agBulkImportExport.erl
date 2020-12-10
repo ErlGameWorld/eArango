@@ -58,9 +58,8 @@
 %    409：如果导入会触发唯一键冲突，complete则返回，并将 其设置为true。
 %    500：如果服务器无法为没有用户定义密钥的文档自动生成文档密钥（密钥错误），则返回500。
 docImport(PoolNameOrSocket, ListOfList, QueryPars) ->
-   Path = <<"/_api/import">>,
-   BodyStr = <<<<(eVPack:encodeBin(OneList))/binary, "\n">> || OneList <- ListOfList>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, QueryPars, ?AgDefHeader, BodyStr).
+   BodyStr = <<<<(jiffy:encode(OneList))/binary, "\n">> || OneList <- ListOfList>>,
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/import">>, QueryPars, ?AgDefHeader, BodyStr).
 
 % 从JSON导入文档
 % POST /_api/import#json
@@ -100,17 +99,15 @@ docImport(PoolNameOrSocket, ListOfList, QueryPars) ->
 %    409：如果导入会触发唯一键冲突，complete则返回，并将 其设置为true。
 %    500：如果服务器无法为没有用户定义密钥的文档自动生成文档密钥（密钥错误），则返回500。
 jsonImport(PoolNameOrSocket, MapDataList, QueryPars) ->
-   case lists:keyfind(type, 1, QueryPars) of
-      {type, list} ->
-         BodyStr = eVPack:encodeBin(MapDataList);
-      {type, documents} ->
-         BodyStr = <<<<(eVPack:encodeBin(OneList))/binary, "\n">> || OneList <- MapDataList>>;
+   case QueryPars of
+      #{type := list} ->
+         BodyStr = jiffy:encode(MapDataList);
+      #{type := documents} ->
+         BodyStr = <<<<(jiffy:encode(OneList))/binary, "\n">> || OneList <- MapDataList>>;
       _ ->
          BodyStr = MapDataList
    end,
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   Path = <<"/_api/import", QueryBinary/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/import">>, QueryPars, ?AgDefHeader, BodyStr).
 
 % 说明------->
 % 导入自包含的JSON文档
@@ -231,4 +228,4 @@ jsonImport(PoolNameOrSocket, MapDataList, QueryPars) ->
 docExport(PoolNameOrSocket, CollName, MapData) ->
    Path = <<"/_api/export?collection=", CollName/binary>>,
    BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, ?AgDefQuery, ?AgDefHeader, BodyStr).

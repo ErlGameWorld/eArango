@@ -65,7 +65,7 @@
 %    409：如果已经存在一个名为name的视图，则返回HTTP 409错误。
 newView(PoolNameOrSocket, MapData) ->
    BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/view">>, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/view">>, ?AgDefQuery, ?AgDefHeader, BodyStr).
 
 % 返回一个视图
 % GET /_api/view/{view-name}
@@ -79,7 +79,7 @@ newView(PoolNameOrSocket, MapData) ->
 %    404：如果视图名称未知，则返回HTTP 404。
 getViewInfo(PoolNameOrSocket, ViewName) ->
    Path = <<"/_api/view/", ViewName/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path).
 
 % 返回所有视图
 % GET /_api/view
@@ -90,7 +90,7 @@ getViewInfo(PoolNameOrSocket, ViewName) ->
 % 返回码
 % 200：视图列表
 getViewList(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/view">>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/view">>).
 
 % 读取指定视图的属性
 % GET /_api/view/{view-name}/properties
@@ -103,7 +103,7 @@ getViewList(PoolNameOrSocket) ->
 % 404：如果视图名称未知，则返回HTTP 404。
 getViewProps(PoolNameOrSocket, ViewName) ->
    Path = <<"/_api/view/", ViewName/binary, "/properties">>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path).
 
 % 更改ArangoSearch视图的所有属性
 % PUT /_api/view/{view-name}/properties#ArangoSearch
@@ -141,7 +141,7 @@ getViewProps(PoolNameOrSocket, ViewName) ->
 changeViewAllProps(PoolNameOrSocket, ViewName, MapData) ->
    Path = <<"/_api/view/", ViewName/binary, "/properties">>,
    BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, ?AgDefQuery, ?AgDefHeader, BodyStr).
 
 % 部分更改ArangoSearch视图的属性
 % PATCH /_api/view/{view-name}/properties#ArangoSearch
@@ -179,7 +179,7 @@ changeViewAllProps(PoolNameOrSocket, ViewName, MapData) ->
 changeViewPartProps(PoolNameOrSocket, ViewName, MapData) ->
    Path = <<"/_api/view/", ViewName/binary, "/properties">>,
    BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, ?AgDefQuery, ?AgDefHeader, BodyStr).
 
 % 重命名视图
 % PUT /_api/view/{view-name}/rename
@@ -213,4 +213,4 @@ renameView(PoolNameOrSocket, ViewName, NewViewName) ->
 % 404：如果视图名称未知，则返回HTTP 404。
 delView(PoolNameOrSocket, ViewName) ->
    Path = <<"/_api/view/", ViewName/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path).

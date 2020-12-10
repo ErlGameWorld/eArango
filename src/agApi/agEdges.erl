@@ -38,6 +38,5 @@
 % 400：如果请求包含无效参数，则返回。
 % 404：如果未找到边缘集合，则返回。
 getEdges(PoolNameOrSocket, CollName, QueryPars) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   Path = <<"/_api/edges/", CollName/binary, QueryBinary/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
+   Path = <<"/_api/edges/", CollName/binary>>,
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, QueryPars).

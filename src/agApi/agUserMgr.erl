@@ -29,7 +29,7 @@
 %    409：如果已经存在同名用户，则返回。
 newUser(PoolNameOrSocket, MapData) ->
    BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/user">>, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/user">>, ?AgDefQuery, ?AgDefHeader, BodyStr).
 
 % 设置数据库访问级别。
 % PUT /_api/user/{user}/database/{dbname}
@@ -49,7 +49,7 @@ newUser(PoolNameOrSocket, MapData) ->
 setUserDbAccessLevel(PoolNameOrSocket, UserName, DbName, MapData) ->
    Path = <<"/_api/user/", UserName/binary, "/database/", DbName/binary>>,
    BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, ?AgDefQuery, ?AgDefHeader, BodyStr).
 
 % 设置收集访问级别。
 % PUT /_api/user/{user}/database/{dbname}/{collection}
@@ -71,7 +71,7 @@ setUserDbAccessLevel(PoolNameOrSocket, UserName, DbName, MapData) ->
 setUserCollAccessLevel(PoolNameOrSocket, UserName, DbName, CollName, MapData) ->
    Path = <<"/_api/user/", UserName/binary, "/database/", DbName/binary, "/", CollName/binary>>,
    BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, ?AgDefQuery, ?AgDefHeader, BodyStr).
 
 % 清除数据库访问级别，恢复为默认访问级别
 % DELETE /_api/user/{user}/database/{dbname}
@@ -86,7 +86,7 @@ setUserCollAccessLevel(PoolNameOrSocket, UserName, DbName, CollName, MapData) ->
 %    400：如果JSON格式不正确或请求中缺少必需数据。。
 clearUserDbAccessLevel(PoolNameOrSocket, UserName, DbName) ->
    Path = <<"/_api/user/", UserName/binary, "/database/", DbName/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path).
 
 % 清除集合访问级别，恢复为默认访问级别
 % DELETE /_api/user/{user}/database/{dbname}/{collection}
@@ -101,7 +101,7 @@ clearUserDbAccessLevel(PoolNameOrSocket, UserName, DbName) ->
 %    400：如果有错误
 clearUserCollAccessLevel(PoolNameOrSocket, UserName, DbName, CollName) ->
    Path = <<"/_api/user/", UserName/binary, "/database/", DbName/binary, "/", CollName/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path).
 
 % 列出用户的可访问数据库
 % GET /_api/user/{user}/database/
@@ -119,12 +119,11 @@ clearUserCollAccessLevel(PoolNameOrSocket, UserName, DbName, CollName) ->
 %    403：如果您没有访问服务器访问级别，则返回。
 getUserDbList(PoolNameOrSocket, UserName) ->
    Path = <<"/_api/user/", UserName/binary, "/database/">>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path).
 
 getUserDbList(PoolNameOrSocket, UserName, QueryPars) ->
-   QueryBinary = agMiscUtils:spellQueryPars(QueryPars),
-   Path = <<"/_api/user/", UserName/binary, "/database/", QueryBinary/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
+   Path = <<"/_api/user/", UserName/binary, "/database/">>,
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, QueryPars).
 
 % 获取特定的数据库访问级别
 % GET /_api/user/{user}/database/{dbname}
@@ -139,7 +138,7 @@ getUserDbList(PoolNameOrSocket, UserName, QueryPars) ->
 %    403：如果您没有访问服务器访问级别，则返回。
 getUserDbAccessLevel(PoolNameOrSocket, UserName, DbName) ->
    Path = <<"/_api/user/", UserName/binary, "/database/", DbName/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path).
 
 % 获取特定集合访问级别
 % GET /_api/user/{user}/database/{dbname}/{collection}
@@ -155,7 +154,7 @@ getUserDbAccessLevel(PoolNameOrSocket, UserName, DbName) ->
 %    403：如果您没有访问服务器访问级别，则返回。
 getUserCollAccessLevel(PoolNameOrSocket, UserName, DbName, CollName) ->
    Path = <<"/_api/user/", UserName/binary, "/database/", DbName/binary, "/", CollName/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path).
 
 % 替换现有用户属性。
 % PUT /_api/user/{user}
@@ -175,7 +174,7 @@ getUserCollAccessLevel(PoolNameOrSocket, UserName, DbName, CollName) ->
 replaceUser(PoolNameOrSocket, UserName, MapData) ->
    Path = <<"/_api/user/", UserName/binary>>,
    BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, ?AgDefQuery, ?AgDefHeader, BodyStr).
 
 % 修改现有用户的属性
 % PATCH /_api/user/{user}
@@ -195,7 +194,7 @@ replaceUser(PoolNameOrSocket, UserName, MapData) ->
 updateUser(PoolNameOrSocket, UserName, MapData) ->
    Path = <<"/_api/user/", UserName/binary>>,
    BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, ?AgDefQuery, ?AgDefHeader, BodyStr).
 
 % 永久删除用户。
 % DELETE /_api/user/{user}
@@ -209,7 +208,7 @@ updateUser(PoolNameOrSocket, UserName, MapData) ->
 %   404：指定的用户不存在
 delUser(PoolNameOrSocket, UserName) ->
    Path = <<"/_api/user/", UserName/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path).
 
 % 获取用户的属性。
 % GET /_api/user/{user}
@@ -223,7 +222,7 @@ delUser(PoolNameOrSocket, UserName) ->
 %    404：指定用户名不存在。
 getUser(PoolNameOrSocket, UserName) ->
    Path = <<"/_api/user/", UserName/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path).
 
 % 获取用户的属性。
 % GET /_api/user/
@@ -237,4 +236,4 @@ getUser(PoolNameOrSocket, UserName) ->
 %    401：如果您没有对_system 数据库的访问数据库访问级别，则返回。
 %    403：如果您没有访问服务器访问级别，则返回。
 getUserList(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/user/">>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/user/">>).

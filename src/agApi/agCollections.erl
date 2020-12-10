@@ -119,7 +119,7 @@ delColl(PoolNameOrSocket, CollName) ->
 
 delColl(PoolNameOrSocket, CollName, QueryPars) ->
    Path = <<"/_api/collection/", CollName/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, QueryPars, ?AgDefHeader, ?AgDefBody).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, QueryPars).
 
 % 清除集合
 % PUT /_api/collection/{collection-name}/truncate
@@ -246,7 +246,7 @@ collShards(PoolNameOrSocket, CollName) ->
 
 collShards(PoolNameOrSocket, CollName, QueryPars) ->
    Path = <<"/_api/collection/", CollName/binary, "/shards">>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, QueryPars, ?AgDefHeader, ?AgDefBody).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, QueryPars).
 
 % 返回集合修订版ID
 % GET /_api/collection/{collection-name}/revision
@@ -288,7 +288,7 @@ collChecksum(PoolNameOrSocket, CollName) ->
 
 collChecksum(PoolNameOrSocket, CollName, QueryPars) ->
    Path = <<"/_api/collection/", CollName/binary, "/checksum">>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, QueryPars, ?AgDefHeader, ?AgDefBody).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, QueryPars).
 
 % 返回所有集合列表
 % GET /_api/collection
@@ -303,7 +303,7 @@ collList(PoolNameOrSocket) ->
    agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/collection">>).
 
 collList(PoolNameOrSocket, QueryPars) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/collection">>, QueryPars, ?AgDefHeader, ?AgDefBody).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/collection">>, QueryPars).
 
 % 加载集合
 % PUT /_api/collection/{collection-name}/load

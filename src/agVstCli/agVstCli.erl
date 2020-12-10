@@ -8,6 +8,7 @@
 -export([
    %% Common Request API
    callAgency/3
+   , callAgency/4
    , callAgency/6
    , callAgency/7
    , callAgency/8
@@ -38,6 +39,10 @@
 -spec callAgency(poolNameOrSocket(), method(), path()) -> term() | {error, term()}.
 callAgency(PoolNameOrSocket, Method, Path) ->
    callAgency(PoolNameOrSocket, Method, Path, #{}, #{}, <<>>, false, ?AgDefTimeout).
+
+-spec callAgency(poolNameOrSocket(), method(), path(), queryPars()) -> term() | {error, term()}.
+callAgency(PoolNameOrSocket, Method, Path, QueryPars) ->
+   callAgency(PoolNameOrSocket, Method, Path, QueryPars, #{}, <<>>, false, ?AgDefTimeout).
 
 -spec callAgency(poolNameOrSocket(), method(), path(), queryPars(), headers(), body()) -> term() | {error, term()}.
 callAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, Body) ->

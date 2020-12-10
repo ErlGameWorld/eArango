@@ -80,7 +80,7 @@
 %    404：如果事务规范包含未知集合，则服务器将使用HTTP 404进行响应。
 beginTransaction(PoolNameOrSocket, MapData) ->
    BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/transaction/begin">>, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/transaction/begin">>, ?AgDefQuery, ?AgDefHeader, BodyStr).
 
 % 提取服务器端事务的状态
 % GET /_api/transaction/{transaction-id}
@@ -95,7 +95,7 @@ beginTransaction(PoolNameOrSocket, MapData) ->
 %    404：如果找不到具有指定标识符的交易，则服务器将使用HTTP 404进行响应。
 getTransactionStatus(PoolNameOrSocket, TransactionId) ->
    Path = <<"/_api/transaction/", (agMiscUtils:toBinary(TransactionId))/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path).
 
 % 提交或中止正在运行的事务必须由客户端完成。在完成使用事务后，不要提交或中止事务是一个坏习惯。这将迫使服务器保留资源和收集锁，直到整个事务超时为止。
 % 提交交易
@@ -123,7 +123,7 @@ getTransactionStatus(PoolNameOrSocket, TransactionId) ->
 %    409：如果事务已经中止，则服务器将使用HTTP 409进行响应。
 commitTransaction(PoolNameOrSocket, TransactionId) ->
    Path = <<"/_api/transaction/", (agMiscUtils:toBinary(TransactionId))/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path).
 
 % 中止服务器端事务
 % DELETE /_api/transaction/{transaction-id}
@@ -149,7 +149,7 @@ commitTransaction(PoolNameOrSocket, TransactionId) ->
 %    409：如果事务已经提交，则服务器将以HTTP 409响应。
 abortTransaction(PoolNameOrSocket, TransactionId) ->
    Path = <<"/_api/transaction/", (agMiscUtils:toBinary(TransactionId))/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path).
 
 % 返回当前运行的服务器端事务
 % GET /_api/transaction
@@ -160,7 +160,7 @@ abortTransaction(PoolNameOrSocket, TransactionId) ->
 % 返回码
 %    200：如果可以成功检索事务列表，则将返回HTTP 200。
 getTransactionList(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/transaction">>, [], undefined).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/transaction">>).
 
 % JavaScript交易的HTTP接口
 % ArangoDB的JS事务在服务器上执行。客户端可以通过将事务描述发送给服务器来启动事务。
@@ -198,7 +198,7 @@ getTransactionList(PoolNameOrSocket) ->
 %    500：用户抛出的异常将使服务器以HTTP 500的返回码进行响应
 executeTransaction(PoolNameOrSocket, MapData) ->
    BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/transaction">>, [], BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/transaction">>, ?AgDefQuery, ?AgDefHeader, BodyStr).
 
 
 
