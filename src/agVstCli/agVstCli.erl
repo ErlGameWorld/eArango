@@ -129,7 +129,7 @@ receiveReqRet(RequestId, MonitorRef) ->
             {error, Err} ->
                Err;
             _ ->
-               {[1, 2, StatusCode, HeaderMap], BodyMap} = eVPack:decodeAll(Reply),
+               {[_1, _2, StatusCode, HeaderMap], BodyMap} = eVPack:decodeAll(Reply),
                {StatusCode, BodyMap, HeaderMap}
          end;
       {'DOWN', MonitorRef, process, _Pid, Reason} ->

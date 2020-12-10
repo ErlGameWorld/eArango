@@ -117,6 +117,14 @@ tcjf(N, Args1) ->
    jiffy:encode(Args),
    tcjf(N - 1, Args1).
 
+tcvp(0, _Args1) ->
+   Args = #{name => ffd, tet => "fdsff", <<"dfdf">> => 131245435346},
+   eVPack:encodeBin(Args);
+tcvp(N, Args1) ->
+   Args = #{name => ffd, tet => "fdsff", <<"dfdf">> => 131245435346},
+   eVPack:encodeBin(Args),
+   tcvp(N - 1, Args1).
+
 tcjx(0, _Args1) ->
    Args = {[{name, ffd}, {tet, "fdsff"}, {<<"dfdf">>, 131245435346}]},
    jiffy:encode(Args);
@@ -126,20 +134,25 @@ tcjx(N, Args1) ->
    tcjx(N - 1, Args1).
 
 
--define(BodyBin1, <<"{\"_key\":\"01J\",\"_id\":\"airports/01J\",\"_rev\":\"_aKwJ_tm--E\",\"name\":\"Hilliard Airpark\",\"city\":\"Hilliard\",\"state\":\"FL\",\"country\":\"USA\",\"lat\":30.6880125,\"long\":-81.90594389,\"vip\":false}">>).
--define(BodyBin2, <<"{\"_key\":\"01J\",\"_id\":\"airports/01J\",\"_rev\":\"_aPaBl7O--_\",\"name\":\"Hilliard Airpark\",\"city\":\"Hilliardfdfsdfdsffffffffffffffffffffffffffffffffffffffffffffffffffffffffafdsfasdfdafsdafdsfsdafdsafdsfdsfdsafdsfdsfdsfhghfghfghgfhsdsdfdsfdsfdsffdfddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddggggggggggggggggggggggggggggggggggggggggg\",\"state\":\"FL\",\"country\":\"USAjjkjkjkfgjkgjfkdjgldgjldjglfdjglfjdljljrlejtrltjewltjrelwtjrletjrletrletjlrejtjtrlwjrejwlrjjreljtljelwjrtlwjtreljrlewjrlwjrlwejrlejltkdfsafd\",\"lat\":30.6880125,\"long\":-81.90594389,\"vip\":false}">>).
+getBin(1) ->
+   <<"{\"_key\":\"01J\",\"_id\":\"airports/01J\",\"_rev\":\"_aKwJ_tm--E\",\"name\":\"Hilliard Airpark\",\"city\":\"Hilliard\",\"state\":\"FL\",\"country\":\"USA\",\"lat\":30.6880125,\"long\":-81.90594389,\"vip\":false}">>;
+getBin(2) ->
+   <<"{\"_key\":\"01J\",\"_id\":\"airports/01J\",\"_rev\":\"_aPaBl7O--_\",\"name\":\"Hilliard Airpark\",\"city\":\"Hilliardfdfsdfdsffffffffffffffffffffffffffffffffffffffffffffffffffffffffafdsfasdfdafsdafdsfsdafdsafdsfdsfdsafdsfdsfdsfhghfghfghgfhsdsdfdsfdsfdsffdfddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddggggggggggggggggggggggggggggggggggggggggg\",\"state\":\"FL\",\"country\":\"USAjjkjkjkfgjkgjfkdjgldgjldjglfdjglfjdljljrlejtrltjewltjrelwtjrletjrletrletjlrejtjtrlwjrejwlrjjreljtljelwjrtlwjtreljrlewjrlwjrlwejrlejltkdfsafd\",\"lat\":30.6880125,\"long\":-81.90594389,\"vip\":false}">>;
+getBin(3) ->
+   Map = jiffy:decode(getBin(1), [return_maps]),
+   eVPack:encodeBin(Map);
+getBin(4) ->
+   Map = jiffy:decode(getBin(2), [return_maps]),
+   eVPack:encodeBin(Map).
 
-jd1(0, Fun) ->
-   ?MODULE:Fun(?BodyBin1);
-jd1(N, Fun) ->
-   ?MODULE:Fun(?BodyBin1),
+jd(N, Fun, Type) ->
+   jd1(N, Fun, getBin(Type)).
+
+jd1(0, Fun, Bin) ->
+   ?MODULE:Fun(Bin);
+jd1(N, Fun, Bin) ->
+   ?MODULE:Fun(Bin),
    jd1(N - 1, Fun).
-
-jd2(0, Fun) ->
-   ?MODULE:Fun(?BodyBin2);
-jd2(N, Fun) ->
-   ?MODULE:Fun(?BodyBin2),
-   jd2(N - 1, Fun).
 
 decodeJy1(Bin) ->
    jiffy:decode(Bin, [return_maps]).
@@ -147,6 +160,11 @@ decodeJy1(Bin) ->
 decodeJy2(Bin) ->
    jiffy:decode(Bin, [return_maps, copy_strings]).
 
+decodeVp(Bin) ->
+   jiffy:decode(Bin, [return_maps]).
+
+decodeVp(Bin) ->
+   jiffy:decode(Bin, [return_maps, copy_strings]).
 
 decodeJx1(Bin) ->
    jsx:decode(Bin, [return_maps]).
