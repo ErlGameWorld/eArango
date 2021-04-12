@@ -92,7 +92,5 @@ toBinary(Value) when is_list(Value) -> list_to_binary(Value);
 toBinary(Value) when is_float(Value) -> float_to_binary(Value, [{decimals, 6}, compact]);
 toBinary(Value) when is_atom(Value) -> atom_to_binary(Value, utf8);
 toBinary(Value) when is_binary(Value) -> Value;
-toBinary([Tuple | PropList] = Value) when is_list(PropList) and is_tuple(Tuple) ->
-   lists:map(fun({K, V}) -> {toBinary(K), toBinary(V)} end, Value);
 toBinary(Value) -> term_to_binary(Value).
 
