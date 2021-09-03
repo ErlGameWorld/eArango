@@ -9,11 +9,11 @@
 %     AQL Query Cursors:
 %           https://www.arangodb.com/docs/stable/http/aql-query-cursor.html
 %     AQL Query:
-%           https://www.arangodb.com/docs/stable/http/aql-query-cursor.html
+%           https://www.arangodb.com/docs/stable/http/aql-query.html
 %     AQL Query Results Cache:
-%           https://www.arangodb.com/docs/stable/http/aql-query-cursor.html
+%           https://www.arangodb.com/docs/stable/http/aql-query-cache.html
 %     AQL User Functions Management:
-%           https://www.arangodb.com/docs/stable/http/aql-query-cursor.html
+%           https://www.arangodb.com/docs/stable/http/aql-user-functions.html
 % 该模块汇总封装上面所有AQL操作
 
 % AQL查询游标的HTTP接口
@@ -33,61 +33,72 @@
 % 使用游标
 % 如果结果集中包含的文档数量超出单次往返传输的文档数量（即通过batchSize属性设置的数量），则服务器将返回前几个文档并创建一个临时游标。游标标识符也将返回给客户端。服务器会将光标标识符放在响应对象的id属性中。此外， 响应对象的hasMore属性将设置为true。这表明客户端还有其他结果要从服务器获取。
 
-% 通过HTTP访问游标
-% 创建光标
-% 创建一个游标并返回第一个结果
-% POST /_api/cursor
-% 描述查询和查询参数的JSON对象。
-% 具有以下属性的JSON对象是必需的：
-%    query：包含要执行的查询字符串
-%    count：指示是否应在结果的“ count”属性中返回结果集中的文档数。计算“ count”属性将来可能会对某些查询产生性能影响，因此默认情况下此选项处于关闭状态，并且仅在请求时返回“ count”。
-%    batchSize：一次往返从服务器传输到客户端的最大结果文档数。如果未设置此属性，则将使用服务器控制的默认值。甲BATCHSIZE的值 0是不允许的。
-%    ttl：光标的生存时间（以秒为单位）。在指定的时间后，游标将自动在服务器上删除。这对于确保客户端不完全获取的游标的垃圾回收很有用。如果未设置，则将使用服务器定义的值（默认值：30秒）。
-%    cache：用于确定是否应使用AQL查询结果缓存的标志。如果设置为false，那么将跳过查询的任何查询缓存。如果设置为真，这将导致被检查的查询缓存为查询，如果查询缓存模式是上还是需求。
-%    memoryLimit：允许查询使用的最大内存数（以字节为单位）。如果设置，则查询将分配过多的内存而失败，并显示错误“超出资源限制”。值为0表示没有内存限制。
-%    bindVars：表示绑定参数的键/值对。
-%    options：键/值对象，带有用于查询的其他选项。
-%       FULLCOUNT：如果设置为真，并在查询中包含LIMIT子句，那么结果将有一个额外的与子属性属性统计 和FULLCOUNT，{ ... , "extra": { "stats": { "fullCount": 123 } } }。该FULLCOUNT属性将包含的文档数量的结果应用于在查询的最后顶层限制之前。它可用于计算符合特定过滤条件的文档数量，但一次只能返回其中的一部分。因此，它类似于MySQL的SQL_CALC_FOUND_ROWS暗示。请注意，设置该选项将禁用一些LIMIT优化，并可能导致处理更多文档，从而使查询运行时间更长。请注意，仅当查询具有顶级LIMIT子句并且在查询中实际使用LIMIT子句时，fullCount属性才可能出现在结果中。
-%       maxPlans：限制AQL查询优化器创建的最大计划数。
-%       maxWarningCount：限制查询将返回的最大警告数。默认情况下，查询将返回的警告数限制为10，但是可以通过设置此属性来增加或减少该警告数。
-%       failOnWarning：设置为true时，查询将引发异常并中止而不产生警告。在开发过程中应使用此选项，以尽早发现潜在问题。当该属性设置为false时，警告将不会传播到异常，并将与查询结果一起返回。还有一个服务器配置选项，--query.fail-on-warning用于设置failOnWarning的默认值，因此不需要在每个查询级别上进行设置。
-%       stream：指定true，查询将以流方式执行。查询结果不存储在服务器上，而是动态计算的。注意：只要查询游标存在，长时间运行的查询就需要保持收集锁。设置为false时，查询将立即全部执行。在这种情况下，查询结果要么立即返回（如果结果集足够小），要么存储在arangod实例上，并且可以通过游标API进行访问（相对于ttl）。建议仅在短期运行的查询上使用此选项，或者不使用排他锁（MMFiles上的写锁）。请注意查询选项cache，count并且fullCount不适用于流查询。此外，查询统计信息，警告和概要分析数据仅在查询完成之后才可用。默认值为false
-%       Optimizer：与查询优化器有关的选项。
-%       rules：可以在此属性中放入要包括的或要排除的优化器规则的列表，告诉优化器包括或排除特定的规则。要禁用规则，请在其名称前面加上-，以启用规则，并在其前面加上+。还有一个伪规则all，它匹配所有优化程序规则。-all禁用所有规则。
-%       profile：如果设置为true或1，那么如果未从查询缓存提供查询结果，则将在Extra Return属性的子属性配置文件中返回其他查询概要信息。设置为2时，查询将在Extra Return属性的子属性stats.nodes中包含每个查询计划节点的执行统计信息。此外，查询计划在子属性extra.plan中返回。
-%       satelliteSyncWait：此Enterprise Edition参数允许配置DB-Server将有多长时间使查询中涉及的Satellite集合同步。默认值为60.0（秒）。达到最大时间后，查询将停止。
-%       maxRuntime：查询必须在给定的运行时内执行，否则将被终止。该值以秒为单位指定。默认值为0.0（无超时）。
-%       maxTransactionSize：事务大小限制（以字节为单位）。仅受RocksDB存储引擎的尊敬。
-%       middleCommitSize：最大操作总数，之后将自动执行中间提交。仅受RocksDB存储引擎的尊敬。
-%       middleCommitCount：操作之后自动执行中间提交的最大操作数。仅受RocksDB存储引擎的尊敬。
-%       skipInaccessibleCollections：AQL查询（尤其是图遍历）将用户没有访问权限的集合视为这些集合为空。您的查询将正常执行，而不是返回禁止的访问错误。这旨在帮助某些用例：一个图包含多个集合，并且不同的用户在该图上执行AQL查询。现在，您可以通过更改用户对集合的访问权限来自然地限制可访问的结果。此功能仅在企业版中可用。
-%
-% 查询详细信息包括查询字符串以及可选的查询选项和绑定参数。这些值需要在POST请求的主体中以JSON表示形式传递。
-% 如果结果集可以由服务器创建，则返回HTTP 201。
-% error：一个标志，指示发生错误（在这种情况下为false）
-% code：HTTP状态码
-% result：结果文档数组（如果查询没有结果，则可能为空）
-% hasMore：一个布尔值指示符，指示服务器上的游标是否还有更多结果可用
-% count：可用结果文档总数（仅当查询是在设置了count属性的情况下执行的）
-% id：在服务器上创建的临时光标的ID（可选，请参见上文）
-% extra：一个可选的JSON对象，其统计信息子属性中包含有关查询结果的额外信息。对于数据修改查询， extra.stats子属性将包含已修改的文档数和由于错误而无法修改的文档数（如果指定了ignoreErrors查询选项）
-% cached：一个布尔型标志，指示是否从查询缓存提供查询结果。如果从查询缓存提供查询结果，则额外的 return属性将不包含任何stats子属性，也不会包含任何配置文件子属性。
-%
-% 如果JSON格式不正确或请求中缺少查询规范，则返回HTTP 400。
-% 如果JSON格式不正确或请求中缺少查询规范，则服务器将使用HTTP 400进行响应。
-% 响应的主体将包含带有其他错误详细信息的JSON对象。该对象具有以下属性：
-% error：布尔值标志，指示发生错误（在这种情况下为true）
-% code：HTTP状态码
-% errorNum：服务器错误号
-% errorMessage：描述性错误消息
-% 如果查询规范已完成，服务器将处理查询。如果在查询处理期间发生错误，则服务器将使用HTTP 400进行响应。同样，响应的正文将包含有关错误的详细信息。
-% 一个查询错误的列表可以在这里找到。
-% 404：如果查询中访问了不存在的集合，服务器将以HTTP 404进行响应。
-% 405：如果使用了不受支持的HTTP方法，则服务器将以HTTP 405进行响应。
-newCursor(PoolNameOrSocket, MapData) ->
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/cursor">>, ?AgDefQuery, ?AgDefHeader, BodyStr).
+% 修改文件
+%    该_api/cursor终端还可以用于执行修改查询。
+%    下面的示例将一个值附加到集合中arrayValue具有键的文档数组中。正常的更新行为是完全替换属性，并使用带有 函数的更新 AQL 查询允许附加到数组。testdocumentsPUSH()
 
+% 设置内存限制
+%    要为查询设置内存限制，可以将memoryLimit选项传递给服务器。内存限制指定允许查询使用的最大字节数。当单个 AQL 查询达到指定的限制值时，查询将因超出资源限制异常而中止。在集群中，内存记帐是按服务器完成的，因此限制值实际上是每个服务器每个查询的内存限制。
+%    如果未指定内存限制，则服务器默认值（由启动选项控制--query.memory-limit将用于限制查询可以使用的最大内存量。内存限制值0表示最大量查询的内存不受限制。
+
+% 通过 HTTP 访问游标
+% 创建游标并返回第一个结果
+% POST /_api/cursor
+% 描述查询和查询参数的 JSON 对象。
+% 需要具有这些属性的 JSON 对象：
+%    query : 包含要执行的查询字符串
+%    count：指示是否应在结果的“count”属性中返回结果集中的文档数。计算“count”属性可能会对将来的某些查询产生性能影响，因此默认情况下关闭此选项，并且仅在请求时返回“count”。
+%    batchSize : 在一次往返中从服务器传输到客户端的最大结果文档数。如果未设置此属性，则将使用服务器控制的默认值。甲BATCHSIZE的值 0是不允许的。
+%    ttl：光标的生存时间（以秒为单位）。如果结果集足够小（小于或等于batchSize），则立即返回结果。否则，它们将存储在内存中，并且可以通过相对于ttl. 在指定的时间后，光标将在服务器上自动移除。这有助于确保对客户端未完全获取的游标进行垃圾回收。如果未设置，将使用服务器定义的值（默认值：30 秒）。
+%    cache : 用于确定是否应使用 AQL 查询结果缓存的标志。如果设置为false，则将跳过查询的任何查询缓存查找。如果设置为true，如果查询缓存模式是on或demand，它将导致为查询检查查询缓存。
+%    memoryLimit：允许查询使用的最大内存数（以字节为单位）。如果设置，则查询将失败并显示错误“超出资源限制”，以防它分配太多内存。值0表示没有内存限制。
+%    bindVars：表示绑定参数的键/值对。
+%    options：具有查询额外选项的键/值对象。
+%    fullCount：如果设置为true并且查询包含LIMIT子句，则结果将有一个额外的属性，包含子属性stats 和fullCount , { ... , "extra": { "stats": { "fullCount": 123 } } }。该FULLCOUNT属性将包含的文档数量的结果应用于在查询的最后顶层限制之前。它可用于计算符合特定过滤条件的文档数量，但一次只返回其中的一个子集。因此它类似于 MySQL 的SQL_CALC_FOUND_ROWS暗示。请注意，设置该选项将禁用一些 LIMIT 优化，并可能导致处理更多文档，从而使查询运行时间更长。请注意，如果查询具有顶级 LIMIT 子句并且查询中实际使用了 LIMIT 子句，则fullCount属性可能仅出现在结果中。
+%    maxPlans：限制 AQL 查询优化器创建的最大计划数。
+%    maxWarningCount：限制查询将返回的最大警告数。默认情况下，查询将返回的警告数量限制为 10，但可以通过设置此属性来增加或减少该数量。
+%    failOnWarning：当设置为true 时，查询将抛出异常并中止而不是产生警告。在开发过程中应使用此选项以尽早发现潜在问题。当该属性设置为false 时，警告不会传播到异常，并将与查询结果一起返回。还有一个服务器配置选项，--query.fail-on-warning用于设置failOnWarning的默认值，因此不需要在每个查询级别进行设置。
+%    stream : 可以启用延迟执行查询。如果设置为true，则只要需要，就会执行查询以产生最多batchSize结果。这些结果会立即返回并暂停查询，直到客户端请求下一批（如果有更多结果）。根据查询，这可能意味着第一个结果将更快地可用并且需要更少的内存，因为服务器一次只需要存储结果的一个子集。只读查询可以受益最大，除非SORT 没有索引或COLLECT涉及必须在返回部分结果之前处理所有文档。建议仅将此选项用于没有排他锁的查询。
+%
+% 评论：
+% 查询将保留资源直到它结束（例如 RocksDB 快照，这在一定程度上防止了压缩）。写入将在内存中，直到提交查询。
+% 如果现有文档被修改，那么这些文档上的写锁就会被持有，并且其他试图修改相同文档的查询将因为这个冲突而失败。
+% 在某些批次已经成功返回之后，由于冲突或其他原因，流式查询可能会延迟失败，这可能会使到该点的结果变得毫无意义。
+% 查询选项cache，count并且fullCount不支持流媒体的查询。
+% 查询统计信息、分析数据和警告作为最后一批的一部分提供。
+% 如果该stream选项为false（默认），则在将查询的任何结果返回给客户端之前计算查询的完整结果。服务器将完整结果存储在内存中（如果在集群中，则在联系的协调器上）。所有其他资源都会立即释放（锁、RocksDB 快照）。如果发生冲突，查询将在返回结果之前失败。
+%    optimizer：与查询优化器相关的选项。
+%    rules：可以将要包含或要排除的优化器规则列表放入此属性中，告诉优化器包含或排除特定规则。要禁用规则，请为其名称添加前缀-，要启用规则，请为其添加前缀+。还有一个伪规则all，它匹配所有优化器规则。-all禁用所有规则。
+%    profile：如果设置为true或1，则如果查询结果不是从查询缓存中提供的，则附加查询分析信息将在额外返回属性的子属性配置文件中返回。设置为2查询将在额外返回属性的子属性stats.nodes中包括每个查询计划节点的执行统计信息。此外，查询计划在子属性extra.plan 中返回。
+%    SatelliteSyncWait：这个企业版参数允许配置 DB-Server 将有多长时间将查询中涉及的 SatelliteCollections 同步。默认值为60.0（秒）。当达到最大时间时，查询将停止。
+%    maxRuntime：查询必须在给定的运行时内执行，否则将被终止。该值以秒为单位指定。默认值为0.0（无超时）。
+%    maxTransactionSize：以字节为单位的交易大小限制。仅由 RocksDB 存储引擎授予。
+%    middleCommitSize：最大操作总大小，之后自动执行中间提交。仅由 RocksDB 存储引擎授予。
+%    middleCommitCount：在自动执行中间提交之后的最大操作数。仅由 RocksDB 存储引擎授予。
+%    skipInaccessibleCollections：AQL 查询（尤其是图遍历）会将用户没有访问权限的集合视为这些集合是空的。您的查询将正常执行，而不是返回禁止访问错误。这旨在帮助某些用例：一个图包含多个集合，不同的用户在该图上执行 AQL 查询。您现在可以通过更改用户对集合的访问权限来自然地限制可访问的结果。此功能仅在企业版中可用。
+%
+% 查询详细信息包括查询字符串以及可选的查询选项和绑定参数。这些值需要在 POST 请求正文中以 JSON 表示形式传递。
+% 如果服务器可以创建结果集，则返回HTTP 201。
+% error：指示发生错误的标志（在本例中为false）
+% code : HTTP 状态码
+% result : 结果文档数组（如果查询没有结果，则可能为空）
+% hasMore：一个布尔值指示符是否有更多结果可用于服务器上的游标
+% count：可用的结果文档总数（仅当使用count属性集执行查询时可用）
+% id : 在服务器上创建的临时游标的 id（可选，见上文）
+% extra：一个可选的 JSON 对象，其中包含有关包含在其stats子属性中的查询结果的额外信息。对于数据修改查询， extra.stats子属性将包含修改的文档数和由于错误而无法修改的文档数（如果指定了ignoreErrors查询选项）
+% cached：一个布尔标志，指示查询结果是否来自查询缓存。如果查询结果是从查询缓存中提供的，额外的返回属性将不包含任何stats子属性，也没有profile子属性。
+% 如果 JSON 表示格式错误或请求中缺少查询规范，则返回HTTP 400。
+% 如果 JSON 表示格式错误或请求中缺少查询规范，服务器将使用HTTP 400 进行响应。
+% 响应的正文将包含一个带有附加错误详细信息的 JSON 对象。该对象具有以下属性：
+% error : 指示发生错误的布尔标志（在这种情况下为true）
+% code : HTTP 状态码
+% errorNum : 服务器错误号
+% errorMessage：描述性错误消息
+% 如果查询规范完成，服务器将处理查询。如果在查询处理过程中发生错误，服务器将响应HTTP 400。同样，响应的正文将包含有关错误的详细信息。
+% 404：如果在查询中访问了不存在的集合，服务器将使用HTTP 404进行响应。
+% 405：如果使用了不受支持的 HTTP 方法，服务器将使用HTTP 405 进行响应。
+newCursor(PoolNameOrSocket, MapData) ->
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/cursor">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 % 从现有游标返回下一个结果
 % PUT /_api/cursor/{cursor-identifier}
@@ -95,7 +106,7 @@ newCursor(PoolNameOrSocket, MapData) ->
 % cursor-identifier（必填）：光标的名称
 % 如果游标仍然存在，则返回具有以下属性的对象：
 % id：光标标识符
-% 结果：当前批次的文档列表
+% result：当前批次的文档列表
 % hasMore：如果这是最后一批，则为false
 % count：如果存在，元素总数
 % 请注意，即使hasMore返回true，下一次调用仍可能不返回任何文档。但是，如果hasMore为false，则光标将被耗尽。一旦hasMore属性的值为 false，客户端就可以停止。
@@ -105,7 +116,7 @@ newCursor(PoolNameOrSocket, MapData) ->
 % 404：如果找不到具有指定标识符的游标，则服务器将使用HTTP 404进行响应。
 nextCursor(PoolNameOrSocket, CursorId) ->
    Path = <<"/_api/cursor/", (agMiscUtils:toBinary(CursorId))/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path).
 
 % 删除光标永
 % DELETE /_api/cursor/{cursor-identifier}
@@ -127,35 +138,33 @@ delCursor(PoolNameOrSocket, CursorId) ->
 % ArangoDB有一个HTTP接口，用于语法验证AQL查询。此外，它提供了一个HTTP接口来检索任何有效AQL查询的执行计划。
 % 这两个功能实际上并不执行提供的AQL查询，而只是检查它并返回有关它的元信息。
 
-% 解释一个AQL查询并返回有关它的信息
+% 解释 AQL 查询并返回有关它的信息
 % POST /_api/explain
-% 描述查询和查询参数的JSON对象。
-% 具有以下属性的JSON对象是必需的：
-%    query：您要解释的查询；如果查询引用了任何绑定变量，则这些变量也必须在属性bindVars中传递。可以在options属性中传递查询的其他选项。
+% 描述查询和查询参数的 JSON 对象。
+%    query：您要解释的查询；如果查询引用了任何绑定变量，则这些变量也必须在属性bindVars 中传递。可以在options属性中传递查询的其他选项。
 %    bindVars：表示绑定参数的键/值对。
-%    options：查询选项
-%    allPlans：如果设置为true，将返回所有可能的执行计划。默认值为false，这意味着将仅返回最佳计划。
-%    maxNumberOfPlans：允许优化程序生成的可选计划最大数量。将此属性设置为较低的值可以限制优化器的工作量。
-%    Optimizer：与查询优化器有关的选项。
-%    rules：可以在此属性中放入要包括的或要排除的优化器规则的列表，告诉优化器包括或排除特定的规则。要禁用规则，请在其名称前面加上-，以启用规则，并在其前面加上+。还有一个伪规则all，它匹配所有优化程序规则。-all禁用所有规则。
+%    options : 查询选项
+%       allPlans：如果设置为true，则将返回所有可能的执行计划。默认值为false，这意味着只会返回最佳计划。
+%       maxNumberOfPlans：允许优化器生成的可选最大计划数。将此属性设置为较低的值可以限制优化器所做的工作量。
+%       optimizer：与查询优化器相关的选项。
+%       rules：可以将要包含或要排除的优化器规则列表放入此属性中，告诉优化器包含或排除特定规则。要禁用规则，请为其名称添加前缀-，要启用规则，请为其添加前缀+。还有一个伪规则all，它匹配所有优化器规则。-all禁用所有规则。
 %
-% 为了说明如何在服务器上执行AQL查询，可以通过HTTP POST请求将查询字符串发送到服务器。然后，服务器将验证查询并为其创建执行计划。将返回执行计划，但不会执行查询。
-% 服务器返回的执行计划可用于估计查询的可能性能。尽管实际性能将取决于许多不同的因素，但是执行计划通常可以对服务器实际运行查询所需的工作量提供一些粗略的估计。
-% 默认情况下，解释操作将返回查询优化器选择的最佳计划。最佳计划是总估计成本最低的计划。该计划将在响应对象的属性计划中返回。如果在请求中指定了allPlans选项，则结果将包含优化器创建的所有计划。然后将在属性计划中返回计划。
-% 结果还将包含一个属性warnings，它是在优化或执行计划创建期间发生的一系列警告。此外，结果中还包含stats属性以及一些优化程序统计信息。如果allPlans设置为false，则结果将包含可缓存的属性 ，该属性指示如果使用了查询结果缓存，则是否可以将查询结果缓存在服务器上。该缓存时属性不存在allPlans 设置为真。
-% 结果中的每个计划都是一个具有以下属性的JSON对象：
-%    nodes：计划执行节点的数组。可在此处找到可用节点类型的数组
-%    estimatedCost：计划的总估计费用。如果有多个计划，优化器将选择总成本最低的计划。
-%    collections：查询中使用的一组collections
-%    rules：优化程序应用的规则数组。可在此处找到可用规则的​​概述
-%    variables：查询中使用的变量数组（注意：这可能包含优化器创建的内部变量）
-% 返回码
-%    200：如果查询有效，则服务器将使用HTTP 200进行响应，并在响应的plan属性中返回最佳执行计划。如果在请求中设置了选项allPlans，则将在allPlans属性中返回一系列计划。
-%    400：如果请求格式错误或查询包含解析错误，服务器将以HTTP 400响应。响应的正文将包含嵌入在JSON对象中的错误详细信息。如果查询引用任何变量，则忽略绑定变量也会导致HTTP 400错误。
-%    404：如果查询中访问了不存在的集合，服务器将以HTTP 404进行响应。
+% 为了解释如何在服务器上执行 AQL 查询，可以通过 HTTP POST 请求将查询字符串发送到服务器。然后服务器将验证查询并为其创建执行计划。会返回执行计划，但不会执行查询。
+% 服务器返回的执行计划可用于估计查询的可能性能。尽管实际性能将取决于许多不同的因素，但执行计划通常可以粗略估计服务器为实际运行查询所需的工作量。
+% 默认情况下，解释操作将返回查询优化器选择的最优计划。最优计划是总估计成本最低的计划。计划将在响应对象的属性计划中返回。如果在请求中指定了allPlans选项，则结果将包含优化器创建的所有计划。这些计划将在属性计划中返回。
+% 结果还将包含一个属性warnings，它是在优化或执行计划创建期间发生的警告数组。此外，结果中包含一个stats属性以及一些优化器统计信息。如果allPlans设置为false，则结果将包含一个属性cacheable ，该属性说明如果使用查询结果缓存，查询结果是否可以缓存在服务器上。当allPlans 设置为true时，cacheable属性不存在。
+% 结果中的每个计划都是一个具有以下属性的 JSON 对象：
+% nodes：计划的执行节点数组。
+% 估计成本：计划的总估计成本。如果有多个计划，优化器会选择总成本最低的计划。
+% collections : 查询中使用的集合数组
+% rules : 优化器应用的一系列规则。
+% variables：查询中使用的变量数组（注意：这可能包含优化器创建的内部变量）
+% 返回代码
+% 200：如果查询有效，服务器会响应HTTP 200，并在响应的plan属性中返回最优执行计划。如果在请求中设置了allPlans选项，则会在allPlans属性中返回一个计划数组。
+% 400：如果请求格式错误，或者查询包含解析错误，服务器将使用HTTP 400响应。响应的正文将包含嵌入在 JSON 对象中的错误详细信息。如果查询引用任何绑定变量，则省略绑定变量也会导致HTTP 400错误。
+% 404：如果在查询中访问了不存在的集合，服务器将使用HTTP 404进行响应。
 explainQuery(PoolNameOrSocket, MapData) ->
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/explain">>, ?AgDefQuery, ?AgDefHeader, BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/explain">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 % 解析一个AQL查询并返回有关它的信息
 % POST /_api/query
@@ -166,8 +175,7 @@ explainQuery(PoolNameOrSocket, MapData) ->
 %    200：如果查询有效，服务器将使用HTTP 200进行响应，并在响应的bindVars属性中返回在查询中找到的绑定参数的名称（如果有）。它还将在collections属性中返回查询中使用的collections的数组。如果查询可以成功解析，则返回的JSON 的ast属性将包含查询的抽象语法树表示形式。ast的格式在将来的ArangoDB版本中可能会发生变化，但是可以用来检查ArangoDB如何解释给定查询。请注意，将在不对其应用任何优化的情况下返回抽象语法树。
 %    400：如果请求格式错误或查询包含解析错误，服务器将以HTTP 400响应。响应的正文将包含嵌入在JSON对象中的错误详细信息。
 parseQuery(PoolNameOrSocket, MapData) ->
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/query">>, ?AgDefQuery, ?AgDefHeader, BodyStr).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/query">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 % 查询跟踪固定链接
 % ArangoDB具有HTTP接口，用于检索当前正在执行的AQL查询列表和慢速AQL查询列表。为了有意义地使用这些API，需要在执行HTTP请求的数据库中启用查询跟踪。
@@ -202,42 +210,67 @@ getQueryProps(PoolNameOrSocket) ->
 %     200：如果属性更改成功，则返回。
 %     400：如果请求格式错误，服务器将以HTTP 400进行响应，
 changeQueryProps(PoolNameOrSocket, MapData) ->
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/query/properties">>, ?AgDefQuery, ?AgDefHeader, BodyStr).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/query/properties">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
-% 返回当前正在运行的AQL查询的列表
+% 返回当前运行的 AQL 查询
 % GET /_api/query/current
-% 返回一个数组，其中包含所选数据库中当前正在运行的AQL查询。每个查询都是一个具有以下属性的JSON对象：
-%    id：查询的ID
-%    query：查询字符串（可能被截断）
+% 查询参数
+%    all（可选）：如果设置为true，将返回所有数据库中当前正在运行的查询，而不仅仅是选定的查询。仅允许在系统数据库中使用该参数并具有超级用户权限。
+% 返回一个包含当前在所选数据库中运行的 AQL 查询的数组。每个查询都是一个 JSON 对象，具有以下属性：
+%    id : 查询的 id
+%    database : 运行查询的数据库的名称
+%    user : 开始查询的用户名
+%    query : 查询字符串（可能被截断）
 %    bindVars：查询使用的绑定参数值
 %    started：查询开始的日期和时间
-%    runTime：查询的运行时间，直到查询到查询列表为止
-%    state：查询的当前执行状态（以字符串形式）
-%    stream：查询是否使用流游标
-% 返回码
-%    200：可以成功检索查询列表时返回。
-%    400：如果请求格式错误，服务器将以HTTP 400进行响应，
+%    runTime：查询的运行时间直到查询列表被查询
+%    state：查询的当前执行状态（作为字符串）。之一：
+%       "initializing"
+%       "parsing"
+%       "optimizing ast"
+%       "loading collections"
+%       "instantiating plan"
+%       "optimizing plan"
+%       "executing"
+%       "finalizing"
+%       "finished"
+%       "killed"
+%       "invalid"
+%    stream : 查询是否使用流式游标
+% 返回代码
+% 200：查询列表检索成功时返回。
+% 400：如果请求格式错误，服务器将响应HTTP 400，
+% 403：如果使用了all参数，但请求是在与 _system 不同的数据库中发出的，或者由非特权用户发出的，则返回HTTP 403。
 currentQuery(PoolNameOrSocket) ->
    agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/query/current">>).
 
+currentQuery(PoolNameOrSocket, QueryPars) ->
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/query/current">>, QueryPars).
 
-% 返回运行缓慢的AQL查询的列表
+% 返回运行缓慢的 AQL 查询列表
 % GET /_api/query/slow
-% 返回一个数组，其中包含已完成并超过所选数据库中慢速查询阈值的最后一个AQL查询。可以通过设置查询跟踪属性来控制列表中的最大查询数量maxSlowQueries。可以通过设置查询跟踪属性来调整 将查询视为慢速查询的阈值slowQueryThreshold。
-% 每个查询都是一个具有以下属性的JSON对象：
-%     id：查询的ID
-%     query：查询字符串（可能被截断）
-%     bindVars：查询使用的绑定参数值
-%      started：查询开始的日期和时间
-%     runTime：查询的总运行时间
-%     state：查询的当前执行状态（对于慢速查询列表将始终“完成”）
-%     stream：查询是否使用流游标
-% 返回码
-%     200：可以成功检索查询列表时返回。
-%     400：如果请求格式错误，服务器将以HTTP 400进行响应，
+% 查询参数
+%    all（可选）：如果设置为true，将返回来自所有数据库的慢查询，而不仅仅是选定的。仅允许在系统数据库中使用该参数并具有超级用户权限。
+% 返回一个数组，其中包含在所选数据库中已完成且已超过慢查询阈值的最后 AQL 查询。列表中的最大查询数量可以通过设置查询跟踪属性来控制maxSlowQueries。可以通过设置查询跟踪属性来调整 将查询视为慢速查询的阈值slowQueryThreshold。
+% 每个查询都是一个 JSON 对象，具有以下属性：
+%    id : 查询的 id
+%    database : 运行查询的数据库的名称
+%    user : 开始查询的用户名
+%    query : 查询字符串（可能被截断）
+%    bindVars：查询使用的绑定参数值
+%    started：查询开始的日期和时间
+%    runTime : 查询的总运行时间
+%    state : 查询的当前执行状态（对于慢查询列表将始终为“已完成”）
+%    stream : 查询是否使用流式游标
+% 返回代码
+% 200：查询列表检索成功时返回。
+% 400：如果请求格式错误，服务器将响应HTTP 400，
+% 403：如果使用了all参数，但请求是在与 _system 不同的数据库中发出的，或者由非特权用户发出的，则返回HTTP 403。
 getSlowQuery(PoolNameOrSocket) ->
    agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/query/slow">>).
+
+getSlowQuery(PoolNameOrSocket, QueryPars) ->
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/query/slow">>, QueryPars).
 
 % 清除慢速AQL查询列表
 % DELETE /_api/query/slow
@@ -248,6 +281,8 @@ getSlowQuery(PoolNameOrSocket) ->
 delSlowQuery(PoolNameOrSocket) ->
    agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, <<"/_api/query/slow">>).
 
+delSlowQuery(PoolNameOrSocket, QueryPars) ->
+   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, <<"/_api/query/slow">>, QueryPars).
 
 % 杀死查询永久链接
 % 运行中的AQL查询也可以在服务器上终止。ArangoDB通过HTTP接口提供了终止功能。要终止正在运行的查询，必须指定其ID（在当前正在运行的查询列表中为该查询返回的ID）。然后将设置查询的kill标志，并且查询到达取消点后将中止查询。
@@ -264,6 +299,10 @@ delSlowQuery(PoolNameOrSocket) ->
 killQuery(PoolNameOrSocket, QueryId) ->
    Path = <<"/_api/query/", (agMiscUtils:toBinary(QueryId))/binary>>,
    agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path).
+
+killQuery(PoolNameOrSocket, QueryId, QueryPars) ->
+   Path = <<"/_api/query/", (agMiscUtils:toBinary(QueryId))/binary>>,
+   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, QueryPars).
 
 % AQL查询结果缓存的HTTP接口
 % 本节介绍用于控制AQL查询结果缓存的API方法。
@@ -323,8 +362,7 @@ getQCacheProps(PoolNameOrSocket) ->
 % 200：如果属性更改成功，则返回。
 % 400：如果请求格式错误，服务器将以HTTP 400进行响应，
 changeQCacheProps(PoolNameOrSocket, MapData) ->
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/query-cache/properties">>, ?AgDefQuery, ?AgDefHeader, BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/query-cache/properties">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 % AQL用户功能管理固定链接
 % 这是用于管理AQL用户功能的ArangoDB HTTP接口的简介。AQL用户功能是一种使用用户定义的JavaScript代码扩展ArangoDB查询语言（AQL）功能的方法。
@@ -353,8 +391,7 @@ changeQCacheProps(PoolNameOrSocket, MapData) ->
 %    errorNum：服务器错误号
 %    errorMessage：描述性错误消息
 newUserFun(PoolNameOrSocket, MapData) ->
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/aqlfunction">>, ?AgDefQuery, ?AgDefHeader, BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/aqlfunction">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 % 删除现有的AQL用户功能
 % DELETE /_api/aqlfunction/{name}
@@ -410,14 +447,3 @@ getUserFuns(PoolNameOrSocket) ->
 
 getUserFuns(PoolNameOrSocket, QueryPars) ->
    agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/aqlfunction">>, QueryPars).
-
-
-
-
-
-
-
-
-
-
-

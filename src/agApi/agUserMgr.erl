@@ -28,8 +28,7 @@
 %    403：如果您没有访问服务器访问级别，则返回。
 %    409：如果已经存在同名用户，则返回。
 newUser(PoolNameOrSocket, MapData) ->
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/user">>, ?AgDefQuery, ?AgDefHeader, BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/user">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 % 设置数据库访问级别。
 % PUT /_api/user/{user}/database/{dbname}
@@ -48,8 +47,7 @@ newUser(PoolNameOrSocket, MapData) ->
 %    403：如果您没有访问服务器访问级别，则返回。
 setUserDbAccessLevel(PoolNameOrSocket, UserName, DbName, MapData) ->
    Path = <<"/_api/user/", UserName/binary, "/database/", DbName/binary>>,
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, ?AgDefQuery, ?AgDefHeader, BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 % 设置收集访问级别。
 % PUT /_api/user/{user}/database/{dbname}/{collection}
@@ -70,8 +68,7 @@ setUserDbAccessLevel(PoolNameOrSocket, UserName, DbName, MapData) ->
 %    403：如果您没有访问服务器访问级别，则返回。
 setUserCollAccessLevel(PoolNameOrSocket, UserName, DbName, CollName, MapData) ->
    Path = <<"/_api/user/", UserName/binary, "/database/", DbName/binary, "/", CollName/binary>>,
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, ?AgDefQuery, ?AgDefHeader, BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 % 清除数据库访问级别，恢复为默认访问级别
 % DELETE /_api/user/{user}/database/{dbname}
@@ -173,8 +170,7 @@ getUserCollAccessLevel(PoolNameOrSocket, UserName, DbName, CollName) ->
 %    404：指定的用户不存在
 replaceUser(PoolNameOrSocket, UserName, MapData) ->
    Path = <<"/_api/user/", UserName/binary>>,
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, ?AgDefQuery, ?AgDefHeader, BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 % 修改现有用户的属性
 % PATCH /_api/user/{user}
@@ -193,8 +189,7 @@ replaceUser(PoolNameOrSocket, UserName, MapData) ->
 %    404：指定的用户不存在
 updateUser(PoolNameOrSocket, UserName, MapData) ->
    Path = <<"/_api/user/", UserName/binary>>,
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, ?AgDefQuery, ?AgDefHeader, BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 % 永久删除用户。
 % DELETE /_api/user/{user}

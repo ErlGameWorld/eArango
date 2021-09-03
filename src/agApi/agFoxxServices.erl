@@ -55,14 +55,14 @@ getFoxxList(PoolNameOrSocket, QueryPars) ->
 % 200：如果请求成功，则返回。
 % 400：如果安装路径未知，则返回。
 getFoxxService(PoolNameOrSocket, QueryPars) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/foxx/service">>, QueryPars).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/foxx/service">>, QueryPars).
 
 % 安装新服务
 % POST /_api/foxx
 % 查询参数
 %    mount（必需）：应在其中安装服务的安装路径。
-%    开发（可选）：设置true为启用开发模式。
-%    安装程序（可选）：设置为false不运行服务的安装脚本。
+%    development （可选）：设置true为启用开发模式。
+%    setup （可选）：设置为false不运行服务的安装脚本。
 %    legacy（可选）：设置为true以2.8旧版兼容性模式安装服务。
 % 在给定的安装路径上安装给定的新服务。
 % 请求主体可以是以下任何格式：
@@ -81,8 +81,7 @@ getFoxxService(PoolNameOrSocket, QueryPars) ->
 % 返回码
 %    201：如果请求成功，则返回。
 installFoxx(PoolNameOrSocket, MapData, QueryPars) ->
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/foxx">>, QueryPars, ?AgDefHeader, BodyStr).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/foxx">>, QueryPars, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 % 卸载服务
 % DELETE /_api/foxx/service
@@ -122,8 +121,7 @@ uninstallFoxx(PoolNameOrSocket, QueryPars) ->
 % 返回码
 %    200：如果请求成功，则返回。
 replaceFoxx(PoolNameOrSocket, MapData, QueryPars) ->
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/foxx/service">>, QueryPars, ?AgDefHeader, BodyStr).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/foxx/service">>, QueryPars, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 % 升级服务
 % PATCH /_api/foxx/service
@@ -151,8 +149,7 @@ replaceFoxx(PoolNameOrSocket, MapData, QueryPars) ->
 % 返回码
 % 200：如果请求成功，则返回。
 upgradeFoxx(PoolNameOrSocket, MapData, QueryPars) ->
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, <<"/_api/foxx/service">>, QueryPars, ?AgDefHeader, BodyStr).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, <<"/_api/foxx/service">>, QueryPars, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 % Foxx服务配置/依赖关系
 % 这是用于管理Foxx服务配置和依赖关系的ArangoDB HTTP接口的简介。
@@ -179,8 +176,7 @@ getFoxxConfig(PoolNameOrSocket, QueryPars) ->
 % 返回码
 % 200：如果请求成功，则返回。
 updateFoxxConfig(PoolNameOrSocket, MapData, QueryPars) ->
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, <<"/_api/foxx/configuration">>, QueryPars, ?AgDefHeader, BodyStr).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, <<"/_api/foxx/configuration">>, QueryPars, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 % 替换配置选项
 % PUT /_api/foxx/configuration
@@ -193,8 +189,7 @@ updateFoxxConfig(PoolNameOrSocket, MapData, QueryPars) ->
 % 返回码
 %     200：如果请求成功，则返回。
 replaceFoxxConfig(PoolNameOrSocket, MapData, QueryPars) ->
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/foxx/configuration">>, QueryPars, ?AgDefHeader, BodyStr).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/foxx/configuration">>, QueryPars, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 % 获取依赖项选项
 % GET /_api/foxx/dependencies
@@ -219,8 +214,7 @@ getFoxxDependencies(PoolNameOrSocket, QueryPars) ->
 % 返回码
 %     200：如果请求成功，则返回。
 updateFoxxDependencies(PoolNameOrSocket, MapData, QueryPars) ->
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch,  <<"/_api/foxx/dependencies">>, QueryPars, ?AgDefHeader, BodyStr).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, <<"/_api/foxx/dependencies">>, QueryPars, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 % 替换依赖项选项
 % PUT /_api/foxx/dependencies
@@ -233,8 +227,7 @@ updateFoxxDependencies(PoolNameOrSocket, MapData, QueryPars) ->
 % 返回码
 % 200：如果请求成功，则返回。
 replaceFoxxDependencies(PoolNameOrSocket, MapData, QueryPars) ->
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/foxx/dependencies">>, QueryPars, ?AgDefHeader, BodyStr).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/foxx/dependencies">>, QueryPars, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 % Foxx服务杂项
 %
@@ -262,9 +255,8 @@ getFoxxScripts(PoolNameOrSocket, QueryPars) ->
 % 返回码
 %     200：如果请求成功，则返回。
 runFoxxScripts(PoolNameOrSocket, ScriptName, MapData, QueryPars) ->
-   Path = <<"/_api/foxx/scripts/", ScriptName/binary>>,
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, QueryPars, ?AgDefHeader, BodyStr).
+	Path = <<"/_api/foxx/scripts/", ScriptName/binary>>,
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, QueryPars, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 % 运行服务测试
 % POST /_api/foxx/tests

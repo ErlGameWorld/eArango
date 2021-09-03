@@ -92,12 +92,10 @@
 %   HTTP 200
 
 newColl(PoolNameOrSocket, MapData) ->
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/collection">>, ?AgDefQuery, ?AgDefHeader, BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/collection">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 newColl(PoolNameOrSocket, MapData, QueryPars) ->
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/collection">>, QueryPars, ?AgDefHeader, BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/collection">>, QueryPars, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 % 删除收藏
 % DELETE /_api/collection/{collection-name}
@@ -183,27 +181,51 @@ collProps(PoolNameOrSocket, CollName) ->
 % 返回码
 % 400：如果缺少集合名称，则返回HTTP 400。
 % 404：如果集合名称未知，则 返回HTTP 404。
-collCount(PoolNameOrSocket, CollName) ->
+collCnt(PoolNameOrSocket, CollName) ->
    Path = <<"/_api/collection/", CollName/binary, "/count">>,
    agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path).
+
+% 重新计算集合的文档数
+% PUT /_api/collection/{collection-name}/recalculateCount
+% 路径参数
+% collection-name（必填）：集合的名称。
+% 重新计算集合的文档计数（如果不一致）。
+% 它返回具有属性的对象
+% 结果：如果重新计算文档计数成功，则为true。
+% 注意：此方法特定于RocksDB存储引擎
+% 返回码
+% 200：如果文档计数成功重新计算，则返回HTTP 200。
+% 404：如果集合名称未知，则返回HTTP 404。
+collRecnt(PoolNameOrSocket, CollName) ->
+   Path = <<"/_api/collection/", CollName/binary, "/recalculateCount">>,
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path).
 
 % 获取集合的统计信息
 % GET /_api/collection/{collection-name}/figures
 % 从版本3.4.0开始，不建议使用按其数字ID访问集合。您应该通过它们的名称来引用它们。
 % 路径参数
-% collection-name（必填）：集合的名称。
+% 集合名称（必需）：集合的名称。
+% 查询参数
+% details （可选）：设置details为true将向数字返回扩展存储引擎特定的详细信息。详细信息用于调试 ArangoDB 本身，
+%     其格式可能会发生变化。默认情况下，details设置为false，因此不会返回任何详细信息，并且行为与之前版本的 ArangoDB 相同。
+%     请注意，请求details可能会导致额外的负载，从而影响性能。
 % 除上述内容外，结果还包含文档数量和有关集合的其他统计信息。
 % HTTP 200返回有关集合的信息：
 % count：集合中当前存在的文档数。
-% figures：收集指标
-%     indexes：
-%     count：为集合定义的索引总数，包括预定义的索引（例如主索引）。
-%     size：为索引分配的总内存，以字节为单位。
+% figures：集合的度量
+%  indexes：
+%  count：为集合定义的索引总数，包括预定义的索引（例如主索引）。
+%  size：为索引分配的总内存（以字节为单位）。
 % 400：如果缺少集合名称，则返回HTTP 400。
 % 404：如果集合名称未知，则 返回HTTP 404。
 collFigures(PoolNameOrSocket, CollName) ->
    Path = <<"/_api/collection/", CollName/binary, "/figures">>,
    agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path).
+
+collFigures(PoolNameOrSocket, CollName, QueryPars) ->
+   Path = <<"/_api/collection/", CollName/binary, "/figures">>,
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, QueryPars).
+
 
 % 返回负责文档的分片
 % PUT /_api/collection/{collection-name}/responsibleShard
@@ -223,15 +245,14 @@ collFigures(PoolNameOrSocket, CollName) ->
 % eg: MapData = #{'_key' => testkey, value => 23}
 collResponsibleShard(PoolNameOrSocket, CollName, MapData) ->
    Path = <<"/_api/collection/", CollName/binary, "/responsibleShard">>,
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, ?AgDefQuery, ?AgDefHeader, BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 % 返回集合的分片ID
 % GET /_api/collection/{collection-name}/shards
 % 路径参数
 % collection-name（必填）：集合的名称。
 % 查询参数
-% 详细信息（可选）：如果设置为true，则返回值还将包含集合碎片的负责服务器。
+% details（可选）：如果设置为true，则返回值还将包含集合碎片的负责服务器。
 % 默认情况下，返回带有集合的分片ID的JSON数组。
 % 如果details参数设置为true，它将返回一个以分片ID作为对象属性键的JSON对象，并将每个分片的负责服务器映射到它们。在详细的响应中，领导者碎片将排在阵列的首位。
 % 注意：此方法仅在群集协调器中可用。
@@ -294,7 +315,7 @@ collChecksum(PoolNameOrSocket, CollName, QueryPars) ->
 % GET /_api/collection
 % 从版本3.4.0开始，不建议使用按其数字ID访问集合。您应该通过它们的名称来引用它们。
 % 查询参数
-%    e（可选）：是否应从结果中排除系统集合。
+%    excludeSystem（可选）：是否应从结果中排除系统集合。
 % 返回带有属性集合的对象，该属性集合包含所有集合描述的数组。在名称中还可以使用对象作为对象，在集合名称中作为键使用相同的信息。
 % 通过为可选查询参数excludeSystem提供值为true的值， 将从响应中排除所有系统集合。
 % 返回码
@@ -330,8 +351,7 @@ loadColl(PoolNameOrSocket, CollName) ->
    agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path).
 
 loadColl(PoolNameOrSocket, CollName, MapData) ->
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/collection/", CollName/binary, "/load">>, ?AgDefQuery, ?AgDefHeader, BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/collection/", CollName/binary, "/load">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 % 卸载集合
 % PUT /_api/collection/{collection-name}/unload
@@ -351,57 +371,6 @@ loadColl(PoolNameOrSocket, CollName, MapData) ->
 unloadColl(PoolNameOrSocket, CollName) ->
    Path = <<"/_api/collection/", CollName/binary, "/unload">>,
    agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path).
-
-% 将索引加载到内存中
-% PUT /_api/collection/{collection-name}/loadIndexesIntoMemory
-% 从版本3.4.0开始，不建议使用按其数字ID访问集合。您应该通过它们的名称来引用它们。
-% 路径参数
-% collection-name（必填）：此路由尝试将这个collection的所有索引条目缓存到主内存中。因此，它将遍历集合的所有索引，并将索引值而不是整个文档数据存储在内存中。可以在缓存中找到的所有查找都比未存储在缓存中的查找要快得多，因此可以提高性能。还可以保证缓存与存储的数据一致。
-% 目前，此功能仅在RocksDB存储引擎上有用，因为在MMFiles引擎中，所有索引无论如何都在内存中。
-% 在RocksDB上，此函数将遵守所有内存限制，如果要加载的索引小于您的内存限制，则此函数可确保大多数索引值都已缓存。如果索引大于您的内存限制，则此函数将填满直至达到此限制的值，并且暂时无法控制集合中的哪些索引应优先于其他索引。
-% 成功后，此函数返回属性result设置为的对象true
-% 返回码
-% 200：如果所有索引都已加载
-% 400：如果缺少集合名称，则返回HTTP 400。
-% 404：如果集合名称未知，则返回HTTP 404。
-collLoadIndexesIntoMemory(PoolNameOrSocket, CollName) ->
-   Path = <<"/_api/collection/", CollName/binary, "/loadIndexesIntoMemory">>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path).
-
-% 更改集合的属性
-% PUT /_api/collection/{collection-name}/properties
-% 从版本3.4.0开始，不建议使用按其数字ID访问集合。您应该通过它们的名称来引用它们。
-% 路径参数
-% collection-name（必填）：集合的名称。
-% 更改集合的属性。需要具有属性的对象
-%    waitForSync：如果为true，则创建或更改文档将等待，直到数据已同步到磁盘。
-%    journalSize：日志或数据文件的最大大小，以字节为单位。该值必须至少为1048576（1 MB）。请注意，更改journalSize值时，它仅对创建的其他日志或数据文件有效。现有的日志或数据文件将不受影响。
-%    schema：指定文档的收集级别架构的对象。属性键rule，level并且message必须遵循文档架构验证中记录的规则
-%
-% 成功后，将返回具有以下属性的对象：
-%    id：集合的标识符。
-%    name：集合的名称。
-%    waitForSync：新值。
-%    journalSize：新值。
-%    status：集合状态为数字。
-%    type：集合类型。有效类型为：
-%       2：文件收集
-%       3：边缘收集
-%    isSystem：如果为true，则该集合为系统集合。
-%    isVolatile：如果为true，则收集数据将仅保留在内存中，并且ArangoDB不会将数据写入或同步到磁盘。
-%    doCompact：是否将压缩集合。
-%    keyOptions：JSON对象，其中包含密钥生成选项：
-%       type：指定密钥生成器的类型。当前可用的生成器是传统的，自动递增的，uuid的 和填充的。
-%       allowUserKeys：如果设置为true，则允许在文档的_key属性中提供自己的键值。如果设置为 false，那么密钥生成器将独自负责生成密钥，并且在文档的_key属性中提供自己的密钥值被视为错误。
-%    schema（可选，默认为null）：指定文档的收集级别架构的对象。属性键rule，level并且message必须遵循文档架构验证中记录的规则
-%    注意：除了waitForSync，journalSize和name之外，创建集合后就无法更改集合属性。要重命名集合，必须使用重命名端点。
-% 返回码
-% 400：如果缺少集合名称，则返回HTTP 400。
-% 404：如果集合名称未知，则 返回HTTP 404。
-collChangeProps(PoolNameOrSocket, CollName, MapData) ->
-   Path = <<"/_api/collection/", CollName/binary, "/properties">>,
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, ?AgDefQuery, ?AgDefHeader, BodyStr).
 
 % 重命名集合
 % PUT /_api/collection/{collection-name}/rename
@@ -425,37 +394,49 @@ collChangeProps(PoolNameOrSocket, CollName, MapData) ->
 % 404：如果集合名称未知，则 返回HTTP 404。
 renameColl(PoolNameOrSocket, OldName, MapData) ->
    Path = <<"/_api/collection/", OldName/binary, "/rename">>,
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, ?AgDefQuery, ?AgDefQuery, BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
-% 旋转收藏夹的日记
-% PUT /_api/collection/{collection-name}/rotate
+% 将索引加载到内存中
+% PUT /_api/collection/{collection-name}/loadIndexesIntoMemory
+% 从版本3.4.0开始，不建议使用按其数字ID访问集合。您应该通过它们的名称来引用它们。
 % 路径参数
-% collection-name（必填）：集合的名称。
-% 旋转集合的日记帐。集合的当前日志将关闭，并成为只读数据文件。Rotate方法的目的是使文件中的数据可用于压缩（压缩仅对只读数据文件而不对日志执行）。
-% 如果没有当前日志，随后将新数据保存在集合中将自动创建一个新的日志文件。
-% 它返回具有属性的对象
-% 结果：如果旋转成功，则为true
-% 注意：此方法特定于MMFiles存储引擎，并且在群集中不可用。
+% collection-name（必填）：此路由尝试将这个collection的所有索引条目缓存到主内存中。因此，它将遍历集合的所有索引，并将索引值而不是整个文档数据存储在内存中。可以在缓存中找到的所有查找都比未存储在缓存中的查找要快得多，因此可以提高性能。还可以保证缓存与存储的数据一致。
+% 目前，此功能仅在RocksDB存储引擎上有用，因为在MMFiles引擎中，所有索引无论如何都在内存中。
+% 在RocksDB上，此函数将遵守所有内存限制，如果要加载的索引小于您的内存限制，则此函数可确保大多数索引值都已缓存。如果索引大于您的内存限制，则此函数将填满直至达到此限制的值，并且暂时无法控制集合中的哪些索引应优先于其他索引。
+% 成功后，此函数返回属性result设置为的对象true
 % 返回码
-% 400：如果该集合当前没有日记，则返回HTTP 400。
+% 200：如果所有索引都已加载
+% 400：如果缺少集合名称，则返回HTTP 400。
 % 404：如果集合名称未知，则返回HTTP 404。
-% 3.7中删掉了该方法
-collRotate(PoolNameOrSocket, CollName) ->
-   Path = <<"/_api/collection/", CollName/binary, "/rotate">>,
+collLoadIndexesIntoMemory(PoolNameOrSocket, CollName) ->
+   Path = <<"/_api/collection/", CollName/binary, "/loadIndexesIntoMemory">>,
    agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path).
 
-% 重新计算集合的文档数
-% PUT /_api/collection/{collection-name}/recalculateCount
+% 更改集合的属性
+% PUT /_api/collection/{collection-name}/properties
+% 从版本3.4.0开始，不建议使用按其数字ID访问集合。您应该通过它们的名称来引用它们。
 % 路径参数
-% collection-name（必填）：集合的名称。
-% 重新计算集合的文档计数（如果不一致）。
-% 它返回具有属性的对象
-% 结果：如果重新计算文档计数成功，则为true。
-% 注意：此方法特定于RocksDB存储引擎
-% 返回码
-% 200：如果文档计数成功重新计算，则返回HTTP 200。
-% 404：如果集合名称未知，则返回HTTP 404。
-collRecount(PoolNameOrSocket, CollName) ->
-   Path = <<"/_api/collection/", CollName/binary, "/recalculateCount">>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path).
+% 集合名称（必需）：集合的名称。
+% 更改集合的属性。期望具有属性的对象
+%    waitForSync：如果为true，则创建或更改文档将等到数据同步到磁盘。
+%    schema：指定文档集合级别架构的对象。属性键rule，level并且message必须遵循文档架构验证中记录的规则
+% 成功时将返回具有以下属性的对象：
+% id：集合的标识符。
+% name：集合的名称。
+% waitForSync：新值。
+% status：集合的状态为数字。
+% type：集合类型。有效类型是：
+%    2：文件收集
+%    3：边缘集合
+% isSystem：如果为true，则该集合是系统集合。
+% keyOptions：包含密钥生成选项的 JSON 对象：
+% type：指定密钥生成器的类型。当前可用的生成器是传统的、自动增量的、uuid 和填充的。
+% allowUserKeys：如果设置为true，则允许在文档的_key属性中提供自己的键值。如果设置为 false，则密钥生成器全权负责生成密钥，并且在文档的_key属性中提供自己的密钥值被视为错误。
+% schema（可选，默认为null）：指定文档集合级别架构的对象。属性键rule，level并且message必须遵循文档架构验证中记录的规则
+% 注意：除了waitForSync和name 之外，一旦创建了集合，就不能更改集合属性。要重命名集合，必须使用重命名端点。
+% 返回代码
+% 400：如果缺少集合名称，则返回HTTP 400。
+% 404：如果集合名称未知，则 返回HTTP 404。
+collChangeProps(PoolNameOrSocket, CollName, MapData) ->
+   Path = <<"/_api/collection/", CollName/binary, "/properties">>,
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).

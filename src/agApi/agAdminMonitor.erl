@@ -7,37 +7,36 @@
 
 % doc_address:https://www.arangodb.com/docs/stable/http/administration-and-monitoring.html
 
-% 从服务器Permalink读取全局日志
-% 返回服务器日志
-% GET /_admin/log
+% 从服务器读取全局日志
+%
+% GET /_admin/log/entries
 % 查询参数
-%    upto （可选）：返回所有日志条目多达日志级别高达。请注意，upto必须为：
-%       fatal 或0
-%       error或1
-%       warning或2
-%       info或3
-%       debug 或4 默认值为info。
-%    level （可选）：返回日志级别的所有日志条目级别。请注意，查询参数 upto和level是互斥的。
-%    start（可选）：返回所有日志条目，以使其日志条目标识符（lid值）大于或等于start。
-%    size（可选）：将结果限制为最大大小的日志条目。
-%    offset（可选）：开始返回日志条目，跳过第一个偏移日志条目。偏移量 和大小可用于分页。
-%    search （可选）：仅返回包含search中指定的文本的日志条目。
-%    sort（可选）：根据日志条目的盖值对日志条目进行升序（如果sort为asc）或降序（如果sort为desc）。请注意，盖子会 按时间顺序排列。默认值为asc。
-% 从服务器的全局日志中返回致命，错误，警告或信息日志消息。结果是具有以下属性的JSON对象：
-% HTTP 200
-%    lid：日志条目标识符的列表。每个日志消息都由其@LIT {lid}唯一标识，并且标识符按升序排列。
-%    level：所有日志条目的日志级别列表。
-%    timestamp：所有日志条目的时间戳列表，自1970-01-01开始以秒为单位。
-%    text：所有日志条目的文本列表
-%    topic：所有日志条目的主题列表
-%    totalAmount：分页前的日志条目总数。
-% 400：如果为up或level指定了无效值，则返回。
-% 500：如果服务器由于内存不足错误而无法生成结果，则返回。
+%    upto（可选）：返回所有日志条目直到日志级别upto。请注意，最多必须是：
+%       致命或0
+%       错误或1
+%       警告或2
+%       信息或3
+% debug 或4 默认值为info。
+%       level（可选）：返回日志级别level 的所有日志条目。注意查询参数 upto和level是互斥的。
+%       start（可选）：返回所有日志条目，使其日志条目标识符（lid值）大于或等于start。
+%       size（可选）：将结果限制为最多大小日志条目。
+%       offset（可选）：开始返回跳过第一个偏移日志条目的日志条目。偏移量 和大小可用于分页。
+%       search（可选）：仅返回包含search 中指定文本的日志条目。
+%       sort（可选）：根据日志条目的id值对日志条目进行升序（如果sort是asc）或降序（如果sort是desc）排序。请注意，id 强加了时间顺序。默认值为asc。
+%       serverId（可选）：返回指定服务器的所有日志条目。所有其他查询参数保持有效。如果没有给出 serverId，被询问的服务器将回复。这个参数只对 Coordinator 有意义。
+% 从服务器的全局日志返回致命、错误、警告或信息日志消息。结果是具有以下属性的 JSON 对象：
+%       total : 分页前的日志条目总数
+%       messages : 一个包含符合条件的日志消息的数组
+% 这个 API 可以通过启动选项关闭--log.api-enabled。如果 API 被禁用，所有请求都将使用 HTTP 403 响应。如果 API 被启用，访问它需要管理员权限，甚至超级用户权限，具体取决于--log.api-enabled启动选项的值。
+% 返回代码
+%    200：如果请求有效则返回。
+%    400：如果为upto或level指定了无效值，则返回。
+%    403：访问日志权限不足返回。
 getAdminLog(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/log">>).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/log/entries">>).
 
 getAdminLog(PoolNameOrSocket, QueryPars) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/log">>, QueryPars).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/log/entries">>, QueryPars).
 
 % 返回当前的日志级别设置
 % GET /_admin/log/level
@@ -107,114 +106,9 @@ getAdminLogLevel(PoolNameOrSocket) ->
 % 405：使用无效的HTTP方法时返回。
 % 500：如果服务器由于内存不足错误而无法生成结果，则返回。
 modifyAdminLogLevel(PoolNameOrSocket, MapData) ->
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_admin/log/level">>, ?AgDefQuery, ?AgDefHeader, BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_admin/log/level">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
-% 返回统计信息
-% GET /_admin/statistics
-% 返回统计信息。返回的对象包含根据_admin / statistics-description返回的描述分组在一起的 统计数字。例如， 要从组系统访问图userTime，您首先选择描述存储在系统中的组的子对象，然后在该子对象中，userTime的值存储在同名属性中。
-% 如果是分发，则返回的对象包含以count为单位的总计 数和以counts为单位的分发列表。各个值的总和（或全部）中被返回总和。
-% 事务统计信息显示本地已启动，已提交和已中止的事务，以及为查询的服务器完成的中间提交。对于RocksDB存储引擎，中间提交计数将仅采用非零值。协调器几乎不会在其本地数据库中进行任何本地事务，因此，群集事务（在协调器上启动的事务需要DBServer在事务提交到群集范围之前完成）才被添加到其本地统计信息中。这意味着您将在单个服务器上看到的统计信息大致是在使用单个协调器查询该协调器的群集设置中所期望的统计信息。区别在于群集事务没有中间提交的概念，也不会增加价值。
-% HTTP 200统计信息已成功返回。
-% error：布尔值标志，指示是否发生错误（在这种情况下为false）
-% code：HTTP状态码-在这种情况下为200
-% time：当前服务器时间戳
-% errorMessage：描述性错误消息
-% enabled：如果服务器启用了统计模块，则为true。如果没有，不要期望任何值。
-% 系统：从系统收集的有关此过程的指标；可能取决于主机操作系统
-% minorPageFaults：pagefaults
-% majorPageFaults：pagefaults
-% userTime：服务器进程使用的用户CPU时间
-% systemTime：服务器进程使用的系统CPU时间
-% numberOfThreads：服务器中的线程数
-% residentSize：流程的RSS
-% residentSizePercent：进程的RSS，以％为单位
-% virtualSize：进程的VSS
-% client：有关连接的客户端及其资源使用情况的信息
-% sum：所有计数的汇总值
-% count：汇总的值数
-% counts：包含值的数组
-% connectionTime：总连接时间
-% totalTime：系统时间
-% requestTime：请求时间
-% queueTime：请求排队等待处理的时间
-% ioTime：IO时间
-% bytesSent：发送给客户端的字节数
-% bytesReceived：从客户端收到的字节数
-% httpConnections：打开的http连接数
-% http：动词的请求数
-% requestsTotal：http请求总数
-% requestsAsync：异步http请求的总数
-% RequestsGet：使用GET动词的请求数
-% requestHead：使用HEAD动词的请求数
-% requestPost：使用POST动词的请求数
-% requestsPut：使用PUT动词的请求数
-% requestsPatch：使用PATCH动词的请求数
-% requestsDelete：使用DELETE动词的请求数
-% requestsOptions：使用OPTIONS动词的请求数
-% requestOther：没有使用以上识别的动词的任何请求
-% 服务器：服务器的统计信息
-% 正常运行时间：服务器启动和运行的时间
-% physicalMemory：服务器上的可用物理内存
-% Transactions：交易统计
-% 已开始：已开始交易的数量
-% 已提交：已提交交易的数量
-% 已中止：已中止交易的数量
-% middleCommits：完成的中间提交数
-% v8Context：有关V8 JavaScript上下文的统计信息
-% 可用：当前生成的V8上下文的数量
-% busy：当前活动的V8上下文的数量
-% dirty：先前使用的上下文数量，现在应该在重新使用之前对其进行垃圾回收
-% free：可以免费使用的V8上下文的数量
-% max：我们可以通过--javascript.v8-contexts配置生成的V8上下文总数
-% 内存：V8内存/垃圾回收水印列表；每次运行垃圾回收时都要刷新；将当时使用的最小/最大内存保留10秒钟
-% contextId：这组内存统计信息来自的上下文的ID
-% tMax：10秒间隔开始的时间戳
-% countOfTimes：这10秒内垃圾回收运行了多少次
-% heapMax：所有垃圾收集的高水位标记在10秒内运行
-% heapMin：这10秒内运行的所有垃圾回收的低水印
-% 线程：有关服务器工作线程的统计信息（不包括特定于V8或jemalloc的线程和系统线程）
-% scheduler-threads：产生的工作线程数
-% 进行中：当前繁忙的工作线程数
-% 排队：排队等待工作线程可用的作业数
-getAdminProps(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/statistics">>).
-
-% 统计数据说明
-% 获取统计信息的描述性信息
-% GET /_admin/statistics-description
-% 返回/ _admin / statistics返回的统计信息的描述。返回的对象在属性组中包含一组统计信息组，在属性图中包含一组统计信息 图。
-% 统计组由
-% group：组的标识符。
-% name：组的名称。
-% description：组的描述。
-% 统计数字由
-% group：此图所属的组的标识符。
-% 标识符：图形的标识符。它在组中是唯一的。
-% name：图形名称。
-% description：对图形的描述。
-% 类型：当前，累计或分配。
-% cuts：分布向量。
-% 单位：测量数字的单位。
-% HTTP 200描述已成功返回。
-% 组：统计组
-% group：组的标识符。
-% name：组的名称。
-% description：组的描述。
-% 数字：统计数字
-% group：此图所属的组的标识符。
-% 标识符：图形的标识符。它在组中是唯一的。
-% name：图形名称。
-% description：对图形的描述。
-% 类型：当前，累计或分配。
-% cuts：分布向量。
-% 单位：测量数字的单位。
-% code：HTTP状态码
-% 错误：错误，在这种情况下为false
-getAdminStatisticsDesc(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/statistics-description">>).
-
-% TLS 永久链接
+% TLS
 % 返回TLS数据的摘要
 % 返回此服务器的TLS数据（服务器密钥，客户端身份验证CA）
 % GET /_admin/server/tls
@@ -233,7 +127,7 @@ getAdminStatisticsDesc(PoolNameOrSocket) ->
 getAdminTLS(PoolNameOrSocket) ->
    agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/server/tls">>).
 
-% 触发TLS数据的重新加载并返回摘要永久链接
+% 触发TLS数据的重新加载并返回摘要
 % 触发此服务器的TLS数据（服务器密钥，客户端身份验证CA）的重新加载，并以摘要形式返回新数据。
 % POST /_admin/server/tls
 % 此API调用触发所有TLS数据的重新加载，然后返回摘要。JSON响应与相应的GET请求完全相同（请参见此处）。
@@ -244,17 +138,22 @@ getAdminTLS(PoolNameOrSocket) ->
 triggerAdminTLS(PoolNameOrSocket) ->
    agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_admin/server/tls">>).
 
-% 返回当前实例指标 IMY-todo 这个接口返回的数据不是json也不是vpack
-% GET /_admin/metrics
-% 以Prometheus格式返回实例的当前指标。返回的文档收集所有实例指标，这些指标在任何给定时间进行测量，并将其公开以供Prometheus收集。
-% 该文档包含不同的度量标准和度量标准组，具体取决于查询实例的角色。所有导出的指标都使用arangodb_或rocksdb_字符串发布，以将其与其他收集的数据区分开。
-% 然后需要将API添加到Prometheus配置文件中进行收集。
-% 返回码
-% 200：指标已成功返回。
-% 404：可以使用--server.export-metrics-api false 服务器中的设置禁用指标API 。在这种情况下，调用结果表明找不到该API。
-getAdminMetrics(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/metrics">>).
-
+% 静态加密
+% 旋转静态密钥库的加密
+% 静态密钥轮换加密
+% POST /_admin/server/encryption
+% 通过向此端点发送不带负载的请求来更改用户提供的静态加密。通过提供的文件--rocksdb.encryption-keyfolder 将被重新加载，内部加密密钥将使用新的用户密钥重新加密。
+% 这是一个受保护的 API，只能以超级用户权限执行。此 API 在协调器节点上不可用。
+% 如果禁用加密密钥轮换，API 将返回 HTTP 404。
+% HTTP 200如果一切正常，此 API 将返回 HTTP 200
+% error : 指示是否发生错误的布尔标志（在这种情况下为false）
+% 代码：HTTP 状态代码 - 在这种情况下为 200
+% 结果：结果对象。
+% 加密密钥：具有密钥秘密的 SHA-256 哈希值的对象数组。可以为空。
+% 403：如果不是以超级用户权限调用，此 API 将返回 HTTP 403 FORBIDDEN。
+% 404：如果禁用了加密密钥轮换，此 API 将返回 HTTP 404。
+encryption(PoolNameOrSocket) ->
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_admin/server/encryption">>).
 
 % 集群
 % 服务器返回是否是在只读模式
@@ -266,6 +165,19 @@ getAdminMetrics(PoolNameOrSocket) ->
 % 200：如果一切正常，此API将返回HTTP 200
 getAdminServerMode(PoolNameOrSocket) ->
    agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/server/mode">>).
+
+% 更新服务器是否处于只读模式
+% 更新此服务器的模式（只读或默认）
+% PUT /_admin/server/mode
+% 需要具有这些属性的 JSON 对象：
+% 模式：服务器的模式readonly或default。
+% 更新有关服务器的模式信息。json 响应将包含一个mode值为readonlyor的字段default。在只读服务器中，所有写入操作都将失败，错误代码为1004( ERROR_READ_ONLY )。创建或删除数据库和集合也将失败并显示错误代码11( ERROR_FORBIDDEN )。
+% 这是一个受保护的 API。它需要身份验证和管理服务器权限。
+% 返回代码
+% 200：如果一切正常，此 API 将返回 HTTP 200
+% 401：如果请求没有被认证为具有足够权限的用户
+setAdminServerMode(PoolNameOrSocket) ->
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_admin/server/mode">>).
 
 % 返回集群永久链接中服务器的ID
 % 了解服务器的内部ID
@@ -279,21 +191,20 @@ getAdminServerId(PoolNameOrSocket) ->
 
 % 返回集群中服务器的角色
 % GET /_admin/server/role
-% 返回集群中服务器的角色。该角色在结果的role属性中返回。角色的可能返回值是：
-% SINGLE：服务器是没有集群的独立服务器
-% 协调器：服务器是集群中的协调器
-% PRIMARY：服务器是集群中的DBServer
-% 次要的：不再使用此角色
-% 代理：服务器是集群中的代理节点
-% UNDEFINED：在集群中，如果无法确定服务器角色，则返回UNDEFINED。
-% 在所有情况下均返回HTTP 200。
-% 错误：始终为假
-% code：HTTP状态码，始终为200
-% errorNum：服务器错误号
+% 返回服务器在集群中的角色。在结果的角色属性中返回角色。角色可能的返回值是：
+%    SINGLE：服务器是一个没有集群的独立服务器
+%    COORDINATOR：服务器是集群中的协调器
+%    PRIMARY：服务器是集群中的数据库服务器
+%    SECONDARY：不再使用此角色
+%    AGENT：服务器是集群中的代理节点
+%    UNDEFINED：在集群中，如果无法确定服务器角色，则返回UNDEFINED。
+% 在所有情况下都返回HTTP 200。
+% 错误：总是错误
+% code : HTTP 状态码，总是 200
+% errorNum : 服务器错误号
 % 作用：之一[ SINGLE，协调员，PRIMARY，SECONDARY，AGENT，UNDEFINED ]
 getAdminServerRole(PoolNameOrSocket) ->
    agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/server/role">>).
-
 
 % 返回服务器是否可用
 % GET /_admin/server/availability
@@ -314,9 +225,8 @@ getAdminServerAvailability(PoolNameOrSocket) ->
 % 200：
 % 400：数据库服务器的ID
 % 403：
-getAdminClusterProps(PoolNameOrSocket, DBserver) ->
-   Path = <<"/_admin/clusterStatistics?DBserver=", (agMiscUtils:toBinary(DBserver))/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path).
+getAdminClusterProps(PoolNameOrSocket, QueryPars) ->
+	agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/clusterStatistics">>, QueryPars).
 
 % 查询集群的运行状况以监视Permalink
 % 返回由监督（机构）评估的集群的运行状况
@@ -347,7 +257,22 @@ getAdminClusterProps(PoolNameOrSocket, DBserver) ->
 % 返回码
 % 200：
 getAdminClusterHealth(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/cluster/health">>).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/cluster/health">>).
+
+% 其他
+% 压缩整个数据库系统数据
+% PUT /_admin/compact
+% 此命令会导致对所有数据库中的所有数据进行完全重写，这对于大型数据库可能需要很长时间。因此，只有在可以长时间承受额外 I/O 负载的情况下，才应谨慎使用它。
+% 需要具有这些属性的 JSON 对象：
+%    changeLevel : 压缩的数据是否应该移动到最低可能的级别。默认值为false。
+%    compactBottomMostLevel : 是否压缩最底层的数据。默认值为false。
+%
+% 此端点可用于在发生大量数据删除后回收磁盘空间。它需要超级用户访问权限。
+% 返回代码
+%    200：压缩成功启动
+%    401：如果请求没有被认证为具有足够权限的用户
+compactSystemData(PoolNameOrSocket) ->
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_admin/compact">>).
 
 % 重新加载路由表。
 % POST /_admin/routing/reload
@@ -355,4 +280,22 @@ getAdminClusterHealth(PoolNameOrSocket) ->
 % 返回码
 % 200：路由信息重新加载成功
 reloadAdminRouting(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_admin/routing/reload">>).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_admin/routing/reload">>).
+
+
+% 指标 API v2
+% 返回当前实例指标
+% GET /_admin/metrics/v2
+% 查询参数
+% serverId（可选）：返回指定服务器的指标。如果没有给出 serverId，被询问的服务器将回复。这个参数只对 Coordinator 有意义。
+% 以 Prometheus 格式返回实例的当前指标。返回的文档收集所有实例指标，这些指标在任何给定时间进行测量，并将它们公开以供 Prometheus 收集。
+% 该文档包含不同的指标和指标组，具体取决于所查询实例的角色。所有导出的指标都使用前缀发布，arangodb_以将它们与其他收集的数据区分开来。
+% 然后需要将 API 添加到 Prometheus 配置文件中进行收集。
+% 返回代码
+% 200：成功返回指标。
+% 404：可以使用--server.export-metrics-api false 服务器中的设置禁用指标 API 。在这种情况下，调用的结果表明找不到 API。
+metricsV2(PoolNameOrSocket) ->
+	agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/metrics/v2">>).
+
+metricsV2(PoolNameOrSocket, QueryPars) ->
+	agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/metrics/v2">>, QueryPars).

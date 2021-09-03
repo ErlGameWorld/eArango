@@ -1,4 +1,4 @@
--module(agGeneralGraphs).
+-module(agGraphs).
 -include("eArango.hrl").
 
 -compile(inline).
@@ -18,16 +18,19 @@
 % error：如果有错误，则标记（true），否则（false）。这个回应是错误的。
 % code：响应代码。
 % 图表：
-% graph：有关新创建的图的信息
-% name：图形名称
-% edgeDefinitions：图形关系的定义数组。每个都有以下类型：
-% orphanCollections：其他顶点集合的数组。这些集合中的文档在此图中没有边。
-% numberOfShards：为图中的每个新集合创建的分片数。
-% _id：此图的内部ID值。
-% _rev：此图的修订版。可用于确保不覆盖对该图的并发修改。
-% ReplicationFactor：图形中每个新集合使用的复制因子。
-% isSmart：标记图形是否为SmartGraph（仅限企业版）。
-% smartGraphAttribute：智能图例中的分片属性名称（仅企业版）
+% graphs：
+%   graph : 关于新创建的图的信息
+%   name : 图的名称
+%   edgeDefinitions：图形关系的定义数组。每个都有以下类型：
+%   orphanCollections：一组额外的顶点集合。这些集合中的文档在该图中没有边。
+%   numberOfShards：为图中的每个新集合创建的分片数。
+%   _id：此图的内部 id 值。
+%   _rev：此图的修订版。可用于确保不会覆盖对此图的并发修改。
+%   replicationFactor：用于图中每个新集合的复制因子。也可以"satellite"是 SmartGraph的字符串（仅限企业版）。
+%   isSmart：图形是否为 SmartGraph（仅限企业版）。
+%   isDisjoint：图形是否为 Disjoint SmartGraph（仅限企业版）。
+%   smartGraphAttribute：SmartGraph 案例中的分片属性名称（仅限企业版）。
+%   isSatellite：标记图形是否为 SatelliteGraph（仅限企业版）。
 graphList(PoolNameOrSocket) ->
    agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/gharial">>).
 
@@ -77,12 +80,10 @@ graphList(PoolNameOrSocket) ->
 % errorNum：发生错误的ArangoDB错误号。
 % errorMessage：为此错误创建的消息。
 newGraph(PoolNameOrSocket, MapData) ->
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/gharial">>, ?AgDefQuery, ?AgDefHeader, BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/gharial">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 newGraph(PoolNameOrSocket, MapData, QueryPars) ->
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/gharial">>, QueryPars, ?AgDefHeader, BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/gharial">>, QueryPars, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 % 获取图表
 % GET /_api/gharial/{graph}
@@ -181,9 +182,8 @@ vertexCollList(PoolNameOrSocket, GraphName) ->
 
 %% MapData = #{"collection" => "otherVertices"}
 addVertexColl(PoolNameOrSocket, GraphName, MapData) ->
-   Path = <<"/_api/gharial/", GraphName/binary, "/vertex">>,
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, ?AgDefQuery, ?AgDefHeader, BodyStr).
+	Path = <<"/_api/gharial/", GraphName/binary, "/vertex">>,
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 % 从图形中删除额外顶点集合。
 % DELETE /_api/gharial/{graph}/vertex/{collection}
@@ -278,9 +278,8 @@ edgeDefList(PoolNameOrSocket, GraphName) ->
 %    errorNum：发生错误的ArangoDB错误号。
 %    errorMessage：为此错误创建的消息。
 addEdgeDef(PoolNameOrSocket, GraphName, MapData) ->
-   Path = <<"/_api/gharial/", GraphName/binary, "/edge">>,
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, ?AgDefQuery, ?AgDefHeader, BodyStr).
+	Path = <<"/_api/gharial/", GraphName/binary, "/edge">>,
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 % 替换现有的边缘定义
 % PUT /_api/gharial/{graph}/edge/{definition}#definition
@@ -323,13 +322,11 @@ addEdgeDef(PoolNameOrSocket, GraphName, MapData) ->
 % EdgeDefName 名字 要在定义列表中存在 MapData中的collection 也要存在 只是替换 from to 中的集合
 replaceEdgeDef(PoolNameOrSocket, GraphName, EdgeDefName, MapData) ->
    Path = <<"/_api/gharial/", GraphName/binary, "/edge/", EdgeDefName/binary>>,
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, ?AgDefQuery, ?AgDefHeader, BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 replaceEdgeDef(PoolNameOrSocket, GraphName, EdgeDefName, MapData, QueryPars) ->
    Path = <<"/_api/gharial/", GraphName/binary, "/edge/", EdgeDefName/binary>>,
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, QueryPars, ?AgDefHeader, BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, QueryPars, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 % 从图形中删除边缘定义
 % DELETE /_api/gharial/{graph}/edge/{definition}#definition
@@ -403,13 +400,11 @@ delEdgeDef(PoolNameOrSocket, GraphName, EdgeDefName, QueryPars) ->
 %     errorMessage：为此错误创建的消息。
 newVertex(PoolNameOrSocket, GraphName, CollName, MapData) ->
    Path = <<"/_api/gharial/", GraphName/binary, "/vertex/", CollName/binary>>,
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, ?AgDefQuery, ?AgDefHeader, BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 newVertex(PoolNameOrSocket, GraphName, CollName, MapData, QueryPars) ->
    Path = <<"/_api/gharial/", GraphName/binary, "/vertex/", CollName/binary>>,
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, QueryPars, ?AgDefHeader, BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, QueryPars, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 % 获取现有顶点
 % GET /_api/gharial/{graph}/vertex/{collection}/{vertex}
@@ -514,18 +509,15 @@ getVertex(PoolNameOrSocket, GraphName, CollName, VertexKey, QueryPars, Headers) 
 %     errorMessage：为此错误创建的消息。
 updateVertex(PoolNameOrSocket, GraphName, CollName, VertexKey, MapData) ->
    Path = <<"/_api/gharial/", GraphName/binary, "/vertex/", CollName/binary, "/", (agMiscUtils:toBinary(VertexKey))/binary>>,
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, ?AgDefQuery, ?AgDefHeader, BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 updateVertex(PoolNameOrSocket, GraphName, CollName, VertexKey, MapData, QueryPars) ->
    Path = <<"/_api/gharial/", GraphName/binary, "/vertex/", CollName/binary, "/", (agMiscUtils:toBinary(VertexKey))/binary>>,
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, QueryPars, ?AgDefHeader, BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, QueryPars, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 updateVertex(PoolNameOrSocket, GraphName, CollName, VertexKey, MapData, QueryPars, Headers) ->
    Path = <<"/_api/gharial/", GraphName/binary, "/vertex/", CollName/binary, "/", (agMiscUtils:toBinary(VertexKey))/binary>>,
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, QueryPars, Headers, BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, QueryPars, Headers, eVPack:encodeBin(MapData)).
 
 % 替换现有的顶点
 % PUT /_api/gharial/{graph}/vertex/{collection}/{vertex}
@@ -577,18 +569,15 @@ updateVertex(PoolNameOrSocket, GraphName, CollName, VertexKey, MapData, QueryPar
 %     errorMessage：为此错误创建的消息。
 replaceVertex(PoolNameOrSocket, GraphName, CollName, VertexKey, MapData) ->
    Path = <<"/_api/gharial/", GraphName/binary, "/vertex/", CollName/binary, "/", (agMiscUtils:toBinary(VertexKey))/binary>>,
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, ?AgDefQuery, ?AgDefHeader, BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 replaceVertex(PoolNameOrSocket, GraphName, CollName, VertexKey, MapData, QueryPars) ->
    Path = <<"/_api/gharial/", GraphName/binary, "/vertex/", CollName/binary, "/", (agMiscUtils:toBinary(VertexKey))/binary>>,
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, QueryPars, ?AgDefHeader, BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, QueryPars, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 replaceVertex(PoolNameOrSocket, GraphName, CollName, VertexKey, MapData, QueryPars, Headers) ->
    Path = <<"/_api/gharial/", GraphName/binary, "/vertex/", CollName/binary, "/", (agMiscUtils:toBinary(VertexKey))/binary>>,
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, QueryPars, Headers, BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, QueryPars, Headers, eVPack:encodeBin(MapData)).
 
 % 从图中删除顶点
 % DELETE /_api/gharial/{graph}/vertex/{collection}/{vertex}
@@ -689,13 +678,11 @@ delVertex(PoolNameOrSocket, GraphName, CollName, VertexKey, QueryPars, Headers) 
 %     errorMessage：为此错误创建的消息。
 newEdge(PoolNameOrSocket, GraphName, CollName, MapData) ->
    Path = <<"/_api/gharial/", GraphName/binary, "/edge/", CollName/binary>>,
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, ?AgDefQuery, ?AgDefHeader, BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 newEdge(PoolNameOrSocket, GraphName, CollName, MapData, QueryPars) ->
    Path = <<"/_api/gharial/", GraphName/binary, "/edge/", CollName/binary>>,
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, QueryPars,  ?AgDefHeader, BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, QueryPars, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 % 获得边
 % GET /_api/gharial/{graph}/edge/{collection}/{edge}
@@ -801,18 +788,15 @@ getEdge(PoolNameOrSocket, GraphName, CollName, EdgeKey, QueryPars, Headers) ->
 %     errorMessage：为此错误创建的消息。
 updateEdge(PoolNameOrSocket, GraphName, CollName, EdgeKey, MapData) ->
    Path = <<"/_api/gharial/", GraphName/binary, "/edge/", CollName/binary, "/", (agMiscUtils:toBinary(EdgeKey))/binary>>,
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path,  ?AgDefQuery, ?AgDefHeader, BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 updateEdge(PoolNameOrSocket, GraphName, CollName, EdgeKey, MapData, QueryPars) ->
    Path = <<"/_api/gharial/", GraphName/binary, "/edge/", CollName/binary, "/", (agMiscUtils:toBinary(EdgeKey))/binary>>,
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path,  QueryPars, ?AgDefHeader, BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, QueryPars, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 updateEdge(PoolNameOrSocket, GraphName, CollName, EdgeKey, MapData, Headers, QueryPars) ->
    Path = <<"/_api/gharial/", GraphName/binary, "/edge/", CollName/binary, "/", (agMiscUtils:toBinary(EdgeKey))/binary>>,
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, QueryPars, Headers, BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, QueryPars, Headers, eVPack:encodeBin(MapData)).
 
 
 % 替换现有边的内容
@@ -867,18 +851,15 @@ updateEdge(PoolNameOrSocket, GraphName, CollName, EdgeKey, MapData, Headers, Que
 %     errorMessage：为此错误创建的消息。
 replaceEdge(PoolNameOrSocket, GraphName, CollName, EdgeKey, MapData) ->
    Path = <<"/_api/gharial/", GraphName/binary, "/edge/", CollName/binary, "/", (agMiscUtils:toBinary(EdgeKey))/binary>>,
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, ?AgDefQuery, ?AgDefHeader, BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 replaceEdge(PoolNameOrSocket, GraphName, CollName, EdgeKey, MapData, QueryPars) ->
    Path = <<"/_api/gharial/", GraphName/binary, "/edge/", CollName/binary, "/", (agMiscUtils:toBinary(EdgeKey))/binary>>,
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, QueryPars, ?AgDefHeader, BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, QueryPars, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 replaceEdge(PoolNameOrSocket, GraphName, CollName, EdgeKey, MapData, QueryPars, Headers) ->
    Path = <<"/_api/gharial/", GraphName/binary, "/edge/", CollName/binary, "/", (agMiscUtils:toBinary(EdgeKey))/binary>>,
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, QueryPars, Headers, BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, QueryPars, Headers, eVPack:encodeBin(MapData)).
 
 % 从图形中删除边
 % DELETE /_api/gharial/{graph}/edge/{collection}/{edge}

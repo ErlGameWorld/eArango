@@ -27,17 +27,4 @@
 % 端点：协调器的绑定，例如tcp://[::1]:8530
 % 501：
 getClusterEndpoints(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/cluster/endpoints">>, ?AgDefQuery, true).
-
-% 所有端点的返回列表永久链接
-% 此API调用返回所有端点（单个服务器）的列表。
-% GET /_api/endpoint
-% 此路由不应再使用。从3.4.0版开始，它被视为已弃用。
-% 返回服务器正在侦听的所有已配置端点的数组。
-% 结果是一个JSON对象的JSON数组，每个对象均带有“ entrypoint”作为唯一属性，并且值是描述端点的字符串。
-% 注意：仅在系统数据库中允许检索所有端点的数组。在任何其他数据库中调用此操作将使服务器返回错误。
-% 返回码
-% 200：可以成功确定端点数组时返回。
-% 400：如果未在系统数据库中执行该操作，则返回。
-% 405：如果使用了不受支持的HTTP方法，则服务器将以HTTP 405进行响应。
-
+	agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/cluster/endpoints">>, ?AgDefQuery, ?AgDefHeader, ?AgDefBody, true).

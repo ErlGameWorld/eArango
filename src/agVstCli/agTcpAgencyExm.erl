@@ -39,7 +39,7 @@ system_get_state({_Parent, SrvState, _CliState}) ->
    {ok, SrvState}.
 
 -spec system_terminate(term(), pid(), [], term()) -> none().
-system_terminate(Reason, _Parent, _Debug, {_Parent, SrvState, CliState}) ->
+system_terminate(Reason, _ParentS, _Debug, {_Parent, SrvState, CliState}) ->
    terminate(Reason, SrvState, CliState).
 
 safeRegister(ServerName) ->

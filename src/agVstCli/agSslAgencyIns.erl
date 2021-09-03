@@ -84,7 +84,7 @@ handleMsg({ssl_error, Socket, Reason},
    ssl:close(Socket),
    agAgencyUtils:dealClose(SrvState, CliState, {error, {ssl_error, Reason}});
 handleMsg(?AgMDoDBConn,
-   #srvState{poolName = PoolName, serverName = ServerName, reConnState = _ReConnState} = SrvState,
+   #srvState{poolName = PoolName, serverName = ServerName, reConnState = ReConnState} = SrvState,
    CliState) ->
    case ?agBeamPool:getv(PoolName) of
       #dbOpts{port = Port, hostname = HostName, dbName = DbName, user = User, password = Password, vstSize = VstSize} ->
@@ -97,7 +97,7 @@ handleMsg(?AgMDoDBConn,
                   {ok, MsgBin} ->
                      case eVPack:decodeHeader(MsgBin) of
                         [1, 2, 200, _] ->
-                           {ok, SrvState#srvState{dbName = DbName, socket = Socket, vstSize = VstSize}, CliState};
+                           {ok, SrvState#srvState{dbName = DbName, reConnState = agAgencyUtils:resetReConnState(ReConnState), socket = Socket, vstSize = VstSize}, CliState};
                         _Err ->
                            ?AgWarn(ServerName, "auth error: ~p~n", [_Err]),
                            agAgencyUtils:reConnTimer(SrvState, CliState)
@@ -113,6 +113,10 @@ handleMsg(?AgMDoDBConn,
       _Ret ->
          ?AgWarn(ServerName, "deal connect not found agBeamPool:getv(~p) ret ~p is error ~n", [PoolName, _Ret])
    end;
+handleMsg({'$gen_call', FromTag, '$SrvInfo'}, SrvState, CliState) ->
+   {To, Tag} = FromTag,
+   catch To ! {Tag, {erlang:get(), SrvState, CliState}},
+   {ok, SrvState, CliState};
 handleMsg(Msg, #srvState{serverName = ServerName} = SrvState, CliState) ->
    ?AgWarn(ServerName, "unknown msg: ~p~n", [Msg]),
    {ok, SrvState, CliState}.

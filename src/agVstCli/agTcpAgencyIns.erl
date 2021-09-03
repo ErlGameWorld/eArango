@@ -34,6 +34,12 @@ handleMsg(#agReq{method = Method, path = Path, queryPars = QueryPars, headers = 
                {ok, SrvState, CliState};
             _ ->
                Request = agVstProto:request(IsSystem, MessageId, Method, DbName, Path, QueryPars, Headers, Body, VstSize),
+               BBBB  = iolist_to_binary(Request),
+               ?AgWarn(ServerName, "the request is:~p~n", [BBBB]),
+               %file:write_file("./request", BBBB),
+               %erlang:put(MessageId, {FromPid, undefined, 0, <<>>}),
+               %Ret = agVstProto:response(?AgUndef, 0, 0, 0, 0, <<>>, BBBB),
+               %?AgWarn(ServerName, "the request is response ret:~p~n", [Ret]),
                case gen_tcp:send(Socket, Request) of
                   ok ->
                      TimerRef = case OverTime of
@@ -84,7 +90,7 @@ handleMsg({tcp_error, Socket, Reason},
    gen_tcp:close(Socket),
    agAgencyUtils:dealClose(SrvState, CliState, {error, {tcp_error, Reason}});
 handleMsg(?AgMDoDBConn,
-   #srvState{poolName = PoolName, serverName = ServerName, reConnState = _ReConnState} = SrvState,
+   #srvState{poolName = PoolName, serverName = ServerName, reConnState = ReConnState} = SrvState,
    CliState) ->
    case ?agBeamPool:getv(PoolName) of
       #dbOpts{port = Port, hostname = HostName, dbName = DbName, user = User, password = Password, vstSize = VstSize} ->
@@ -97,7 +103,8 @@ handleMsg(?AgMDoDBConn,
                   {ok, MsgBin} ->
                      case eVPack:decodeHeader(MsgBin) of
                         [1, 2, 200, _] ->
-                           {ok, SrvState#srvState{dbName = DbName, socket = Socket, vstSize = VstSize}, CliState};
+                           ?AgWarn(ServerName, "connect success: old server state:~n ~p~n client state~n ~p ~n", [SrvState, CliState]),
+                           {ok, SrvState#srvState{dbName = DbName, reConnState = agAgencyUtils:resetReConnState(ReConnState), socket = Socket, vstSize = VstSize}, CliState};
                         _Err ->
                            ?AgWarn(ServerName, "auth error: ~p~n", [_Err]),
                            agAgencyUtils:reConnTimer(SrvState, CliState)
@@ -113,6 +120,10 @@ handleMsg(?AgMDoDBConn,
       _Ret ->
          ?AgWarn(ServerName, "deal connect not found agBeamPool:getv(~p) ret ~p is error ~n", [PoolName, _Ret])
    end;
+handleMsg({'$gen_call', FromTag, '$SrvInfo'}, SrvState, CliState) ->
+   {To, Tag} = FromTag,
+   catch To ! {Tag, {erlang:get(), SrvState, CliState}},
+   {ok, SrvState, CliState};
 handleMsg(Msg, #srvState{serverName = ServerName} = SrvState, CliState) ->
    ?AgWarn(ServerName, "unknown msg: ~p~n", [Msg]),
    {ok, SrvState, CliState}.

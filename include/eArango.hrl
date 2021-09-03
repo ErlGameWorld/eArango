@@ -2,9 +2,9 @@
 -define(AgGet, 1).
 -define(AgPost, 2).
 -define(AgPut, 3).
--define(AgHead, 4).              %% (not used in VPP)
+-define(AgHead, 4).              %% (not used in VPP, 即主体是存储为VelocyPack的对象。)
 -define(AgPatch, 5).
--define(AgOptions, 6).           %% (not used in VPP)
+-define(AgOptions, 6).           %% (not used in VPP, 即主体是存储为VelocyPack的对象。)
 
 -define(AgDefQuery, #{}).
 -define(AgDefHeader, #{}).

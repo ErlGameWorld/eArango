@@ -25,6 +25,6 @@ start_link() ->
 init([]) ->
    SupFlags = #{strategy => one_for_one, intensity => 100, period => 3600},
    PoolMgrSpec = #{id => agAgencyPoolMgrExm, start => {agAgencyPoolMgrExm, start_link, [?agAgencyPoolMgr, [], []]}, restart => permanent, shutdown => infinity, type => worker, modules => [agAgencyPoolMgrExm]},
-   HttpCliSupSpec = #{id => agAgencyPool_sup, start => {agAgencyPool_sup, start_link, []}, restart => permanent, shutdown => infinity, type => supervisor, modules => [agAgencyPool_sup]},
-   {ok, {SupFlags, [PoolMgrSpec, HttpCliSupSpec]}}.
+   CliSupSpec = #{id => agAgencyPool_sup, start => {agAgencyPool_sup, start_link, []}, restart => permanent, shutdown => infinity, type => supervisor, modules => [agAgencyPool_sup]},
+   {ok, {SupFlags, [PoolMgrSpec, CliSupSpec]}}.
 

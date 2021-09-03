@@ -61,6 +61,9 @@ response(?AgUndef, DoneCnt, _MessageId, _ChunkIdx, _ChunkSize, _ChunkBuffer, Dat
       <<Length:32/integer-little-unsigned, ChunkX:31/integer-little-unsigned, IsFirst:1/integer-little-unsigned, MessageId:64/integer-little-unsigned, _MessageLength:64/integer-little-unsigned, LeftBuffer/binary>> ->
          ByteSize = erlang:byte_size(LeftBuffer),
          ChunkSize = Length - ?AgHeaderSize,
+
+         io:format("IMY***********get ret ~p ~n", [{Length, ChunkX, IsFirst, MessageId, _MessageLength, ChunkSize, ByteSize}]),
+
          if
             ByteSize == ChunkSize ->
                {PidFrom, TimerRef, ChunkCnt, MsgBuffer} = MsgCache = erlang:get(MessageId),

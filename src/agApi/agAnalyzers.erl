@@ -25,8 +25,7 @@
 %    400：缺少一个或多个必需参数，或者一个或多个参数无效。
 %    403：用户无权使用此配置创建和分析器。
 newAnalyzer(PoolNameOrSocket, MapData) ->
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/analyzer">>, ?AgDefQuery, ?AgDefHeader, BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/analyzer">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 % 返回分析器定义
 % GET /_api/analyzer/{analyzer-name}

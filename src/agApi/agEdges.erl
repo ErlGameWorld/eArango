@@ -28,7 +28,7 @@
 % 获取边
 % GET /_api/edges/{collection-id}
 % 路径参数
-% collection-id（必填）：边集合的ID或者边集合名。
+% collection-id（必填）：边集合名。
 % 查询参数
 %    vertex（必填）：起始顶点的ID。
 %    direction（可选）：选择 in or out 为边缘方向。如果未设置，则返回任何边。
@@ -37,6 +37,6 @@
 % 200：如果找到边缘集合并检索到边缘，则返回。
 % 400：如果请求包含无效参数，则返回。
 % 404：如果未找到边缘集合，则返回。
-getEdges(PoolNameOrSocket, CollName, QueryPars) ->
-   Path = <<"/_api/edges/", CollName/binary>>,
+getEdges(PoolNameOrSocket, EdgesCollName, QueryPars) ->
+   Path = <<"/_api/edges/", EdgesCollName/binary>>,
    agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, QueryPars).

@@ -111,8 +111,7 @@ getWalProps(PoolNameOrSocket) ->
 %    200：操作成功返回。
 %    405：使用无效的HTTP方法时返回。
 setWalProps(PoolNameOrSocket, MapData) ->
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_admin/wal/properties">>, ?AgDefQuery, ?AgDefHeader, BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_admin/wal/properties">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 % 返回有关当前正在运行的事务的信息
 % GET /_admin/wal/transactions
@@ -167,8 +166,7 @@ curDbTime(PoolNameOrSocket) ->
 %    path：此请求的相对路径
 %    rawRequestBody：已发送字符的数字列表
 echo(PoolNameOrSocket, MapData) ->
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_admin/echo">>, ?AgDefQuery, ?AgDefHeader, BodyStr).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_admin/echo">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 % 返回数据库的版本。
 % GET /_admin/database/target-version
@@ -183,8 +181,34 @@ targetVersion(PoolNameOrSocket) ->
 % 此调用将启动干净的关机序列。需要管理权限
 % 返回码
 % 200：在所有情况下OK都将返回，成功时将在结果缓冲区中返回。
-shutDown(PoolNameOrSocket) ->
+doShutdown(PoolNameOrSocket) ->
    agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, <<"/_admin/shutdown">>).
+
+% 查询软关机进程进度
+%
+% GET /_admin/shutdown
+% 引入：v3.7.12、v3.8.1、v3.9.0
+% 此调用报告有关软协调器关闭的进度（请参阅 的文档DELETE /_admin/shutdown?soft=true）。在这种情况下，将跟踪以下类型的操作：
+% AQL 游标（特别是流游标）
+% 交易（特别是流交易）
+% Pregel 运行（由该协调员进行）
+% 正在进行的异步请求（使用x-arango-async: storeHTTP 标头
+% 已完成的异步请求，其结果尚未收集
+% 排队的低优先级请求（最正常的请求）
+% 正在进行的低优先级请求
+% 此 API 仅在协调器上可用。
+% HTTP 200响应表明软关机正在进行以及各种类型的活动操作数。一旦所有数字都变为 0，allClear则设置标志并且协调器自动关闭。
+%    softShutdownOngoing：是否正在进行协调器的软关闭。
+%    AQLcursors：仍处于活动状态的 AQL 游标数。
+%    Transactions ：正在进行的交易数量。
+%    pendingJobs：正在进行的异步请求的数量。
+%    doneJobs：已完成的异步请求数，其结果尚未收集。
+%    pregelConductors：正在进行的 Pregel 作业的数量。
+%    lowPrioOngoingRequests：排队的低优先级请求的数量。
+%    lowPrioQueuedRequests：正在进行的低优先级请求的数量。
+%    allClear : 所有活动操作是否完成。
+infoShutdown(PoolNameOrSocket) ->
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_admin/shutdown">>).
 
 
 % 在服务器上执行脚本。
@@ -198,8 +222,8 @@ shutDown(PoolNameOrSocket) ->
 % 200：一切正常或发生超时时返回。在后一种情况下，将返回指示超时的application / json类型的主体。根据returnAsJSON的不同，这是一个json对象或纯字符串。
 % 403：如果ArangoDB不在集群模式下运行，则返回。
 % 404：如果未为群集操作编译ArangoDB，则返回404。
-execute(PoolNameOrSocket, BodyStr) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_admin/execute">>, ?AgDefQuery, ?AgDefHeader, BodyStr).
+execute(PoolNameOrSocket, Script) ->
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_admin/execute">>, ?AgDefQuery, ?AgDefHeader, eVPack:decode(Script)).
 
 % 返回服务器的状态信息。
 % GET /_admin/status

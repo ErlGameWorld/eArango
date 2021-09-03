@@ -33,16 +33,18 @@
    , getMsgId/0
    , receiveTcpData/2
    , receiveSslData/2
+
+   , agencyInfo/1
 ]).
 
 
 -spec callAgency(poolNameOrSocket(), method(), path()) -> term() | {error, term()}.
 callAgency(PoolNameOrSocket, Method, Path) ->
-   callAgency(PoolNameOrSocket, Method, Path, #{}, #{}, <<>>, false, ?AgDefTimeout).
+   callAgency(PoolNameOrSocket, Method, Path, ?AgDefQuery, ?AgDefHeader, ?AgDefBody, false, ?AgDefTimeout).
 
 -spec callAgency(poolNameOrSocket(), method(), path(), queryPars()) -> term() | {error, term()}.
 callAgency(PoolNameOrSocket, Method, Path, QueryPars) ->
-   callAgency(PoolNameOrSocket, Method, Path, QueryPars, #{}, <<>>, false, ?AgDefTimeout).
+   callAgency(PoolNameOrSocket, Method, Path, QueryPars, ?AgDefHeader, ?AgDefBody, false, ?AgDefTimeout).
 
 -spec callAgency(poolNameOrSocket(), method(), path(), queryPars(), headers(), body()) -> term() | {error, term()}.
 callAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, Body) ->
@@ -54,7 +56,7 @@ callAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, Body, IsSystem) -
 
 -spec callAgency(poolNameOrSocket(), method(), path(), queryPars(), headers(), body(), boolean(), timeout()) -> term() | {error, atom()}.
 callAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, Body, IsSystem, Timeout) ->
-   case castAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, eVPack:encodeBin(Body), self(), IsSystem, Timeout) of
+   case castAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, Body, self(), IsSystem, Timeout) of
       {waitRRT, RequestId, MonitorRef} ->
          receiveReqRet(RequestId, MonitorRef);
       {error, _Reason} = Err ->
@@ -172,11 +174,11 @@ receiveSslData(RecvState, Socket) ->
             {?AgMDone, MsgBin} ->
                {ok, MsgBin};
             {?AgCHeader, NewRecvState} ->
-               receiveTcpData(NewRecvState, Socket);
+               receiveSslData(NewRecvState, Socket);
             {?AgCBodyStart, NewRecvState} ->
-               receiveTcpData(NewRecvState, Socket);
+               receiveSslData(NewRecvState, Socket);
             {?AgCBodyGoOn, NewRecvState} ->
-               receiveTcpData(NewRecvState, Socket)
+               receiveSslData(NewRecvState, Socket)
          end;
       {ssl_closed, Socket} ->
          disConnDb(Socket),
@@ -314,3 +316,6 @@ getMsgId() ->
       true ->
          MessageId
    end.
+
+agencyInfo(AgencyName) ->
+   gen_server:call(AgencyName, '$SrvInfo').

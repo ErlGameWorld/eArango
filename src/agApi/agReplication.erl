@@ -24,56 +24,62 @@
 % 返回集合及其索引的概述
 % GET /_api/replication/inventory
 % 查询参数
-%     includeSystem（可选）：在结果中包括系统集合。默认值为true。
-%     global （可选）：在响应中包括所有数据库。仅适用于_system默认值为false。
-%     batchId（必填）：此API调用的RocksDB引擎需要有效的batchId
-% 返回服务器上可用的集合和索引的数组。复制客户端可以使用此阵列来启动与服务器的初始同步。
-% 响应将包含具有collection和state和 tick属性的JSON对象。
-% 集合是具有以下子属性的集合数组：
-%     parameters：集合属性
-%     indexes：集合索引的数组。主索引和边缘索引不包含在此数组中。
+%    includeSystem（可选）：在结果中包含系统集合。默认值为true。
+%    global（可选）：在响应中包括所有数据库。仅适用于_system默认值为false。
+%    batchId（必需）：此 API 调用需要有效的 batchId
+%    collection （可选）：如果设置了此参数，则响应将限制为单个集合（指定的集合），并且不会返回任何视图。这可以用作优化以减小响应的大小。
+%
+% 返回集合数组及其索引，以及可用的视图数组。复制客户端可以使用这些阵列来启动与服务器的初始同步。响应将包含所有的集合，它们的索引和观点所请求的数据库，如果全球没有设置，并在所有数据库中的所有藏品，索引和视图，如果全局 设置。如果global未设置，则可以通过设置collection参数将响应限制为单个集合。在这种情况下，响应将只包含关于集合数组中请求的集合的信息，而不包含关于视图的信息（即视图 响应属性将是一个空数组）。
+% 响应将包含一个带有collections、views、state和 tick属性的 JSON 对象。
+% collections是具有以下子属性的集合数组：
+%    parameters：集合属性
+%    indexes：集合索引的数组。此数组中不包含主索引和边缘索引。
 % 该状态属性包含复制记录器的当前状态。它包含以下子属性：
-%     running：复制记录器当前是否处于活动状态。注意：从ArangoDB 2.2开始，该值将始终为true
-%     lastLogTick：复制记录器已写入的最后一个滴答的值
-%     time：服务器上的当前时间
-% 复制客户端应注意返回的lastLogTick值。然后，他们可以使用转储方法获取集合的数据直到lastLogTick的值，并在此滴答值之后查询连续复制日志中的日志事件。
+% running：复制记录器当前是否处于活动状态。注意：从 ArangoDB 2.2 开始，该值将始终为true
+% lastLogTick：复制记录器写入的最后一个刻度的值
+% time : 服务器上的当前时间
+% views是一组可用的视图。
+% 复制客户端应注意返回的lastLogTick值。然后，他们可以使用 dump 方法获取集合的数据，直到 lastLogTick 的值，并在此滴答值之后查询连续复制日志以获取日志事件。
 % 要在服务器上创建集合的完整副本，复制客户端可以执行以下步骤：
-%     调用/ inventory API方法。这将从服务器返回lastLogTick值以及集合和索引的数组。
-%     对于/ inventory返回的每个集合，请在本地创建集合，然后调用/ dump将集合数据流式传输到客户端，直到lastLogTick的值 为止。之后，客户端可以在/ inventory报告的集合上创建索引。
-% 如果客户端要从记录器服务器连续流式传输复制日志事件，则需要执行以下附加步骤：
-%     客户端应首先调用/ logger-follow来获取在客户端调用/ inventory之后记录的第一批复制事件。
-%     对/ logger-follow的调用应使用from参数，其值应为/ inventory报告的lastLogTick的值 。调用/ logger-follow将返回 x-arango-replication-lastincluded，其中将包含响应中包含的最后一个滴答值。
-%     然后，客户端可以连续调用/ logger-follow以递增地获取上次传输后发生的新复制事件。
-%     调用应使用from参数，并带有 上一个响应的x-arango-replication-lastincluded头的值。如果没有更多的复制事件，则响应将为空，客户端可以休眠一会儿，然后再试一次。
-% 注意：在协调器上，此请求必须具有查询参数DBserver，该参数 必须是DBserver的ID。相同的请求被同步转发到该DBserver。如果此属性未在协调程序情况下绑定，则是错误的。
-% 注意：：global顶层对象使用参数包含一个键databases ，每个键下的一个键代表一个datbase名称，并且值符合上述说明。
-% 返回码
-%     200：如果请求成功执行，则返回。
-%     405：使用无效的HTTP方法时返回。
-%     500：如果组装响应时发生错误，则返回500。
-getRepInventory(PoolNameOrSocket, QueryPars) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/replication/inventory">>, QueryPars).
-
-% 创建新的转储批次
-% 处理转储批处理命令
-% POST /_api/replication/batch
-% 注意：这些调用对用户而言并不有趣。
-% 具有以下属性的JSON对象是必需的：
-%    ttl：新批处理的生存时间（以秒为单位）
-% 具有批处理配置的JSON对象。
-% 创建一个新的转储批次并返回批次的ID。
-% 响应是具有以下属性的JSON对象：
-%    id：批次的ID
-% 注意：在协调器上，此请求必须具有查询参数DBserver，该参数 必须是DB-Server的ID。相同的请求被同步转发到该DB服务器。如果在Coordinator情况下未绑定此属性，则会出错。
-% 返回码
-%    200：批量创建成功，返回
-%    400：如果ttl值无效，或者在Coordinator上未指定DBserver属性或该属性非法，则返回400 。
+% 调用/inventory API 方法。这将返回lastLogTick值以及来自服务器的集合和索引数组。
+% 对于/inventory返回的每个集合，在本地创建集合并调用/dump将集合数据流式传输到客户端，直到lastLogTick的值 。之后，客户端可以在/inventory报告的集合上创建索引。
+% 如果客户端想要从记录器服务器连续流式传输复制日志事件，则需要执行以下附加步骤：
+% 客户端最初应调用/logger-follow以获取在客户端调用/inventory后记录的第一批复制事件。
+% 对/logger-follow的调用应该使用from参数和/inventory报告的lastLogTick的值 。对/logger-follow的调用将返回 x-arango-replication-lastincluded，它将包含响应中包含的最后一个刻度值。
+% 然后客户端可以连续调用/logger-follow以增量获取上次传输后发生的新复制事件。
+% 调用应使用带有 前一个响应的x-arango-replication-lastincluded标头值的from参数。如果没有更多的复制事件，响应将为空，客户端可以进入休眠状态，稍后再试。
+% 注意：在 Coordinator 上，此请求必须具有查询参数DBserver，该参数 必须是 DB-Server 的 ID。相同的请求会同步转发到该 DB-Server。如果此属性在 Coordinator 情况下未绑定，则会出错。
+% 注意：使用该global参数，顶层对象包含一个key databases ，每个key下代表一个数据库名，值符合上面的描述。
+% 返回代码
+%    200：请求执行成功返回。
 %    405：使用无效的HTTP方法时返回。
-newRepBatch(PoolNameOrSocket, MapData) ->
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/replication/batch">>, ?AgDefQuery, ?AgDefHeader, BodyStr).
+%    500：如果组装响应时发生错误，则返回。
+% 该批次方法将创建然后可转储的当前状态的快照。将转储 API 与 RocksDB 一起使用时需要一个 batchId。
+getRepInventory(PoolNameOrSocket, QueryPars) ->
+	agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/replication/inventory">>, QueryPars).
 
-% 删除现有的转储批次固定链接
+% 创建新的转储批处理
+% POST /_api/replication/batch
+% 注意：这些调用对用户来说是无趣的。
+% 查询参数
+%    state（可选）：设置state为 true 将使响应还包含一个包含state有关领导者状态信息的属性。这仅在复制过程中在内部使用，不应由客户端应用程序使用。
+% 需要具有这些属性的 JSON 对象：
+%    ttl：新批次的生存时间（以秒为单位）
+% 具有批次配置的 JSON 对象。
+% 创建一个新的转储批次并返回该批次的 ID。
+% 响应是具有以下属性的 JSON 对象：
+%    id : 批次的 id
+%    lastTick : 创建批处理时使用的快照刻度值
+%    state : 额外的领导者状态信息（仅当请求中的stateURL 参数设置为时才存在 true）
+% 注意：在 Coordinator 上，此请求必须具有查询参数DBserver，该参数 必须是 DB-Server 的 ID。相同的请求会同步转发到该 DB-Server。如果此属性在 Coordinator 情况下未绑定，则会出错。
+% 返回代码
+% 200：如果批次创建成功则返回。
+% 400：如果 ttl 值无效或未指定DBserver属性或协调器上的DBserver属性不合法，则返回。
+% 405：使用无效的HTTP方法时返回。
+newRepBatch(PoolNameOrSocket, MapData) ->
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/replication/batch">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
+
+% 删除现有的转储批次
 % 处理转储批处理命令
 % DELETE /_api/replication/batch/{id}
 % 注意：这些调用对用户而言并不有趣。
@@ -86,11 +92,10 @@ newRepBatch(PoolNameOrSocket, MapData) ->
 %    400：如果找不到批次，则返回。
 %    405：使用无效的HTTP方法时返回。
 delRepBatch(PoolNameOrSocket, BatchId) ->
-   Path = <<"/_api/replication/batch/", (agMiscUtils:toBinary(BatchId))/binary>>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path).
+	Path = <<"/_api/replication/batch/", (agMiscUtils:toBinary(BatchId))/binary>>,
+	agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path).
 
-% 延长现有的转储批次固定链接
-% 处理转储批处理命令
+% 延长现有的转储批次
 % PUT /_api/replication/batch/{id}
 % 注意：这些调用对用户而言并不有趣。
 % 路径参数
@@ -108,9 +113,8 @@ delRepBatch(PoolNameOrSocket, BatchId) ->
 % 请注意，dump方法将仅返回文档，日记帐和数据文件中的更新，删除。仅存储在预写日志中的操作将不会返回。为了确保这些操作包含在转储中，必须先清除预写日志。
 % 为了获得相同的数据状态，复制客户端应按照提供的顺序使用转储结果的各个部分。
 prolongRepBatch(PoolNameOrSocket, BatchId, MapData) ->
-   Path = <<"/_api/replication/batch/", (agMiscUtils:toBinary(BatchId))/binary>>,
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, ?AgDefQuery, ?AgDefHeader, BodyStr).
+	Path = <<"/_api/replication/batch/", (agMiscUtils:toBinary(BatchId))/binary>>,
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 % 返回集合的数据
 % 返回一个集合的全部内容
@@ -140,7 +144,7 @@ prolongRepBatch(PoolNameOrSocket, BatchId, MapData) ->
 %    405：使用无效的HTTP方法时返回。
 %    500：如果组装响应时发生错误，则返回500。
 getRepDump(PoolNameOrSocket, QueryPars) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/replication/dump">>, QueryPars).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/replication/dump">>, QueryPars).
 
 % 返回Merkle树以进行收集
 % 检索与集合关联的Merkle树
@@ -176,7 +180,7 @@ getRepDump(PoolNameOrSocket, QueryPars) ->
 % 500：如果组装响应时发生错误，则返回500。
 % 501：如果使用mmfiles调用或在不支持按版本同步的集合上返回，则返回
 getRepTree(PoolNameOrSocket, QueryPars) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/replication/revisions/tree">>, QueryPars).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/replication/revisions/tree">>, QueryPars).
 
 % 为集合永久链接重建Merkle树
 % 重建与集合关联的Merkle树
@@ -194,7 +198,7 @@ getRepTree(PoolNameOrSocket, QueryPars) ->
 %    500：如果组装响应时发生错误，则返回500。
 %    501：如果使用mmfiles调用或在不支持按版本同步的集合上返回，则返回
 resetRepTree(PoolNameOrSocket, QueryPars) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/replication/revisions/tree">>, QueryPars).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/replication/revisions/tree">>, QueryPars).
 
 % 返回要求范围内的修订版ID 永久链接
 % 检索请求范围内的文档的修订ID
@@ -205,7 +209,7 @@ resetRepTree(PoolNameOrSocket, QueryPars) ->
 %    batchId（必填）：要使用的快照的ID
 %    resume（可选）：如果先前的请求被截断，则恢复的修订版本
 getRepRanges(PoolNameOrSocket, QueryPars) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/revisions/ranges">>, QueryPars).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/revisions/ranges">>, QueryPars).
 
 % 通过修订返回文档
 % 通过修订检索文档
@@ -234,7 +238,7 @@ getRepRanges(PoolNameOrSocket, QueryPars) ->
 %    500：如果组装响应时发生错误，则返回500。
 %    501：如果使用mmfiles调用或在不支持按版本同步的集合上返回，则返回
 getRepDoc(PoolNameOrSocket, QueryPars) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/revisions/documents">>, QueryPars).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/revisions/documents">>, QueryPars).
 
 % 从远程端点同步数据永久
 % 开始复制
@@ -265,8 +269,7 @@ getRepDoc(PoolNameOrSocket, QueryPars) ->
 %    500：如果同步期间发生错误，则返回。
 %    501：在集群中的协调器上调用此操作时返回。
 startRepSync(PoolNameOrSocket, MapData) ->
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/sync">>, ?AgDefQuery, ?AgDefHeader, BodyStr).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/sync">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 % 返回集合和索引的集群清单
 % 重建集群中的集合和索引的概述
@@ -280,7 +283,7 @@ startRepSync(PoolNameOrSocket, MapData) ->
 %     405：使用无效的HTTP方法时返回。
 %     500：如果组装响应时发生错误，则返回500。
 getRepClusterInv(PoolNameOrSocket, QueryPars) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/replication/clusterInventory">>, QueryPars).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/replication/clusterInventory">>, QueryPars).
 
 % 复制记录器命令
 % 早期版本的ArangoDB允许启动，停止和配置复制记录器。这些命令在ArangoDB 2.2中是多余的，因为所有数据修改操作均写入服务器的预写日志，并且不再由单独的记录器处理。
@@ -309,16 +312,16 @@ getRepClusterInv(PoolNameOrSocket, QueryPars) ->
 %     405：使用无效的HTTP方法时返回。
 %     500：如果无法确定记录器状态，则返回。
 getRepLoggerState(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/replication/logger-state">>).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/replication/logger-state">>).
 
 
-% 返回日志条目永久链接固定链接
+% 返回日志条目
 % 从服务器获取日志行
 % GET /_api/replication/logger-follow
 % 此路由不应再使用。从3.4.0版开始，它被视为已弃用。
 % 查询参数
 % from（可选）：结果的排他性下界刻度值。
-% 到（可选）：结果的包含上限刻度值。
+% to（可选）：结果的包含上限刻度值。
 % chunkSize（可选）：返回结果的大约最大大小。
 % includeSystem（可选）：在结果中包括系统集合。默认值为true。
 % 从服务器的复制日志中返回数据。初始同步数据后，复制客户端可以调用此方法。该方法将从记录器服务器返回所有“最近”的日志条目，并且客户端可以在本地重播和应用这些条目，以使它们进入与记录器服务器相同的数据状态。
@@ -364,9 +367,9 @@ getRepLoggerState(PoolNameOrSocket) ->
 %     500：如果组装响应时发生错误，则返回500。
 %     501：在集群中的协调器上调用此操作时返回。
 getRepLoggerFirstTick(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/replication/logger-first-tick">>).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/replication/logger-first-tick">>).
 
-% 返回日志文件中可用的刻度值范围
+% 返回 WAL日志文件中可用的刻度值范围
 % GET /_api/replication/logger-tick-ranges
 % 返回所有当前可用的WAL日志文件的刻度值的当前可用范围。刻度值可用于确定某些数据（由刻度值标识）是否仍可用于复制。
 % 响应的主体包含一个JSON数组。每个数组成员都是一个描述单个日志文件的对象。每个对象都具有以下属性：
@@ -380,7 +383,7 @@ getRepLoggerFirstTick(PoolNameOrSocket) ->
 %     500：如果无法确定记录器状态，则返回。
 %     501：在集群中的协调器上调用此操作时返回。
 getRepLoggerTickRanges(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/replication/logger-tick-ranges">>).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/replication/logger-tick-ranges">>).
 
 % 复制应用程序命令
 % applier命令允许远程启动，停止和查询ArangoDB数据库复制应用程序的状态和配置。
@@ -419,10 +422,10 @@ getRepLoggerTickRanges(PoolNameOrSocket) ->
 % 405：使用无效的HTTP方法时返回。
 % 500：如果组装响应时发生错误，则返回500。
 getRepApplierConfig(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/replication/applier-config">>).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/replication/applier-config">>).
 
 getRepApplierConfig(PoolNameOrSocket, QueryPars) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/replication/applier-config">>, QueryPars).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/replication/applier-config">>, QueryPars).
 
 % 设置申请者的配置值
 % PUT /_api/replication/applier-config
@@ -459,51 +462,49 @@ getRepApplierConfig(PoolNameOrSocket, QueryPars) ->
 % 405：使用无效的HTTP方法时返回。
 % 500：如果组装响应时发生错误，则返回500。
 setRepApplierConfig(PoolNameOrSocket, MapData) ->
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/applier-config">>, ?AgDefQuery, ?AgDefHeader, BodyStr).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/applier-config">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 setRepApplierConfig(PoolNameOrSocket, MapData, QueryPars) ->
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/applier-config">>, QueryPars, ?AgDefHeader, BodyStr).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/applier-config">>, QueryPars, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 % 启动复制应用程序
 % PUT /_api/replication/applier-start
 % 查询参数
-% 全局（可选）：如果设置为true，则为所有数据库启动全局复制应用程序。如果设置为false，则在所选数据库中启动复制应用程序（默认）。
+% global（可选）：如果设置为true，则为所有数据库启动全局复制应用程序。如果设置为false，则在所选数据库中启动复制应用程序（默认）。
 % from（可选）：从其开始应用的远程lastLogTick值。如果未指定，则使用上一次申请者运行中最后保存的刻度。如果没有保存以前的申请者状态，则申请者将从记录器服务器日志的开头开始。
 % 启动复制程序。如果复制应用程序已经在运行，它将立即返回。
 % 如果复制应用程序尚未运行，则将检查该应用程序配置，如果复制程序已完成，则将在后台线程中启动该应用程序。这意味着即使应用程序在运行时遇到任何错误，也不会在对此方法的响应中报告这些错误。
 % 要在启动应用程序后检测复制应用程序错误，请改用 / _api / replication / applier-state API。
 % 返回码
-% 200：如果请求成功执行，则返回。
-% 400：如果复制申请人未完全配置或配置无效，则返回。
-% 405：使用无效的HTTP方法时返回。
-% 500：如果组装响应时发生错误，则返回500。
+%  200：如果请求成功执行，则返回。
+%  400：如果复制申请人未完全配置或配置无效，则返回。
+%  405：使用无效的HTTP方法时返回。
+%  500：如果组装响应时发生错误，则返回500。
 startRepApplier(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/applier-start">>).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/applier-start">>).
 
 startRepApplier(PoolNameOrSocket, QueryPars) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/applier-start">>, QueryPars).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/applier-start">>, QueryPars).
 
 % 停止复制
 % PUT /_api/replication/applier-stop
 % 查询参数
-% 全局（可选）：如果设置为true，则停止所有数据库的全局复制应用程序。如果设置为false，则在所选数据库中停止复制应用程序（默认）。
+%     global（可选）：如果设置为true，则停止所有数据库的全局复制应用程序。如果设置为false，则在所选数据库中停止复制应用程序（默认）。
 % 停止复制程序。如果复制应用程序未运行，它将立即返回。
 % 返回码
 % 200：如果请求成功执行，则返回。
 % 405：使用无效的HTTP方法时返回。
 % 500：如果组装响应时发生错误，则返回500。
 stopRepApplier(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/applier-stop">>).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/applier-stop">>).
 
 stopRepApplier(PoolNameOrSocket, QueryPars) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/applier-stop">>, QueryPars).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/applier-stop">>, QueryPars).
 
 % 输出复制的当前状态
 % GET /_api/replication/applier-state
 % 查询参数
-% 全局（可选）：如果设置为true，则返回所有数据库的全局复制应用程序的状态。如果设置为false，则返回所选数据库中复制应用程序的状态（默认）。
+% global（可选）：如果设置为true，则返回所有数据库的全局复制应用程序的状态。如果设置为false，则返回所选数据库中复制应用程序的状态（默认）。
 % 返回复制应用程序的状态，无论该应用程序当前是否正在运行。
 % 响应是具有以下属性的JSON对象：
 % state：具有以下子属性的JSON对象：
@@ -540,79 +541,79 @@ stopRepApplier(PoolNameOrSocket, QueryPars) ->
 % 405：使用无效的HTTP方法时返回。
 % 500：如果组装响应时发生错误，则返回500。
 getRepApplierState(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/replication/applier-state">>).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/replication/applier-state">>).
 
 getRepApplierState(PoolNameOrSocket, QueryPars) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/replication/applier-state">>, QueryPars).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/replication/applier-state">>, QueryPars).
 
-% 将角色更改为奴隶
-% PUT /_api/replication/make-slave
-% 具有以下属性的JSON对象是必需的：
-% 端点：要连接的主端点（例如“ tcp：//192.168.173.13：8529”）。
-% database：主数据库上的数据库名称（如果未指定，则默认为本地当前数据库的名称）。
-% username：连接到主服务器时使用的可选ArangoDB用户名。
-% password：连接到主服务器时使用的密码。
-% includeSystem：是否将应用系统收集操作
-% strictType：用于集合过滤的可选字符串值。指定时，允许的值包括include或exclude。
-% restrictCollections：集合用于在使用的可选阵列restrictType。如果limitType为include，则仅指定的集合将被同步。如果limitType为exclude，则将同步除指定集合以外的所有集合。
-% maxConnectRetries：应用程序连续进行的最大连接尝试次数。如果应用程序无法通过此尝试次数建立与端点的连接，它将停止运行。
-% connectTimeout：尝试连接到端点时的超时（以秒为单位）。该值用于每次连接尝试。
+% 将服务器变成另一个的追随者
+% 将角色更改为关注者
+% PUT /_api/replication/make-follower
+% 需要具有这些属性的 JSON 对象：
+% 端点：要连接的领导端点（例如“tcp://192.168.173.13:8529”）。
+% database：leader 上的数据库名称（如果不指定，默认为本地当前数据库的名称）。
+% username：连接到领导者时使用的可选 ArangoDB 用户名。
+% password : 连接领导者时使用的密码。
+% includeSystem : 是否应用系统收集操作
+% 限制类型：用于集合过滤的可选字符串值。指定时，允许的值为include或exclude。
+% 限制集合：一个可选的集合数组，用于限制类型。如果restrictType为include，则只会同步指定的集合。如果restrictType为exclude，则将同步除指定集合之外的所有集合。
+% maxConnectRetries：应用程序将连续进行的最大连接尝试次数。如果应用程序在此尝试次数中无法与端点建立连接，它将自行停止。
+% connectTimeout：尝试连接到端点时的超时（以秒为单位）。此值用于每次连接尝试。
 % requestTimeout：对端点的单个请求的超时（以秒为单位）。
-% chunkSize：请求的日志传输包的最大大小，该大小在联系端点时使用。
-% adaptivePolling：复制应用程序是否将使用自适应轮询。
-% autoResync：如果主服务器无法提供从属服务器请求的日志数据，或者在复制开始且找不到刻度值时，从属服务器是否应与主服务器执行自动重新同步。
-% autoResyncRetries：启用和启用自动重新同步后，将连续执行的重新同步重试次数。将其设置为0将有效地禁用autoResync。将其设置为其他值将限制重试的次数。如果重新同步总是失败，这有助于防止无休止的重试。
-% initialSyncMaxWaitTime：在获取初始收集数据时，初始同步将等待主服务器响应的最长时间（以秒为单位）。此等待时间可用于控制初始同步将在多长时间后放弃等待响应并失败。即使将autoResync设置为true时，该值也适用于连续复制，因为当主服务器无法提供从属服务器所需的日志数据时，此值可能会重新启动初始同步。如果设置为0，则将忽略此值。
-% connectionRetryWaitTime：如果出现连接问题，应用程序在重试连接到主服务器之前将有意空闲的时间（以秒为单位）。如果设置为0，则将忽略此值。
-% idleMinWaitTime：如果主服务器已经发送了所有日志数据，那么在从主服务器获取更多日志数据之前，应用程序将有意空闲的最短等待时间（以秒为单位）。该等待时间可用于控制复制应用程序向主服务器发送HTTP日志获取请求的频率，以防主服务器上没有写入活动。如果设置为0，则将忽略此值。
-% idleMaxWaitTime：如果主服务器已经发送了所有日志数据并且之前进行了日志获取尝试而没有更多日志数据，那么在从主服务器获取更多日志数据之前，应用程序将有意空闲的最大等待时间（以秒为单位） 。该等待时间可用于控制复制应用程序向主服务器发送HTTP日志获取请求的最大频率，以防主服务器上长时间没有写入活动。仅当选项adaptivePolling设置为true时，才使用此配置值 。如果设置为0，则将忽略此值。
-% requireFromPresent：如果设置为true，则复制应用程序将在其连续复制开始时检查转储阶段的开始时间是否仍存在于主服务器上。否则，将丢失数据。如果 requireFromPresent为true，则复制应用程序将中止并显示相应的错误消息。如果设置为false，那么复制应用程序仍将启动，并忽略数据丢失。
-% verbose：如果设置为true，那么将为复制应用程序执行的所有操作发出一条日志行。这仅应用于调试复制问题。
-% 启动从远程端点到本地ArangoDB数据库的完整数据同步，然后启动连续复制。该操作在每个数据库级别上进行。
-% 同步之前，将删除所有本地数据库数据。
-% 如果成功，响应的主体是具有以下属性的JSON对象：
-% state：具有以下子属性的JSON对象：
-% running：申请者是否处于活动状态并正在运行
-% lastAppliedContinuousTick：应用者已应用的连续复制日志中的最后一个滴答值。
-% lastProcessedContinuousTick：申请人已处理的连续复制日志中的最后一个滴答值。
-% 通常，最后应用和最后处理的滴答值应相同。对于事务操作，复制应用程序将首先处理传入的日志事件，然后再应用它们，因此处理的滴答值可能会高于所应用的滴答值。在申请人遇到事务的事务提交日志事件之前，情况将一直如此。
-% lastAvailableContinuousTick：远程服务器可以提供的最后一个滴答值。
-% ticksBehind：仅当应用程序当前正在运行时，此属性才存在。它将提供申请者已应用/看到的内容与远程服务器提供的最后一个日志滴答值之间的日志滴答数。如果该值为零，则两个服务器都处于同步状态。如果该值不为零，则远程服务器具有尚未提取和处理应用程序的其他数据，或者远程服务器可能具有其他不适用于该应用程序的数据。
-% 客户端应用程序可以使用它来确定大致距离远程服务器后面的应用程序，并且可以定期检查该值是增加（应用程序落后）还是减小（应用程序赶上）。
-% 请注意，由于远程服务器将仅为其所有数据库保留最后一个日志滴答值，但是复制可能只限于应用程序中的某些数据库，因此使用全局应用程序时，此值更有意义。此外，由于对由于复制配置而无法复制的系统集合的写入，远程服务器提供的最后一个日志滴答可能会增加。因此，在某些情况下，报告的值可能会夸大现实。
-% time：应用服务器上的时间。
+% chunkSize：请求的日志传输数据包的最大大小，在联系端点时使用。
+% 自适应轮询：复制应用程序是否将使用自适应轮询。
+% autoResync：如果领导者无法提供追随者请求的日志数据，或者当复制开始并且找不到刻度值时，追随者是否应该与领导者执行自动重新同步。
+% autoResyncRetries：将在一排时自动重新同步在启用和踢腿来进行重新同步重试次数此值设置为0将有效地禁用autoResync。将其设置为其他值将限制执行的重试次数。这有助于防止在重新同步总是失败的情况下无休止的重试。
+% initialSyncMaxWaitTime：初始同步在获取初始集合数据时将等待领导者响应的最大等待时间（以秒为单位）。此等待时间可用于控制初始同步在什么时间后放弃等待响应并失败。当autoResync设置为true时，即使对于连续复制，此值也是相关的，因为当领导者无法提供追随者所需的日志数据时，这可能会重新启动初始同步。如果设置为0 ，则该值将被忽略。
+% connectionRetryWaitTime：在连接问题的情况下，应用程序在重试连接到领导者之前有意空闲的时间（以秒为单位）。如果设置为0 ，则该值将被忽略。
+% idleMinWaitTime：应用程序在从领导者获取更多日志数据之前有意空闲的最小等待时间（以秒为单位），以防领导者已经发送其所有日志数据。此等待时间可用于控制复制应用程序向领导者发送 HTTP 日志获取请求的频率，以防领导者上没有写入活动。如果设置为0 ，则该值将被忽略。
+% idleMaxWaitTime : 应用程序在从领导者获取更多日志数据之前有意空闲的最大等待时间（以秒为单位），以防领导者已经发送其所有日志数据并且之前的日志获取尝试导致没有更多日志数据. 此等待时间可用于控制复制应用程序向领导者发送 HTTP 日志获取请求的最大频率，以防领导者长时间没有写入活动。只有在选项AdaptivePolling设置为True时，才会使用此配置值 。如果设置为0 ，则该值将被忽略。
+% requireFromPresent：如果设置为true，那么复制应用程序将在其连续复制开始时检查转储阶段的开始刻度是否仍然存在于领导者上。如果没有，那么就会有数据丢失。如果 requireFromPresent为true，则复制应用程序将中止并显示适当的错误消息。如果设置为false，则复制应用程序仍将启动，并忽略数据丢失。
+% verbose：如果设置为true，则将为复制应用程序执行的所有操作发出日志行。这应该仅用于调试复制问题。
+% 开始从远程端点到本地 ArangoDB 数据库的完整数据同步，然后开始连续复制。该操作适用于每个数据库级别。
+% 所有本地数据库数据将在同步之前被删除。
+% 如果成功，响应的主体是具有以下属性的 JSON 对象：
+% state：具有以下子属性的 JSON 对象：
+% running：应用程序是否处于活动状态并正在运行
+% lastAppliedContinuousTick：应用程序应用的连续复制日志中的最后一个刻度值。
+% lastProcessedContinuousTick：应用程序处理的连续复制日志中的最后一个刻度值。
+% 通常，最后应用和最后处理的刻度值应该相同。对于事务性操作，复制应用程序将在应用它们之前首先处理传入的日志事件，因此处理的刻度值可能高于应用的刻度值。直到应用程序遇到事务的事务提交日志事件，情况才会如此。
+% lastAvailableContinuousTick：远程服务器可以提供的最后一个刻度值。
+% ticksBehind：仅当应用程序当前正在运行时才会出现此属性。它将提供应用程序已应用/看到的日志刻度数与远程服务器提供的最后一个日志刻度值之间的日志刻度数。如果此值为零，则两个服务器同步。如果这是非零值，则远程服务器具有应用程序尚未获取和处理的其他数据，或者远程服务器可能具有更多不适用于应用程序的数据。
+% 客户端应用程序可以使用它来确定应用程序落后于远程服务器的大约多远，并且可以定期检查该值是增加（应用程序落后）还是减少（应用程序正在追赶）。
+% 请注意，由于远程服务器将只保留其所有数据库的最后一个日志刻度值，但复制可能仅限于应用程序上的某些数据库，当使用全局应用程序时，此值更有意义。此外，远程服务器提供的最后一个日志滴答可能会增加，因为写入到由于复制配置而未复制的系统集合中。因此，在某些情况下，报告的值可能会夸大现实。
+% time：应用程序服务器上的时间。
 % totalRequests：应用程序向端点发出的请求总数。
 % totalFailedConnects：应用程序进行的失败连接尝试总数。
 % totalEvents：应用程序已处理的日志事件总数。
-% totalOperationsExcluded：由于restrictCollections而被排除的日志事件总数。
-% progress：一个JSON对象，其中包含有关复制应用程序进度的详细信息。如果有报告进度，则它包含以下子属性：
-% 消息：进度的文字描述
-% 时间：记录进度的日期和时间
-% failedConnects：当前失败的连接尝试次数
-% lastError：一个JSON对象，其中包含有关应用程序上发生的最后一个错误的详细信息。如果发生错误，它包含以下子属性：
-% errorNum：数字错误代码
-% errorMessage：文本错误描述
-% 时间：发生错误的日​​期和时间
+% totalOperationsExcluded：由于restrictCollections排除的日志事件总数。
+% progress：一个 JSON 对象，其中包含有关复制应用程序进度的详细信息。如果有进度报告，它包含以下子属性：
+% message : 进度的文本描述
+% time : 记录进度的日期和时间
+% failedConnects : 当前连接尝试失败的次数
+% lastError：一个 JSON 对象，其中包含有关应用程序上发生的最后一个错误的详细信息。如果出现错误，它包含以下子属性：
+% errorNum : 数字错误代码
+% errorMessage : 文本错误描述
+% time : 发生错误的日​​期和时间
 % 如果没有发生错误，lastError将为空。
-% server：具有以下子属性的JSON对象：
-% version：应用服务器的版本
-% serverId：应用服务器的ID
-% 端点：应用程序连接到的端点（如果应用程序处于活动状态）或将连接到端点（如果应用程序当前处于非活动状态）
-% database：应用程序连接到的数据库的名称（如果应用程序处于活动状态）或将连接（如果应用程序当前处于非活动状态）
-% 请注意，所有返回的“刻度”值都没有特定的单位。刻度值仅在相互比较时才有意义。较高的报价值表示比较低的报价值“时间更晚”。
-% 警告：调用此方法会将来自远程主服务器上的集合中的数据同步到本地ArangoDB数据库。本地集合中的所有数据将被清除，并替换为主数据库中的数据。
-% 请谨慎使用！
-% 还请记住，此命令可能需要很长时间才能完成并返回。这是因为它将首先与主机进行完全的数据同步，这将花费与数据量大致成比例的时间。
+% server：具有以下子属性的 JSON 对象：
+% version : 应用程序服务器的版本
+% serverId：应用程序服务器的 id
+% 端点：应用程序连接到的端点（如果应用程序处于活动状态）或将连接到（如果应用程序当前处于非活动状态）
+% database：应用程序连接到的数据库的名称（如果应用程序处于活动状态）或将连接到（如果应用程序当前处于非活动状态）
+% 请注意，返回的所有“刻度”值都没有特定单位。刻度值仅在相互比较时才有意义。较高的刻度值比较低的刻度值意味着“时间较晚”。
+% 警告：调用此方法会将远程领导者上找到的集合中的数据同步到本地 ArangoDB 数据库。本地集合中的所有数据都将被清除并替换为来自领导者的数据。
+% 谨慎使用！
+% 另请记住，此命令可能需要很长时间才能完成并返回。这是因为它将首先与领导者进行完整的数据同步，这将花费与数据量大致成正比的时间。
 % 注意：集群中的协调器不支持此方法。
-% 返回码
-% 200：如果请求成功执行，则返回。
-% 400：配置不完整或格式错误，返回。
-% 405：使用无效的HTTP方法时返回。
-% 500：如果在同步过程中或开始连续复制时发生错误，则返回。
-% 501：在集群中的协调器上调用此操作时返回。
+% 返回代码
+%    200：请求执行成功返回。
+%    400：配置不完整或格式错误返回。
+%    405：使用无效的HTTP方法时返回。
+%    500：同步或启动连续复制时出错返回。
+%    501：在集群中的Coordinator上调用该操作时返回。
 changeRepMakeSlave(PoolNameOrSocket, MapData) ->
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/make-slave">>, ?AgDefQuery, ?AgDefHeader, BodyStr).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/make-follower">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 %其他复制命令
 %返回服务器ID
@@ -625,7 +626,7 @@ changeRepMakeSlave(PoolNameOrSocket, MapData) ->
 %405：使用无效的HTTP方法时返回。
 %500：如果组装响应时发生错误，则返回500。
 getRepServerId(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/replication/server-id">>).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/replication/server-id">>).
 
 % WAL 固定链接操作中可用的返回刻度范围
 % 返回预写日志中可用的刻度线范围
@@ -642,7 +643,7 @@ getRepServerId(PoolNameOrSocket) ->
 % 500：如果无法确定服务器操作状态，则返回。
 % 501：在集群中的协调器上调用此操作时返回。
 getWalRange(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/wal/range">>).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/wal/range">>).
 
 % 返回最后一个可用的刻度值固定链接
 % 返回最后一个可用的刻度值
@@ -659,7 +660,7 @@ getWalRange(PoolNameOrSocket) ->
 % 500：如果组装响应时发生错误，则返回500。
 % 501：在集群中的协调器上调用此操作时返回。
 getWalLastTick(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/wal/lastTick">>).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/wal/lastTick">>).
 
 % 获取最近的操作
 % GET /_api/wal/tail
@@ -705,8 +706,7 @@ getWalLastTick(PoolNameOrSocket) ->
 % 500：如果组装响应时发生错误，则返回500。
 % 501：在集群中的协调器上调用此操作时返回。
 getWalTail(PoolNameOrSocket) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/wal/tail">>).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/wal/tail">>).
 
 getWalTail(PoolNameOrSocket, QueryPars) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/wal/tail">>, QueryPars).
-
+	agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/wal/tail">>, QueryPars).

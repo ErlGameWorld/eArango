@@ -80,10 +80,14 @@ initReConnState(IsReconnect, Min, Max) ->
    end.
 
 -spec resetReConnState(undefined | reConnState()) -> reConnState() | undefined.
+resetReConnState(undefined) ->
+   undefined;
 resetReConnState(#reConnState{min = Min} = ReConnState) ->
    ReConnState#reConnState{current = Min}.
 
 -spec updateReConnState(reConnState()) -> reConnState().
+updateReConnState(undefined) ->
+   undefined;
 updateReConnState(#reConnState{current = Current, max = Max} = ReConnState) ->
    NewCurrent = Current + Current,
    ReConnState#reConnState{current = if NewCurrent >= Max -> Max; true -> NewCurrent end}.

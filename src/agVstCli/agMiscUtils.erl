@@ -10,7 +10,7 @@
    , agencyOpts/1
    , warnMsg/3
    , getListValue/3
-   , randomElement/1
+   , randElement/1
    , toBinary/1
 ]).
 
@@ -71,7 +71,7 @@ getListValue(Key, List, Default) ->
    case lists:keyfind(Key, 1, List) of
       false ->
          Default;
-      {Key, Value} ->
+      {_Key, Value} ->
          Value
    end.
 
@@ -79,10 +79,10 @@ getListValue(Key, List, Default) ->
 warnMsg(Tag, Format, Data) ->
    error_logger:warning_msg("[~p] " ++ Format, [Tag | Data]).
 
--spec randomElement([term()]) -> term().
-randomElement([X]) ->
+-spec randElement([term()]) -> term().
+randElement([X]) ->
    X;
-randomElement([_ | _] = List) ->
+randElement([_ | _] = List) ->
    T = list_to_tuple(List),
    element(rand:uniform(tuple_size(T)), T).
 

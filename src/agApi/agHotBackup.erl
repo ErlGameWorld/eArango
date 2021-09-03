@@ -30,8 +30,7 @@
 %    400：如果使用错误的参数或除之外的任何HTTP方法调用了create命令POST，则返回HTTP 400。具体细节在返回的错误文档中有详细说明。
 %    408：如果操作无法在超时时间内获得全局事务锁定，则返回HTTP 408。
 newBackup(PoolNameOrSocket, MapData) ->
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_admin/backup/create">>, ?AgDefQuery, ?AgDefHeader, BodyStr).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_admin/backup/create">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 % 从本地备份还原
 % POST /_admin/backup/restore
@@ -42,8 +41,7 @@ newBackup(PoolNameOrSocket, MapData) ->
 %    200：如果可以恢复备份，则返回。请注意，单个服务器和群集之间不可避免存在差异。在单个服务器中，请求成功返回，但是还原仅在之后执行。在集群中，仅在成功完成还原操作后才返回请求。群集行为显然是所需的行为，但是在单个实例中，无法在重新启动期间保持连接打开。
 %    400：如果使用错误的参数或除以外的任何HTTP方法调用了restore命令POST，则返回HTTP 400。具体细节在返回的错误文档中有详细说明。
 restoreBackup(PoolNameOrSocket, MapData) ->
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_admin/backup/restore">>, ?AgDefQuery, ?AgDefHeader, BodyStr).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_admin/backup/restore">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 % 删除特定的本地备份
 % POST /_admin/backup/delete
@@ -55,8 +53,7 @@ restoreBackup(PoolNameOrSocket, MapData) ->
 %    400：如果使用错误的参数或除以外的任何HTTP方法调用delete命令POST，则返回HTTP 400。
 %    404：如果id找不到与该标识符相对应的备份。
 delBackup(PoolNameOrSocket, MapData) ->
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_admin/backup/delete">>,?AgDefQuery, ?AgDefHeader, BodyStr).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_admin/backup/delete">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 % 列出所有本地备份
 % POST /_admin/backup/list
@@ -93,8 +90,7 @@ getBackupList(PoolNameOrSocket) ->
 %    401：如果对转储存储库的身份验证失败，则返回HTTP 400。
 %    404：如果id 找不到对应于标识符的备份，或者没有已知的上载操作uploadId。
 uploadBackup(PoolNameOrSocket, MapData) ->
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_admin/backup/upload">>, ?AgDefQuery, ?AgDefHeader, BodyStr).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_admin/backup/upload">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
 
 % 下载特定的本地备份
 % POST /_admin/backup/download
@@ -112,5 +108,4 @@ uploadBackup(PoolNameOrSocket, MapData) ->
 %    401：如果对转储存储库的身份验证失败，则返回HTTP 401。
 %    404：如果id 找不到与该标识符相对应的备份，或者如果没有已知的与的下载操作downloadId。
 downloadBackup(PoolNameOrSocket, MapData) ->
-   BodyStr = eVPack:encodeBin(MapData),
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_admin/backup/download">>, ?AgDefQuery, ?AgDefHeader, BodyStr).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_admin/backup/download">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
