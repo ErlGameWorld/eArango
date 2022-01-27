@@ -1,4 +1,5 @@
--module(agTcpAgencyIns).
+-module(agTcpAgency).
+
 -include("agVstCli.hrl").
 -include("eArango.hrl").
 
@@ -6,11 +7,74 @@
 -compile({inline_size, 128}).
 
 -export([
-   %% Inner Behavior API
-   init/1
-   , handleMsg/3
-   , terminate/3
+   start_link/3
+
+   , init_it/3
+   , loop/3
+   , system_code_change/4
+   , system_continue/3
+   , system_get_state/1
+   , system_terminate/4
 ]).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% genActor  start %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+-spec start_link(module(), term(), [proc_lib:spawn_option()]) -> {ok, pid()}.
+start_link(ServerName, Args, SpawnOpts) ->
+   proc_lib:start_link(?MODULE, init_it, [ServerName, self(), Args], infinity, SpawnOpts).
+
+init_it(ServerName, Parent, Args) ->
+   case safeRegister(ServerName) of
+      true ->
+         process_flag(trap_exit, true),
+         moduleInit(Parent, Args);
+      {false, Pid} ->
+         proc_lib:init_ack(Parent, {error, {alreadyStarted, Pid}})
+   end.
+
+-spec system_code_change(term(), module(), undefined | term(), term()) -> {ok, term()}.
+system_code_change(MiscState, _Module, _OldVsn, _Extra) ->
+   {ok, MiscState}.
+
+-spec system_continue(pid(), [], {module(), term(), term()}) -> ok.
+system_continue(_Parent, _Debug, {Parent, SrvState, CliState}) ->
+   ?MODULE:loop(Parent, SrvState, CliState).
+
+-spec system_get_state(term()) -> {ok, term()}.
+system_get_state({_Parent, SrvState, _CliState}) ->
+   {ok, SrvState}.
+
+-spec system_terminate(term(), pid(), [], term()) -> none().
+system_terminate(Reason, _ParentS, _Debug, {_Parent, SrvState, CliState}) ->
+   terminate(Reason, SrvState, CliState).
+
+safeRegister(ServerName) ->
+   try register(ServerName, self()) of
+      true -> true
+   catch
+      _:_ -> {false, whereis(ServerName)}
+   end.
+
+moduleInit(Parent, Args) ->
+   case init(Args) of
+      {ok, SrvState, CliState} ->
+         proc_lib:init_ack(Parent, {ok, self()}),
+         ?MODULE:loop(Parent, SrvState, CliState);
+      {stop, Reason} ->
+         proc_lib:init_ack(Parent, {error, Reason}),
+         exit(Reason)
+   end.
+
+loop(Parent, SrvState, CliState) ->
+   receive
+      {system, From, Request} ->
+         sys:handle_system_msg(Request, From, Parent, ?MODULE, [], {Parent, SrvState, CliState});
+      {'EXIT', Parent, Reason} ->
+         terminate(Reason, SrvState, CliState);
+      Msg ->
+         {ok, NewSrvState, NewCliState} = handleMsg(Msg, SrvState, CliState),
+         ?MODULE:loop(Parent, NewSrvState, NewCliState)
+   end.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% genActor  end %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 -spec init(term()) -> no_return().
 init({PoolName, AgencyName, #agencyOpts{reconnect = Reconnect, backlogSize = BacklogSize, reConnTimeMin = Min, reConnTimeMax = Max}}) ->
@@ -129,11 +193,11 @@ handleMsg(Msg, #srvState{serverName = ServerName} = SrvState, CliState) ->
    {ok, SrvState, CliState}.
 
 -spec terminate(term(), srvState(), cliState()) -> ok.
-terminate(_Reason, #srvState{socket = Socket} = SrvState, CliState) ->
+terminate(Reason, #srvState{socket = Socket} = SrvState, CliState) ->
    {ok, NewSrvState, NewCliState} = waitAllReqOver(SrvState, CliState),
    gen_tcp:close(Socket),
    agAgencyUtils:dealClose(NewSrvState, NewCliState, {error, shutdown}),
-   ok.
+   exit(Reason).
 
 -spec waitAllReqOver(srvState(), cliState()) -> {ok, srvState(), cliState()}.
 waitAllReqOver(SrvState, #cliState{backlogNum = BacklogNum} = CliState) ->

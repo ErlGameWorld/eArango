@@ -1,4 +1,5 @@
--module(user_default).
+-module(agTest).
+
 -include("agVstCli.hrl").
 
 -compile([export_all, nowarn_export_all]).
@@ -6,14 +7,14 @@
 start() ->
    eSync:run(),
    application:ensure_all_started(eArango),
-   agVstCli:startPool(tt, [{poolSize, 1}], []).
+   eArango:openPool(tt, [{poolSize, 1}], []).
 
 stop() ->
-   agVstCli:stopPool(tt).
+   eArango:closePool(tt).
 
 tt(C, N) ->
    application:ensure_all_started(eArango),
-   agVstCli:startPool(tt, [{poolSize, 1}], []),
+   eArango:openPool(tt, [{poolSize, 1}], []),
    StartTime = erlang:system_time(millisecond),
    io:format("IMY**********************  started~n"),
    [spawn(?MODULE, test, [N, StartTime]) || _Idx <- lists:seq(1, C)].

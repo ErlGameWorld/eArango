@@ -2,9 +2,9 @@
 -define(AgGet, 1).
 -define(AgPost, 2).
 -define(AgPut, 3).
--define(AgHead, 4).              %% (not used in VPP, ¼´Ö÷ÌåÊÇ´æ´¢ÎªVelocyPackµÄ¶ÔÏó¡£)
+-define(AgHead, 4).              %% (not used in VPP, å³ä¸»ä½“æ˜¯å­˜å‚¨ä¸ºVelocyPackçš„å¯¹è±¡ã€‚)
 -define(AgPatch, 5).
--define(AgOptions, 6).           %% (not used in VPP, ¼´Ö÷ÌåÊÇ´æ´¢ÎªVelocyPackµÄ¶ÔÏó¡£)
+-define(AgOptions, 6).           %% (not used in VPP, å³ä¸»ä½“æ˜¯å­˜å‚¨ä¸ºVelocyPackçš„å¯¹è±¡ã€‚)
 
 -define(AgDefQuery, #{}).
 -define(AgDefHeader, #{}).

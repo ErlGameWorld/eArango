@@ -43,7 +43,7 @@ Efficient, fast and easy to use.
        agMgrDb:curDbInfo(poolName).  
 
 # notice
-   ¸ÃÇý¶¯ÖÐËùÓÐµÄ×Ö·û´® Ò»ÂÉÖµ ¶þ½øÖÆµÄ×Ö·û´®
-   QueryPars ºÍ HeadersÎªmap ÆäÖÐµÄ key -> value ±ØÐëÎª×Ö·û´®
+   è¯¥é©±åŠ¨ä¸­æ‰€æœ‰çš„å­—ç¬¦ä¸² ä¸€å¾‹å€¼ äºŒè¿›åˆ¶çš„å­—ç¬¦ä¸²
+   QueryPars å’Œ Headersä¸ºmap å…¶ä¸­çš„ key -> value å¿…é¡»ä¸ºå­—ç¬¦ä¸²
 
        

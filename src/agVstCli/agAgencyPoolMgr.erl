@@ -1,20 +1,84 @@
--module(agAgencyPoolMgrIns).
+-module(agAgencyPoolMgr).
 -include("agVstCli.hrl").
 
 -compile(inline).
 -compile({inline_size, 128}).
 
 -export([
-   startPool/2
+   start_link/3
+
+   , startPool/2
    , startPool/3
    , stopPool/1
    , getOneAgency/1
 
-   %% genExm API
-   , init/1
-   , handleMsg/2
-   , terminate/2
+   , init_it/3
+   , loop/2
+   , system_code_change/4
+   , system_continue/3
+   , system_get_state/1
+   , system_terminate/4
+
 ]).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% genActor  start %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+-spec start_link(module(), term(), [proc_lib:spawn_option()]) -> {ok, pid()}.
+start_link(Name, Args, SpawnOpts) ->
+   proc_lib:start_link(?MODULE, init_it, [Name, self(), Args], infinity, SpawnOpts).
+
+init_it(Name, Parent, Args) ->
+   case safeRegister(Name) of
+      true ->
+         process_flag(trap_exit, true),
+         moduleInit(Parent, Args);
+      {false, Pid} ->
+         proc_lib:init_ack(Parent, {error, {alreadyStarted, Pid}})
+   end.
+
+-spec system_code_change(term(), module(), undefined | term(), term()) -> {ok, term()}.
+system_code_change(State, _Module, _OldVsn, _Extra) ->
+   {ok, State}.
+
+-spec system_continue(pid(), [], {module(), atom(), pid(), term()}) -> ok.
+system_continue(_Parent, _Debug, {Parent, State}) ->
+   ?MODULE:loop(Parent, State).
+
+-spec system_get_state(term()) -> {ok, term()}.
+system_get_state(State) ->
+   {ok, State}.
+
+-spec system_terminate(term(), pid(), [], term()) -> none().
+system_terminate(Reason, _Parent, _Debug, State) ->
+   terminate(Reason, State).
+
+safeRegister(Name) ->
+   try register(Name, self()) of
+      true -> true
+   catch
+      _:_ -> {false, whereis(Name)}
+   end.
+
+moduleInit(Parent, Args) ->
+   case init(Args) of
+      {ok, State} ->
+         proc_lib:init_ack(Parent, {ok, self()}),
+         ?MODULE:loop(Parent, State);
+      {stop, Reason} ->
+         proc_lib:init_ack(Parent, {error, Reason}),
+         exit(Reason)
+   end.
+
+loop(Parent, State) ->
+   receive
+      {system, From, Request} ->
+         sys:handle_system_msg(Request, From, Parent, ?MODULE, [], {Parent, State});
+      {'EXIT', Parent, Reason} ->
+         terminate(Reason, State);
+      Msg ->
+         {ok, NewState} = handleMsg(Msg, State),
+         ?MODULE:loop(Parent, NewState)
+   end.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% genActor  end %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% k-v beam cache
 -define(ETS_AG_Pool, ets_ag_Pool).
@@ -52,12 +116,12 @@ handleMsg(_Msg, State) ->
    ?AgWarn(?MODULE, "receive unexpected  msg: ~p", [_Msg]),
    {ok, State}.
 
-terminate(_Reason, _State) ->
+terminate(Reason, _State) ->
    ets:delete(?ETS_AG_Pool),
    ets:delete(?ETS_AG_Agency),
    agKvsToBeam:load(?agBeamPool, []),
    agKvsToBeam:load(?agBeamAgency, []),
-   ok.
+   exit(Reason).
 
 -spec startPool(poolName(), dbCfgs()) -> ok | {error, poolNameUsed}.
 startPool(PoolName, DbCfgs) ->
@@ -115,11 +179,11 @@ agencyNames(PoolName, PoolSize) ->
    [agencyName(PoolName, N) || N <- lists:seq(1, PoolSize)].
 
 agencyMod(tcp) ->
-   agTcpAgencyExm;
+   agTcpAgency;
 agencyMod(ssl) ->
-   agSslAgencyExm;
+   agSslAgency;
 agencyMod(_) ->
-   agTcpAgencyExm.
+   agTcpAgency.
 
 -spec startChildren(atom(), protocol(), poolSize(), agencyOpts()) -> ok.
 startChildren(PoolName, Protocol, PoolSize, AgencyOpts) ->
@@ -134,13 +198,13 @@ stopChildren([AgencyName | T]) ->
       ok ->
          ok;
       {error, TerReason} ->
-         ?AgWarn(agAgencyPoolMgrIns, ":terminate_child: ~p error reason: ~p ~n", [AgencyName, TerReason])
+         ?AgWarn(agAgencyPoolMgr, ":terminate_child: ~p error reason: ~p ~n", [AgencyName, TerReason])
    end,
    case supervisor:delete_child(agAgencyPool_sup, AgencyName) of
       ok ->
          ok;
       {error, DelReason} ->
-         ?AgWarn(agAgencyPoolMgrIns, ":delete_child: ~p error reason: ~p ~n", [AgencyName, DelReason])
+         ?AgWarn(agAgencyPoolMgr, ":delete_child: ~p error reason: ~p ~n", [AgencyName, DelReason])
    end,
    stopChildren(T);
 stopChildren([]) ->

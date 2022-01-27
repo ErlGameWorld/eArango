@@ -151,19 +151,19 @@
 -type error() :: {error, term()}.
 
 -type dbCfg() ::
-{baseUrl, binary()} |
-{dbName, binary()} |
-{user, binary()} |
-{password, binary()} |
-{poolSize, poolSize()} |
-{vstSize, pos_integer()}.
+   {baseUrl, binary()} |
+   {dbName, binary()} |
+   {user, binary()} |
+   {password, binary()} |
+   {poolSize, poolSize()} |
+   {vstSize, pos_integer()}.
 
 -type agencyCfg() ::
-{reconnect, boolean()} |
-{agencySlg, agencySlg()} |
-{backlogSize, backlogSize()} |
-{reConnTimeMin, pos_integer()} |
-{reConnTimeMax, pos_integer()}.
+   {reconnect, boolean()} |
+   {agencySlg, agencySlg()} |
+   {backlogSize, backlogSize()} |
+   {reConnTimeMin, pos_integer()} |
+   {reConnTimeMax, pos_integer()}.
 
 -type dbCfgs() :: [dbCfg()].
 -type dbOpts() :: #dbOpts{}.

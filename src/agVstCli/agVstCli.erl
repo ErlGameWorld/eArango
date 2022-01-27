@@ -18,23 +18,10 @@
    , castAgency/9
    , receiveReqRet/2
 
-   %% Pools API
-   , startPool/2
-   , startPool/3
-   , stopPool/1
-
-   %% Single Process DbAPI
-   , connDb/1
-   , disConnDb/1
-   , getCurDbInfo/1
-   , useDatabase/2
-
    , initMsgId/0
    , getMsgId/0
    , receiveTcpData/2
    , receiveSslData/2
-
-   , agencyInfo/1
 ]).
 
 
@@ -87,7 +74,7 @@ castAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, Body, Pid, IsSyst
       end,
    case erlang:is_atom(PoolNameOrSocket) of
       true ->
-         case agAgencyPoolMgrIns:getOneAgency(PoolNameOrSocket) of
+         case agAgencyPoolMgr:getOneAgency(PoolNameOrSocket) of
             {error, pool_not_found} = Err ->
                Err;
             undefined ->
@@ -99,9 +86,10 @@ castAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, Body, Pid, IsSyst
                {waitRRT, MessageId, MonitorRef}
          end;
       _ ->
-         case getCurDbInfo(PoolNameOrSocket) of
+         case eArango:getCurDbInfo(PoolNameOrSocket) of
             {DbName, VstSize, Protocol} ->
-               Request = agVstProto:request(IsSystem, Method, DbName, Path, QueryPars, Headers, Body, VstSize),
+               MessageId = getMsgId(),
+               Request = agVstProto:request(IsSystem, MessageId, Method, DbName, Path, QueryPars, Headers, Body, VstSize),
                case Protocol of
                   tcp ->
                      case gen_tcp:send(PoolNameOrSocket, Request) of
@@ -109,7 +97,7 @@ castAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, Body, Pid, IsSyst
                            receiveTcpData(#recvState{}, PoolNameOrSocket);
                         {error, Reason} = Err ->
                            ?AgWarn(castAgency, ":gen_tcp send error: ~p ~n", [Reason]),
-                           disConnDb(PoolNameOrSocket),
+                           eArango:disConnDb(PoolNameOrSocket),
                            Err
                      end;
                   ssl ->
@@ -118,7 +106,7 @@ castAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, Body, Pid, IsSyst
                            receiveSslData(#recvState{}, PoolNameOrSocket);
                         {error, Reason} = Err ->
                            ?AgWarn(castAgency, ":ssl send error: ~p ~n", [Reason]),
-                           disConnDb(PoolNameOrSocket),
+                           eArango:disConnDb(PoolNameOrSocket),
                            Err
                      end
                end;
@@ -159,10 +147,10 @@ receiveTcpData(RecvState, Socket) ->
                receiveTcpData(NewRecvState, Socket)
          end;
       {tcp_closed, Socket} ->
-         disConnDb(Socket),
+         eArango:disConnDb(Socket),
          {error, tcp_closed};
       {tcp_error, Socket, Reason} ->
-         disConnDb(Socket),
+         eArango:disConnDb(Socket),
          {error, {tcp_error, Reason}}
    end.
 
@@ -181,118 +169,12 @@ receiveSslData(RecvState, Socket) ->
                receiveSslData(NewRecvState, Socket)
          end;
       {ssl_closed, Socket} ->
-         disConnDb(Socket),
+         eArango:disConnDb(Socket),
          {error, ssl_closed};
       {ssl_error, Socket, Reason} ->
-         disConnDb(Socket),
+         eArango:disConnDb(Socket),
          {error, {ssl_error, Reason}}
    end.
-
--spec startPool(poolName(), dbCfgs()) -> ok | {error, poolNameUsed}.
-startPool(PoolName, DbCfgs) ->
-   agAgencyPoolMgrIns:startPool(PoolName, DbCfgs, []).
-
--spec startPool(poolName(), dbCfgs(), agencyCfgs()) -> ok | {error, poolNameUsed}.
-startPool(PoolName, DbCfgs, AgencyCfgs) ->
-   agAgencyPoolMgrIns:startPool(PoolName, DbCfgs, AgencyCfgs).
-
--spec stopPool(poolName()) -> ok | {error, poolNotStarted}.
-stopPool(PoolName) ->
-   agAgencyPoolMgrIns:stopPool(PoolName).
-
--spec connDb(dbCfgs()) -> {ok, socket()} | {error, term()}.
-connDb(DbCfgs) ->
-   #dbOpts{
-      port = Port,
-      hostname = HostName,
-      dbName = DbName,
-      protocol = Protocol,
-      user = User,
-      password = Password,
-      vstSize = VstSize
-   } = agMiscUtils:dbOpts(DbCfgs),
-   case Protocol of
-      tcp ->
-         case gen_tcp:connect(HostName, Port, ?AgDefSocketOpts, ?AgDefConnTimeout) of
-            {ok, Socket} ->
-               gen_tcp:send(Socket, ?AgUpgradeInfo),
-               AuthInfo = agVstProto:authInfo(User, Password),
-               gen_tcp:send(Socket, AuthInfo),
-               case agVstCli:receiveTcpData(#recvState{}, Socket) of
-                  {ok, MsgBin} ->
-                     case eVPack:decodeHeader(MsgBin) of
-                        [1, 2, 200, _] ->
-                           setCurDbInfo(Socket, DbName, VstSize, Protocol),
-                           {ok, Socket};
-                        _Err ->
-                           ?AgWarn(connDb_tcp, "auth error: ~p~n", [_Err]),
-                           {error, _Err}
-                     end;
-                  {error, Reason} = Err ->
-                     ?AgWarn(connDb_tcp, "recv error: ~p~n", [Reason]),
-                     Err
-               end;
-            {error, Reason} = Err ->
-               ?AgWarn(connDb_tcp, "connect error: ~p~n", [Reason]),
-               Err
-         end;
-      ssl ->
-         case ssl:connect(HostName, Port, ?AgDefSocketOpts, ?AgDefConnTimeout) of
-            {ok, Socket} ->
-               ssl:send(Socket, ?AgUpgradeInfo),
-               AuthInfo = agVstProto:authInfo(User, Password),
-               ssl:send(Socket, AuthInfo),
-               case agVstCli:receiveSslData(#recvState{}, Socket) of
-                  {ok, MsgBin} ->
-                     case eVPack:decodeHeader(MsgBin) of
-                        [1, 2, 200, _] ->
-                           setCurDbInfo(Socket, DbName, VstSize, Protocol),
-                           {ok, Socket};
-                        _Err ->
-                           ?AgWarn(connDb_ssl, "auth error: ~p~n", [_Err]),
-                           {error, _Err}
-                     end;
-                  {error, Reason} = Err ->
-                     ?AgWarn(connDb_ssl, "recv error: ~p~n", [Reason]),
-                     Err
-               end;
-            {error, Reason} = Err ->
-               ?AgWarn(connDb_ssl, "connect error: ~p~n", [Reason]),
-               Err
-         end
-   end.
-
--spec disConnDb(socket()) -> ok | {error, term()}.
-disConnDb(Socket) ->
-   case erlang:erase({'$agDbInfo', Socket}) of
-      undefined ->
-         ignore;
-      {_DbName, _VstSize, Protocol} ->
-         case Protocol of
-            tcp ->
-               gen_tcp:close(Socket);
-            ssl ->
-               ssl:close(Socket)
-         end
-   end.
-
--spec setCurDbInfo(socket(), binary(), pos_integer(), protocol()) -> term().
-setCurDbInfo(Socket, DbName, VstSize, Protocol) ->
-   erlang:put({'$agDbInfo', Socket}, {DbName, VstSize, Protocol}).
-
--spec getCurDbInfo(socket()) -> term().
-getCurDbInfo(Socket) ->
-   erlang:get({'$agDbInfo', Socket}).
-
--spec useDatabase(socket(), binary()) -> ok.
-useDatabase(Socket, NewDbName) ->
-   case erlang:get({'$agDbInfo', Socket}) of
-      undefined ->
-         ignore;
-      {_DbName, VstSize, Protocol} ->
-         erlang:put({'$agDbInfo', Socket}, {NewDbName, VstSize, Protocol})
-   end,
-   ok.
 
 initMsgId() ->
    case persistent_term:get(agMessageId, undefined) of
@@ -317,5 +199,3 @@ getMsgId() ->
          MessageId
    end.
 
-agencyInfo(AgencyName) ->
-   gen_server:call(AgencyName, '$SrvInfo').
