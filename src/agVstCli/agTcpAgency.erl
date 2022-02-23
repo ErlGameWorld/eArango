@@ -98,12 +98,11 @@ handleMsg(#agReq{method = Method, path = Path, queryPars = QueryPars, headers = 
                {ok, SrvState, CliState};
             _ ->
                Request = agVstProto:request(IsSystem, MessageId, Method, DbName, Path, QueryPars, Headers, Body, VstSize),
-               BBBB  = iolist_to_binary(Request),
-               ?AgWarn(ServerName, "the request is:~p~n", [BBBB]),
+
                %file:write_file("./request", BBBB),
                %erlang:put(MessageId, {FromPid, undefined, 0, <<>>}),
                %Ret = agVstProto:response(?AgUndef, 0, 0, 0, 0, <<>>, BBBB),
-               %?AgWarn(ServerName, "the request is response ret:~p~n", [Ret]),
+               %?AgErr(ServerName, "the request is response ret:~p~n", [Ret]),
                case gen_tcp:send(Socket, Request) of
                   ok ->
                      TimerRef = case OverTime of
@@ -115,7 +114,7 @@ handleMsg(#agReq{method = Method, path = Path, queryPars = QueryPars, headers = 
                      erlang:put(MessageId, {FromPid, TimerRef, 0, <<>>}),
                      {ok, SrvState, CliState#cliState{backlogNum = BacklogNum + 1}};
                   {error, Reason} ->
-                     ?AgWarn(ServerName, ":send error: ~p ~p ~p ~n", [Reason, FromPid, MessageId]),
+                     ?AgErr(ServerName, ":send error: ~p ~p ~p ~n", [Reason, FromPid, MessageId]),
                      gen_tcp:close(Socket),
                      agAgencyUtils:agencyReply(FromPid, undefined, MessageId, {error, {socketSendError, Reason}}),
                      agAgencyUtils:dealClose(SrvState, CliState, {error, {socketSendError, Reason}})
@@ -144,13 +143,13 @@ handleMsg({timeout, _TimerRef, {mWaitingOver, MessageId, FromPid}}, SrvState,
 handleMsg({tcp_closed, Socket},
    #srvState{socket = Socket, serverName = ServerName} = SrvState,
    CliState) ->
-   ?AgWarn(ServerName, "connection closed~n", []),
+   ?AgInfo(ServerName, "connection closed~n", []),
    gen_tcp:close(Socket),
    agAgencyUtils:dealClose(SrvState, CliState, {error, tcp_closed});
 handleMsg({tcp_error, Socket, Reason},
    #srvState{socket = Socket, serverName = ServerName} = SrvState,
    CliState) ->
-   ?AgWarn(ServerName, "connection error: ~p~n", [Reason]),
+   ?AgInfo(ServerName, "connection error: ~p~n", [Reason]),
    gen_tcp:close(Socket),
    agAgencyUtils:dealClose(SrvState, CliState, {error, {tcp_error, Reason}});
 handleMsg(?AgMDoDBConn,
@@ -164,32 +163,25 @@ handleMsg(?AgMDoDBConn,
                AuthInfo = agVstProto:authInfo(User, Password),
                gen_tcp:send(Socket, AuthInfo),
                case agVstCli:receiveTcpData(#recvState{}, Socket) of
-                  {ok, MsgBin} ->
-                     case eVPack:decodeHeader(MsgBin) of
-                        [1, 2, 200, _] ->
-                           ?AgWarn(ServerName, "connect success: old server state:~n ~p~n client state~n ~p ~n", [SrvState, CliState]),
-                           {ok, SrvState#srvState{dbName = DbName, reConnState = agAgencyUtils:resetReConnState(ReConnState), socket = Socket, vstSize = VstSize}, CliState};
-                        _Err ->
-                           ?AgWarn(ServerName, "auth error: ~p~n", [_Err]),
-                           agAgencyUtils:reConnTimer(SrvState, CliState)
-                     end;
-                  {error, Reason} = Err ->
-                     ?AgWarn(ServerName, "recv auth error: ~p~n", [Reason]),
-                     Err
+                  {200, _BodyMap, _HeaderMap} ->
+                     {ok, SrvState#srvState{dbName = DbName, reConnState = agAgencyUtils:resetReConnState(ReConnState), socket = Socket, vstSize = VstSize}, CliState};
+                  _Err ->
+                     ?AgErr(ServerName, "auth error: ~p~n", [_Err]),
+                     agAgencyUtils:reConnTimer(SrvState, CliState)
                end;
-            {error, Reason} ->
-               ?AgWarn(ServerName, "connect error: ~p~n", [Reason]),
+            _Err ->
+               ?AgErr(ServerName, "connect error: ~p~n", [_Err]),
                agAgencyUtils:reConnTimer(SrvState, CliState)
          end;
       _Ret ->
-         ?AgWarn(ServerName, "deal connect not found agBeamPool:getv(~p) ret ~p is error ~n", [PoolName, _Ret])
+         ?AgErr(ServerName, "deal connect not found agBeamPool:getv(~p) ret ~p is error ~n", [PoolName, _Ret])
    end;
 handleMsg({'$gen_call', FromTag, '$SrvInfo'}, SrvState, CliState) ->
    {To, Tag} = FromTag,
    catch To ! {Tag, {erlang:get(), SrvState, CliState}},
    {ok, SrvState, CliState};
 handleMsg(Msg, #srvState{serverName = ServerName} = SrvState, CliState) ->
-   ?AgWarn(ServerName, "unknown msg: ~p~n", [Msg]),
+   ?AgErr(ServerName, "unknown msg: ~p~n", [Msg]),
    {ok, SrvState, CliState}.
 
 -spec terminate(term(), srvState(), cliState()) -> ok.

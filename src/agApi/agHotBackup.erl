@@ -65,7 +65,7 @@ delBackup(PoolNameOrSocket, MapData) ->
 %    400：如果使用错误的参数调用list命令，则 返回HTTP 400。
 %    404：如果id给出了ID或ID列表，但未找到给定ID作为备份的标识符，则返回HTTP 404 NOT FOUND。
 %    405：如果使用以外的任何HTTP方法调用了list命令POST，则返回HTTP 405 METHOD NOT ALLOWED。
-getBackupList(PoolNameOrSocket) ->
+backupList(PoolNameOrSocket) ->
    agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_admin/backup/list">>).
 
 % 结果由list热备份的一个对象组成id，其中id唯一地标识了特定的热备份，version描绘了用于创建任何单个热备份的ArangoDB的版本，并datetime显示了创建热备份的时间。

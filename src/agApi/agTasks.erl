@@ -16,7 +16,7 @@
 % 获取服务器上的所有现有任务
 % HTTP 200任务列表
 % **：所有任务的列表
-getTaskList(PoolNameOrSocket) ->
+taskList(PoolNameOrSocket) ->
    agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/tasks/">>).
 
 % 检索一个当前活动的服务器任务

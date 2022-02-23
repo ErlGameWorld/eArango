@@ -24,24 +24,23 @@
    , receiveSslData/2
 ]).
 
-
--spec callAgency(poolNameOrSocket(), method(), path()) -> term() | {error, term()}.
+-spec callAgency(poolNameOrSocket(), method(), path()) -> eArango:dbRet().
 callAgency(PoolNameOrSocket, Method, Path) ->
    callAgency(PoolNameOrSocket, Method, Path, ?AgDefQuery, ?AgDefHeader, ?AgDefBody, false, ?AgDefTimeout).
 
--spec callAgency(poolNameOrSocket(), method(), path(), queryPars()) -> term() | {error, term()}.
+-spec callAgency(poolNameOrSocket(), method(), path(), queryPars()) -> eArango:dbRet().
 callAgency(PoolNameOrSocket, Method, Path, QueryPars) ->
    callAgency(PoolNameOrSocket, Method, Path, QueryPars, ?AgDefHeader, ?AgDefBody, false, ?AgDefTimeout).
 
--spec callAgency(poolNameOrSocket(), method(), path(), queryPars(), headers(), body()) -> term() | {error, term()}.
+-spec callAgency(poolNameOrSocket(), method(), path(), queryPars(), headers(), body()) -> eArango:dbRet().
 callAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, Body) ->
    callAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, Body, false, ?AgDefTimeout).
 
--spec callAgency(poolNameOrSocket(), method(), path(), queryPars(), headers(), body(), boolean()) -> term() | {error, atom()}.
+-spec callAgency(poolNameOrSocket(), method(), path(), queryPars(), headers(), body(), boolean()) -> eArango:dbRet().
 callAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, Body, IsSystem) ->
    callAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, Body, IsSystem, ?AgDefTimeout).
 
--spec callAgency(poolNameOrSocket(), method(), path(), queryPars(), headers(), body(), boolean(), timeout()) -> term() | {error, atom()}.
+-spec callAgency(poolNameOrSocket(), method(), path(), queryPars(), headers(), body(), boolean(), timeout()) -> eArango:dbRet().
 callAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, Body, IsSystem, Timeout) ->
    case castAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, Body, self(), IsSystem, Timeout) of
       {waitRRT, RequestId, MonitorRef} ->
@@ -94,20 +93,20 @@ castAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, Body, Pid, IsSyst
                   tcp ->
                      case gen_tcp:send(PoolNameOrSocket, Request) of
                         ok ->
-                           receiveTcpData(#recvState{}, PoolNameOrSocket);
-                        {error, Reason} = Err ->
-                           ?AgWarn(castAgency, ":gen_tcp send error: ~p ~n", [Reason]),
+                           receiveTcpData(#recvState{messageId = MessageId}, PoolNameOrSocket);
+                        _Err ->
+                           ?AgErr(castAgency, ":gen_tcp send error: ~p ~n", [_Err]),
                            eArango:disConnDb(PoolNameOrSocket),
-                           Err
+                           _Err
                      end;
                   ssl ->
                      case ssl:send(PoolNameOrSocket, Request) of
                         ok ->
-                           receiveSslData(#recvState{}, PoolNameOrSocket);
-                        {error, Reason} = Err ->
-                           ?AgWarn(castAgency, ":ssl send error: ~p ~n", [Reason]),
+                           receiveSslData(#recvState{messageId = MessageId}, PoolNameOrSocket);
+                        _Err ->
+                           ?AgErr(castAgency, ":ssl send error: ~p ~n", [_Err]),
                            eArango:disConnDb(PoolNameOrSocket),
-                           Err
+                           _Err
                      end
                end;
             _ ->
@@ -115,30 +114,32 @@ castAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, Body, Pid, IsSyst
          end
    end.
 
--spec receiveReqRet(messageId(), reference()) -> {StatusCode :: non_neg_integer(), Body :: map(), Headers :: map()} | {error, term()}.
+-spec receiveReqRet(messageId(), reference()) -> eArango:dbRet().
 receiveReqRet(RequestId, MonitorRef) ->
    receive
       #agReqRet{messageId = RequestId, reply = Reply} ->
          erlang:demonitor(MonitorRef),
          case Reply of
-            {error, Err} ->
+            {error, _} = Err ->
                Err;
             _ ->
                {[_1, _2, StatusCode, HeaderMap], BodyMap} = eVPack:decodeAll(Reply),
+               ?AgDebug('IMY******response', "MessageId:~p Time:~p StatusCode:~p BodyMap:~p, HeaderMap:~p", [RequestId, erlang:system_time(second), StatusCode, BodyMap, HeaderMap]),
                {StatusCode, BodyMap, HeaderMap}
          end;
       {'DOWN', MonitorRef, process, _Pid, Reason} ->
          {error, {agencyDown, Reason}}
    end.
 
--spec receiveTcpData(recvState(), socket()) -> {ok, term(), term()} | {error, term()}.
+-spec receiveTcpData(recvState(), socket()) -> eArango:dbRet().
 receiveTcpData(RecvState, Socket) ->
    receive
       {tcp, Socket, DataBuffer} ->
-         %% ?AgWarn(1111, "IMY************receove 1: ~p ~p ~n", [erlang:byte_size(DataBuffer), DataBuffer]),
          case agVstProto:response(element(2, RecvState), RecvState, DataBuffer) of
             {?AgMDone, MsgBin} ->
-               {ok, MsgBin};
+               {[_1, _2, StatusCode, HeaderMap], BodyMap} = eVPack:decodeAll(MsgBin),
+               ?AgDebug('IMY******response', "MessageId:~p Time:~p StatusCode:~p BodyMap:~p, HeaderMap:~p", [RecvState#recvState.messageId, erlang:system_time(second), StatusCode, BodyMap, HeaderMap]),
+               {StatusCode, BodyMap, HeaderMap};
             {?AgCHeader, NewRecvState} ->
                receiveTcpData(NewRecvState, Socket);
             {?AgCBodyStart, NewRecvState} ->
@@ -154,13 +155,15 @@ receiveTcpData(RecvState, Socket) ->
          {error, {tcp_error, Reason}}
    end.
 
--spec receiveSslData(recvState(), socket()) -> {ok, term(), term()} | {error, term()}.
+-spec receiveSslData(recvState(), socket()) -> eArango:dbRet().
 receiveSslData(RecvState, Socket) ->
    receive
       {ssl, Socket, DataBuffer} ->
          case agVstProto:response(element(2, RecvState), RecvState, DataBuffer) of
             {?AgMDone, MsgBin} ->
-               {ok, MsgBin};
+               {[_1, _2, StatusCode, HeaderMap], BodyMap} = eVPack:decodeAll(MsgBin),
+               ?AgDebug('IMY******response', "MessageId:~p Time:~p StatusCode:~p BodyMap:~p, HeaderMap:~p", [RecvState#recvState.messageId, erlang:system_time(second), StatusCode, BodyMap, HeaderMap]),
+               {StatusCode, BodyMap, HeaderMap};
             {?AgCHeader, NewRecvState} ->
                receiveSslData(NewRecvState, Socket);
             {?AgCBodyStart, NewRecvState} ->

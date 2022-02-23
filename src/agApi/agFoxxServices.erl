@@ -30,10 +30,10 @@
 %    version：与semver兼容的版本字符串
 % 返回码
 %    200：如果请求成功，则返回。
-getFoxxList(PoolNameOrSocket) ->
+foxxList(PoolNameOrSocket) ->
    agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/foxx">>).
 
-getFoxxList(PoolNameOrSocket, QueryPars) ->
+foxxList(PoolNameOrSocket, QueryPars) ->
    agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/foxx">>, QueryPars).
 
 % 服务说明

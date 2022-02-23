@@ -21,6 +21,10 @@
 
 ]).
 
+-export_type([dbRet/0, ps/0]).
+-type(dbRet() :: {StatusCode :: non_neg_integer(), Body :: map(), Headers :: map()} | {error, term()}).
+-type(ps() :: poolNameOrSocket()).
+
 start() ->
    application:ensure_all_started(eArango).
 
@@ -58,22 +62,16 @@ connDb(DbCfgs) ->
                AuthInfo = agVstProto:authInfo(User, Password),
                gen_tcp:send(Socket, AuthInfo),
                case agVstCli:receiveTcpData(#recvState{}, Socket) of
-                  {ok, MsgBin} ->
-                     case eVPack:decodeHeader(MsgBin) of
-                        [1, 2, 200, _] ->
-                           setCurDbInfo(Socket, DbName, VstSize, Protocol),
-                           {ok, Socket};
-                        _Err ->
-                           ?AgWarn(connDb_tcp, "auth error: ~p~n", [_Err]),
-                           {error, _Err}
-                     end;
-                  {error, Reason} = Err ->
-                     ?AgWarn(connDb_tcp, "recv error: ~p~n", [Reason]),
-                     Err
+                  {200, _BodyMap, _HeaderMap} ->
+                     setCurDbInfo(Socket, DbName, VstSize, Protocol),
+                     {ok, Socket};
+                  _Err ->
+                     ?AgErr(connDb_tcp, "auth error: ~p~n", [_Err]),
+                     _Err
                end;
-            {error, Reason} = Err ->
-               ?AgWarn(connDb_tcp, "connect error: ~p~n", [Reason]),
-               Err
+            _Err ->
+               ?AgErr(connDb_tcp, "connect error: ~p~n", [_Err]),
+               _Err
          end;
       ssl ->
          case ssl:connect(HostName, Port, ?AgDefSocketOpts, ?AgDefConnTimeout) of
@@ -82,22 +80,16 @@ connDb(DbCfgs) ->
                AuthInfo = agVstProto:authInfo(User, Password),
                ssl:send(Socket, AuthInfo),
                case agVstCli:receiveSslData(#recvState{}, Socket) of
-                  {ok, MsgBin} ->
-                     case eVPack:decodeHeader(MsgBin) of
-                        [1, 2, 200, _] ->
-                           setCurDbInfo(Socket, DbName, VstSize, Protocol),
-                           {ok, Socket};
-                        _Err ->
-                           ?AgWarn(connDb_ssl, "auth error: ~p~n", [_Err]),
-                           {error, _Err}
-                     end;
-                  {error, Reason} = Err ->
-                     ?AgWarn(connDb_ssl, "recv error: ~p~n", [Reason]),
-                     Err
+                  {200, _BodyMap, _HeaderMap} ->
+                     setCurDbInfo(Socket, DbName, VstSize, Protocol),
+                     {ok, Socket};
+                  _Err ->
+                     ?AgErr(connDb_ssl, "auth error: ~p~n", [_Err]),
+                     _Err
                end;
-            {error, Reason} = Err ->
-               ?AgWarn(connDb_ssl, "connect error: ~p~n", [Reason]),
-               Err
+            _Err ->
+               ?AgErr(connDb_ssl, "connect error: ~p~n", [_Err]),
+               _Err
          end
    end.
 

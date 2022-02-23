@@ -42,7 +42,7 @@ curDbInfo(PoolNameOrSocket) ->
 % 返回码
 % 200：如果数据库列表编译成功，则返回。
 % 400：如果请求无效，则返回。
-visitDbs(PoolNameOrSocket) ->
+visitDbList(PoolNameOrSocket) ->
    agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/database/user">>).
 
 % 检索所有现有数据库的列表
@@ -54,7 +54,7 @@ visitDbs(PoolNameOrSocket) ->
 % 200：如果数据库列表编译成功，则返回。
 % 400：如果请求无效，则返回。
 % 403：如果请求未在_system数据库中执行，则返回。
-allDbs(PoolNameOrSocket) ->
+dbList(PoolNameOrSocket) ->
    agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/database">>, ?AgDefQuery, ?AgDefHeader, ?AgDefBody, true).
 
 % 创建一个新的数据库

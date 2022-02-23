@@ -12,6 +12,7 @@
    , getListValue/3
    , randElement/1
    , toBinary/1
+   , agMethod/1
 ]).
 
 -spec parseUrl(binary()) -> dbOpts() | {error, invalidUrl}.
@@ -93,4 +94,12 @@ toBinary(Value) when is_float(Value) -> float_to_binary(Value, [{decimals, 6}, c
 toBinary(Value) when is_atom(Value) -> atom_to_binary(Value, utf8);
 toBinary(Value) when is_binary(Value) -> Value;
 toBinary(Value) -> term_to_binary(Value).
+
+agMethod(0) -> <<"Delete">>;
+agMethod(1) -> <<"Get">>;
+agMethod(2) -> <<"Post">>;
+agMethod(3) -> <<"Put">>;
+agMethod(4) -> <<"Head">>;
+agMethod(5) -> <<"Patch">>;
+agMethod(6) -> <<"Options">>.
 

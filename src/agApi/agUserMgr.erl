@@ -114,11 +114,11 @@ clearUserCollAccessLevel(PoolNameOrSocket, UserName, DbName, CollName) ->
 %    400：如果访问权限不正确等
 %    401：如果您没有对_system 数据库的访问数据库访问级别，则返回。
 %    403：如果您没有访问服务器访问级别，则返回。
-getUserDbList(PoolNameOrSocket, UserName) ->
+userDbList(PoolNameOrSocket, UserName) ->
    Path = <<"/_api/user/", UserName/binary, "/database/">>,
    agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path).
 
-getUserDbList(PoolNameOrSocket, UserName, QueryPars) ->
+userDbList(PoolNameOrSocket, UserName, QueryPars) ->
    Path = <<"/_api/user/", UserName/binary, "/database/">>,
    agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, QueryPars).
 
@@ -230,5 +230,5 @@ getUser(PoolNameOrSocket, UserName) ->
 %    200：找到的用户
 %    401：如果您没有对_system 数据库的访问数据库访问级别，则返回。
 %    403：如果您没有访问服务器访问级别，则返回。
-getUserList(PoolNameOrSocket) ->
+userList(PoolNameOrSocket) ->
    agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/user/">>).

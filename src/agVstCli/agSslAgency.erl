@@ -109,7 +109,7 @@ handleMsg(#agReq{method = Method, path = Path, queryPars = QueryPars, headers = 
                      erlang:put(MessageId, {FromPid, TimerRef, 0, <<>>}),
                      {ok, SrvState, CliState#cliState{backlogNum = BacklogNum + 1}};
                   {error, Reason} ->
-                     ?AgWarn(ServerName, ":send error: ~p ~p ~p ~n", [Reason, FromPid, MessageId]),
+                     ?AgErr(ServerName, ":send error: ~p ~p ~p ~n", [Reason, FromPid, MessageId]),
                      ssl:close(Socket),
                      agAgencyUtils:agencyReply(FromPid, undefined, MessageId, {error, {socketSendError, Reason}}),
                      agAgencyUtils:dealClose(SrvState, CliState, {error, {socketSendError, Reason}})
@@ -138,13 +138,13 @@ handleMsg({timeout, _TimerRef, {mWaitingOver, MessageId, FromPid}}, SrvState,
 handleMsg({ssl_closed, Socket},
    #srvState{socket = Socket, serverName = ServerName} = SrvState,
    CliState) ->
-   ?AgWarn(ServerName, "connection closed~n", []),
+   ?AgInfo(ServerName, "connection closed~n", []),
    ssl:close(Socket),
    agAgencyUtils:dealClose(SrvState, CliState, {error, ssl_closed});
 handleMsg({ssl_error, Socket, Reason},
    #srvState{socket = Socket, serverName = ServerName} = SrvState,
    CliState) ->
-   ?AgWarn(ServerName, "connection error: ~p~n", [Reason]),
+   ?AgInfo(ServerName, "connection error: ~p~n", [Reason]),
    ssl:close(Socket),
    agAgencyUtils:dealClose(SrvState, CliState, {error, {ssl_error, Reason}});
 handleMsg(?AgMDoDBConn,
@@ -158,31 +158,25 @@ handleMsg(?AgMDoDBConn,
                AuthInfo = agVstProto:authInfo(User, Password),
                ssl:send(Socket, AuthInfo),
                case agVstCli:receiveSslData(#recvState{}, Socket) of
-                  {ok, MsgBin} ->
-                     case eVPack:decodeHeader(MsgBin) of
-                        [1, 2, 200, _] ->
-                           {ok, SrvState#srvState{dbName = DbName, reConnState = agAgencyUtils:resetReConnState(ReConnState), socket = Socket, vstSize = VstSize}, CliState};
-                        _Err ->
-                           ?AgWarn(ServerName, "auth error: ~p~n", [_Err]),
-                           agAgencyUtils:reConnTimer(SrvState, CliState)
-                     end;
-                  {error, Reason} = Err ->
-                     ?AgWarn(ServerName, "recv auth error: ~p~n", [Reason]),
-                     Err
+                  {200, _BodyMap, _HeaderMap} ->
+                     {ok, SrvState#srvState{dbName = DbName, reConnState = agAgencyUtils:resetReConnState(ReConnState), socket = Socket, vstSize = VstSize}, CliState};
+                  _Err ->
+                     ?AgErr(ServerName, "auth error: ~p~n", [_Err]),
+                     agAgencyUtils:reConnTimer(SrvState, CliState)
                end;
-            {error, Reason} ->
-               ?AgWarn(ServerName, "connect error: ~p~n", [Reason]),
+            _Err ->
+               ?AgErr(ServerName, "connect error: ~p~n", [_Err]),
                agAgencyUtils:reConnTimer(SrvState, CliState)
          end;
       _Ret ->
-         ?AgWarn(ServerName, "deal connect not found agBeamPool:getv(~p) ret ~p is error ~n", [PoolName, _Ret])
+         ?AgErr(ServerName, "deal connect not found agBeamPool:getv(~p) ret ~p is error ~n", [PoolName, _Ret])
    end;
 handleMsg({'$gen_call', FromTag, '$SrvInfo'}, SrvState, CliState) ->
    {To, Tag} = FromTag,
    catch To ! {Tag, {erlang:get(), SrvState, CliState}},
    {ok, SrvState, CliState};
 handleMsg(Msg, #srvState{serverName = ServerName} = SrvState, CliState) ->
-   ?AgWarn(ServerName, "unknown msg: ~p~n", [Msg]),
+   ?AgErr(ServerName, "unknown msg: ~p~n", [Msg]),
    {ok, SrvState, CliState}.
 
 -spec terminate(term(), srvState(), cliState()) -> ok.

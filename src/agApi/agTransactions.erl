@@ -158,7 +158,7 @@ abortTransaction(PoolNameOrSocket, TransactionId) ->
 %    status：交易的状态
 % 返回码
 %    200：如果可以成功检索事务列表，则将返回HTTP 200。
-getTransactionList(PoolNameOrSocket) ->
+transactionList(PoolNameOrSocket) ->
    agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/transaction">>).
 
 % JavaScript交易的HTTP接口

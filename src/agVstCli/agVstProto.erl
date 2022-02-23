@@ -13,12 +13,15 @@
 
 -spec authInfo(User :: binary(), Password :: binary()) -> ok.
 authInfo(User, Password) ->
+   ?AgDebug('IMY******authInfo', " User:~p", [User]),
    AuthInfo = eVPack:encodeBin([1, 1000, <<"plain">>, User, Password]),
    MsgSize = erlang:byte_size(AuthInfo),
    <<(MsgSize + ?AgHeaderSize):32/integer-little-unsigned, 3:32/integer-little-unsigned, (agVstCli:getMsgId()):64/integer-little-unsigned, MsgSize:64/integer-little-unsigned, AuthInfo/binary>>.
 
 -spec request(boolean(), pos_integer(), method(), binary(), path(), queryPars(), headers(), body(), pos_integer()) -> iolist().
 request(IsSystem, MessageId, Method, DbName, Path, QueryPars, Headers, Body, VstSize) ->
+   ?AgDebug('IMY******request', "MessageId:~p Time:~p IsSystem:~p  Method:~p, DbName:~p, Path:~p, QueryPars:~p, Headers:~p, Body:~p", [MessageId, erlang:system_time(second), IsSystem, agMiscUtils:agMethod(Method), DbName, Path, QueryPars, Headers, Body]),
+
    ReqBin =
       case IsSystem of
          false ->
@@ -31,7 +34,6 @@ request(IsSystem, MessageId, Method, DbName, Path, QueryPars, Headers, Body, Vst
    MsgSize = erlang:byte_size(MsgBin),
    case MsgSize =< VstSize of
       true ->
-         %% ?AgWarn(tt, "IMY************** ~p ~p ~p ~p~n", [MsgSize, MessageId, MsgSize, MsgBin]),
          [<<(MsgSize + ?AgHeaderSize):32/integer-little-unsigned, 3:32/integer-little-unsigned, MessageId:64/integer-little-unsigned, MsgSize:64/integer-little-unsigned>>, MsgBin];
       _ ->
          ChunkCnt = erlang:ceil(MsgSize / VstSize),
@@ -61,8 +63,6 @@ response(?AgUndef, DoneCnt, _MessageId, _ChunkIdx, _ChunkSize, _ChunkBuffer, Dat
       <<Length:32/integer-little-unsigned, ChunkX:31/integer-little-unsigned, IsFirst:1/integer-little-unsigned, MessageId:64/integer-little-unsigned, _MessageLength:64/integer-little-unsigned, LeftBuffer/binary>> ->
          ByteSize = erlang:byte_size(LeftBuffer),
          ChunkSize = Length - ?AgHeaderSize,
-
-         io:format("IMY***********get ret ~p ~n", [{Length, ChunkX, IsFirst, MessageId, _MessageLength, ChunkSize, ByteSize}]),
 
          if
             ByteSize == ChunkSize ->
@@ -231,7 +231,6 @@ response(?AgCBody, DoneCnt, MessageId, ChunkIdx, ChunkSize, ChunkBuffer, DataBuf
 response(?AgUndef, #recvState{chunkCnt = ChunkCnt, msgBuffer = MsgBuffer} = RecvState, DataBuffer) ->
    case DataBuffer of
       <<Length:32/integer-little-unsigned, ChunkX:31/integer-little-unsigned, IsFirst:1/integer-little-unsigned, MessageId:64/integer-little-unsigned, _MessageLength:64/integer-little-unsigned, LeftBuffer/binary>> ->
-         ?AgWarn(1111, "response 1: ~p ~p ~p ~p ~p ~n", [ChunkX, IsFirst, MessageId, Length, _MessageLength]),
 
          ByteSize = erlang:byte_size(LeftBuffer),
          ChunkSize = Length - ?AgHeaderSize,

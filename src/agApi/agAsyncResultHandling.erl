@@ -129,10 +129,10 @@ getAsyncJobStatus(PoolNameOrSocket, JodId) ->
 % 返回码
 %     200：如果列表可以成功编译，则返回。注意：该列表可能为空。
 %     400：如果未指定type或值无效，则返回。
-getAsyncJobList(PoolNameOrSocket, Type) ->
+asyncJobList(PoolNameOrSocket, Type) ->
 	Path = <<"/_api/job/", (agMiscUtils:toBinary(Type))/binary>>,
 	agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path).
 
-getAsyncJobList(PoolNameOrSocket, Type, QueryPars) ->
+asyncJobList(PoolNameOrSocket, Type, QueryPars) ->
 	Path = <<"/_api/job/", (agMiscUtils:toBinary(Type))/binary>>,
 	agVstCli:callAgency(PoolNameOrSocket, ?AgGet, Path, QueryPars).

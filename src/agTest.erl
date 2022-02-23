@@ -12,6 +12,9 @@ start() ->
 stop() ->
    eArango:closePool(tt).
 
+isDebug() ->
+   ?AgDebug(test, "IMY**************", []).
+
 tt(C, N) ->
    application:ensure_all_started(eArango),
    eArango:openPool(tt, [{poolSize, 1}], []),

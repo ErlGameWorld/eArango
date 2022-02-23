@@ -113,7 +113,7 @@ handleMsg({'$gen_call', From, {miStopPool, Name}}, State) ->
    gen_server:reply(From, ok),
    {ok, State};
 handleMsg(_Msg, State) ->
-   ?AgWarn(?MODULE, "receive unexpected  msg: ~p", [_Msg]),
+   ?AgErr(?MODULE, "receive unexpected  msg: ~p", [_Msg]),
    {ok, State}.
 
 terminate(Reason, _State) ->
@@ -198,13 +198,13 @@ stopChildren([AgencyName | T]) ->
       ok ->
          ok;
       {error, TerReason} ->
-         ?AgWarn(agAgencyPoolMgr, ":terminate_child: ~p error reason: ~p ~n", [AgencyName, TerReason])
+         ?AgErr(agAgencyPoolMgr, ":terminate_child: ~p error reason: ~p ~n", [AgencyName, TerReason])
    end,
    case supervisor:delete_child(agAgencyPool_sup, AgencyName) of
       ok ->
          ok;
       {error, DelReason} ->
-         ?AgWarn(agAgencyPoolMgr, ":delete_child: ~p error reason: ~p ~n", [AgencyName, DelReason])
+         ?AgErr(agAgencyPoolMgr, ":delete_child: ~p error reason: ~p ~n", [AgencyName, DelReason])
    end,
    stopChildren(T);
 stopChildren([]) ->

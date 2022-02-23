@@ -52,7 +52,7 @@ getAnalyzer(PoolNameOrSocket, AnalyzerName) ->
 %    features：在分析器生成的字段上设置的功能集
 % 返回码
 % 200：分析器定义已成功检索。
-getAnalyzerList(PoolNameOrSocket) ->
+analyzerList(PoolNameOrSocket) ->
    agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/analyzer">>).
 
 % 删除分析仪配置

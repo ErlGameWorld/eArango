@@ -88,7 +88,7 @@ getViewInfo(PoolNameOrSocket, ViewName) ->
 % 类型
 % 返回码
 % 200：视图列表
-getViewList(PoolNameOrSocket) ->
+viewList(PoolNameOrSocket) ->
    agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/view">>).
 
 % 读取指定视图的属性

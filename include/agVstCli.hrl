@@ -46,7 +46,16 @@
 
 -define(AgGetListKV(Key, List), agMiscUtils:getListValue(Key, List, undefined)).
 -define(AgGetListKV(Key, List, Default), agMiscUtils:getListValue(Key, List, Default)).
--define(AgWarn(Tag, Format, Data), agMiscUtils:warnMsg(Tag, Format, Data)).
+
+-define(AgWarn(Tag, Format, Data),  error_logger:warning_msg("[~p:~p|~p]~p " ++ Format, [?MODULE, ?FUNCTION_NAME, ?LINE, Tag | Data])).
+-define(AgInfo(Tag, Format, Data), error_logger:info_msg("[~p:~p|~p]~p " ++ Format, [?MODULE, ?FUNCTION_NAME, ?LINE, Tag | Data])).
+-define(AgErr(Tag, Format, Data), error_logger:error_msg("[~p:~p|~p]~p " ++ Format, [?MODULE, ?FUNCTION_NAME, ?LINE, Tag | Data])).
+
+-ifdef(debug).
+-define(AgDebug(Tag, Format, Data), error_logger:info_msg("[~p:~p|~p]~p " ++ Format, [?MODULE, ?FUNCTION_NAME, ?LINE, Tag | Data])).
+-else.
+-define(AgDebug(_Tag, _Format, _Data), rel).
+-endif.
 
 -define(AgMDoDBConn, mDoDBConn).
 -define(AgUpgradeInfo, <<"VST/1.1\r\n\r\n">>).

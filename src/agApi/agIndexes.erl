@@ -96,7 +96,7 @@ delIndex(PoolNameOrSocket, IndexId) ->
 % 返回一个对象，该对象的属性索引包含给定集合的所有索引描述的数组。在标识符中还可以使用与索引句柄作为键的对象相同的信息。
 % 返回码
 %    200：返回一个JSON对象，其中包含该集合的索引列表。
-getIndexList(PoolNameOrSocket, QueryPars) ->
+indexList(PoolNameOrSocket, QueryPars) ->
 	agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/index">>, QueryPars).
 
 % 使用哈希索引
