@@ -142,8 +142,7 @@ stopPool(PoolName) ->
       undefined ->
          {error, poolNotStarted};
       _ ->
-         gen_server:call(?agAgencyPoolMgr, {miStopPool, PoolName}, infinity)
-
+         gen_server:call(?agAgencyPoolMgr, {miStopPool, PoolName})
    end.
 
 dealStart(PoolName, DbCfgs, AgencyCfgs) ->

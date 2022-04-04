@@ -182,7 +182,12 @@ handleMsg(Msg, #srvState{serverName = ServerName} = SrvState, CliState) ->
 -spec terminate(term(), srvState(), cliState()) -> ok.
 terminate(Reason, #srvState{socket = Socket} = SrvState, CliState) ->
    {ok, NewSrvState, NewCliState} = waitAllReqOver(SrvState, CliState),
-   ssl:close(Socket),
+   case Socket of
+      undefined ->
+         ignore;
+      _ ->
+         ssl:close(Socket)
+   end,
    agAgencyUtils:dealClose(NewSrvState, NewCliState, {error, shutdown}),
    exit(Reason).
 
