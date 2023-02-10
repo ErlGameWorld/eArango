@@ -7,7 +7,7 @@
 start() ->
    eSync:run(),
    application:ensure_all_started(eArango),
-   eArango:openPool(tt, [{poolSize, 1}], []).
+   eArango:openPool(tt, [{poolSize, 16}], []).
 
 stop() ->
    eArango:closePool(tt).
@@ -17,7 +17,7 @@ isDebug() ->
 
 tt(C, N) ->
    application:ensure_all_started(eArango),
-   eArango:openPool(tt, [{poolSize, 1}], []),
+   eArango:openPool(tt, [{poolSize, 16}], []),
    StartTime = erlang:system_time(millisecond),
    io:format("IMY**********************  started~n"),
    [spawn(?MODULE, test, [N, StartTime]) || _Idx <- lists:seq(1, C)].
@@ -126,10 +126,10 @@ tcjf(N, Args1) ->
 
 tcvp(0, _Args1) ->
    Args = #{name => ffd, tet => "fdsff", <<"dfdf">> => 131245435346},
-   eVPack:encodeBin(Args);
+   eVPack:encode(Args);
 tcvp(N, Args1) ->
    Args = #{name => ffd, tet => "fdsff", <<"dfdf">> => 131245435346},
-   eVPack:encodeBin(Args),
+   eVPack:encode(Args),
    tcvp(N - 1, Args1).
 
 tcjx(0, _Args1) ->
@@ -147,12 +147,12 @@ getBin(2) ->
    <<"{\"_key\":\"01J\",\"_id\":\"airports/01J\",\"_rev\":\"_aPaBl7O--_\",\"name\":\"Hilliard Airpark\",\"city\":\"Hilliardfdfsdfdsffffffffffffffffffffffffffffffffffffffffffffffffffffffffafdsfasdfdafsdafdsfsdafdsafdsfdsfdsafdsfdsfdsfhghfghfghgfhsdsdfdsfdsfdsffdfddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddggggggggggggggggggggggggggggggggggggggggg\",\"state\":\"FL\",\"country\":\"USAjjkjkjkfgjkgjfkdjgldgjldjglfdjglfjdljljrlejtrltjewltjrelwtjrletjrletrletjlrejtjtrlwjrejwlrjjreljtljelwjrtlwjtreljrlewjrlwjrlwejrlejltkdfsafd\",\"lat\":30.6880125,\"long\":-81.90594389,\"vip\":false}">>;
 getBin(3) ->
    Map = jiffy:decode(getBin(1), [return_maps]),
-   eVPack:encodeBin(Map);
+   eVPack:encode(Map);
 getBin(4) ->
    Map = jiffy:decode(getBin(2), [return_maps]),
-   eVPack:encodeBin(Map);
+   eVPack:encode(Map);
 getBin(5) ->
-   Header = eVPack:encodeBin([1, 2, 200, #{aaa => bbbb}]),
+   Header = eVPack:encode([1, 2, 200, #{aaa => bbbb}]),
    <<Header/binary, (getBin(4))/binary>>.
 
 

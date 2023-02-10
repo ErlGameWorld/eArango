@@ -1,4 +1,4 @@
--module(agDocuments).
+-module(agDocs).
 -include("eArango.hrl").
 
 -compile(inline).
@@ -168,11 +168,11 @@ getHead(PoolNameOrSocket, CollName, Key, Headers) ->
 % 409：如果在索引属性中具有相同限定词的文档与现有文档发生冲突并因此违反了该唯一约束，则在单个文档的情况下返回409。在这种情况下，响应主体包含一个错误文档。
 newDoc(PoolNameOrSocket, CollName, MapData) ->
 	Path = <<"/_api/document/", CollName/binary>>,
-	agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, ?AgDefQuery, ?AgDefHeader, eVPack:encode(MapData)).
 
 newDoc(PoolNameOrSocket, CollName, MapData, QueryPars) ->
 	Path = <<"/_api/document/", CollName/binary>>,
-	agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, QueryPars, ?AgDefHeader, eVPack:encodeBin(MapData)).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, QueryPars, ?AgDefHeader, eVPack:encode(MapData)).
 
 % 替换文档
 % PUT /_api/document/{collection}/{key}
@@ -209,15 +209,15 @@ newDoc(PoolNameOrSocket, CollName, MapData, QueryPars) ->
 % 412：如果违反了前提条件，则返回。该响应还将在_rev 属性中包含找到的文档的当前修订。此外，将返回属性_id和_key。
 replaceDoc(PoolNameOrSocket, CollName, Key, MapData) ->
 	Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary>>,
-	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, ?AgDefQuery, ?AgDefHeader, eVPack:encode(MapData)).
 
 replaceDoc(PoolNameOrSocket, CollName, Key, MapData, QueryPars) ->
 	Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary>>,
-	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, QueryPars, ?AgDefHeader, eVPack:encodeBin(MapData)).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, QueryPars, ?AgDefHeader, eVPack:encode(MapData)).
 
 replaceDoc(PoolNameOrSocket, CollName, Key, MapData, QueryPars, Headers) ->
 	Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary>>,
-	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, QueryPars, Headers, eVPack:encodeBin(MapData)).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, QueryPars, Headers, eVPack:encode(MapData)).
 
 % 更新文档
 % PATCH /_api/document/{collection}/{key}
@@ -257,15 +257,15 @@ replaceDoc(PoolNameOrSocket, CollName, Key, MapData, QueryPars, Headers) ->
 % 412：如果违反了前提条件，则返回。该响应还将在_rev 属性中包含找到的文档的当前修订。此外，将返回属性_id和_key。
 updateDoc(PoolNameOrSocket, CollName, Key, MapData) ->
 	Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary>>,
-	agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, ?AgDefQuery, ?AgDefHeader, eVPack:encode(MapData)).
 
 updateDoc(PoolNameOrSocket, CollName, Key, MapData, QueryPars) ->
 	Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary>>,
-	agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, QueryPars, ?AgDefHeader, eVPack:encodeBin(MapData)).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, QueryPars, ?AgDefHeader, eVPack:encode(MapData)).
 
 updateDoc(PoolNameOrSocket, CollName, Key, MapData, QueryPars, Headers) ->
 	Path = <<"/_api/document/", CollName/binary, "/", (agMiscUtils:toBinary(Key))/binary>>,
-	agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, QueryPars, Headers, eVPack:encodeBin(MapData)).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, QueryPars, Headers, eVPack:encode(MapData)).
 
 % 删除文档
 % DELETE /_api/document/{collection}/{key}
@@ -321,7 +321,7 @@ delDoc(PoolNameOrSocket, CollName, Key, QueryPars, Headers) ->
 % 对于该操作的返回 列表 如果文档不存在 或者_rev条件不满足 则返回列表的中包含相关的错误 可能需要在使用的时候过滤正确和非正确的返回文档
 getDocs(PoolNameOrSocket, CollName, KeyOrMapDataList) ->
 	Path = <<"/_api/document/", CollName/binary>>,
-	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, #{<<"onlyget">> => <<"true">>}, ?AgDefHeader, eVPack:encodeBin(KeyOrMapDataList)).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, #{<<"onlyget">> => <<"true">>}, ?AgDefHeader, eVPack:encode(KeyOrMapDataList)).
 
 getDocs(PoolNameOrSocket, CollName, KeyOrMapDataList, QueryPars) ->
 	LastQueryPars =
@@ -334,7 +334,7 @@ getDocs(PoolNameOrSocket, CollName, KeyOrMapDataList, QueryPars) ->
 				QueryPars#{<<"onlyget">> => <<"true">>}
 		end,
 	Path = <<"/_api/document/", CollName/binary>>,
-	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, LastQueryPars, ?AgDefHeader, eVPack:encodeBin(KeyOrMapDataList)).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, LastQueryPars, ?AgDefHeader, eVPack:encode(KeyOrMapDataList)).
 
 % 创建多个文档
 % POST /_api/document/{collection}#multiple
@@ -374,11 +374,11 @@ getDocs(PoolNameOrSocket, CollName, KeyOrMapDataList, QueryPars) ->
 % 404：collection指定的collection未知时返回。在这种情况下，响应正文包含一个错误文档。
 newDocs(PoolNameOrSocket, CollName, MapDataList) ->
 	Path = <<"/_api/document/", CollName/binary>>,
-	agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapDataList)).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, ?AgDefQuery, ?AgDefHeader, eVPack:encode(MapDataList)).
 
 newDocs(PoolNameOrSocket, CollName, MapDataList, QueryPars) ->
 	Path = <<"/_api/document/", CollName/binary>>,
-	agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, QueryPars, ?AgDefHeader, eVPack:encodeBin(MapDataList)).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPost, Path, QueryPars, ?AgDefHeader, eVPack:encode(MapDataList)).
 
 % 替换多个文件
 % PUT /_api/document/{collection}
@@ -407,11 +407,11 @@ newDocs(PoolNameOrSocket, CollName, MapDataList, QueryPars) ->
 % 404：如果找不到集合，则返回。
 replaceDocs(PoolNameOrSocket, CollName, MapDataList) ->
 	Path = <<"/_api/document/", CollName/binary>>,
-	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapDataList)).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, ?AgDefQuery, ?AgDefHeader, eVPack:encode(MapDataList)).
 
 replaceDocs(PoolNameOrSocket, CollName, MapDataList, QueryPars) ->
 	Path = <<"/_api/document/", CollName/binary>>,
-	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, QueryPars, ?AgDefHeader, eVPack:encodeBin(MapDataList)).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, QueryPars, ?AgDefHeader, eVPack:encode(MapDataList)).
 
 % 更新多个文件
 % PATCH /_api/document/{collection}
@@ -443,11 +443,11 @@ replaceDocs(PoolNameOrSocket, CollName, MapDataList, QueryPars) ->
 % 404：如果找不到集合，则返回。
 updateDocs(PoolNameOrSocket, CollName, MapDataList) ->
 	Path = <<"/_api/document/", CollName/binary>>,
-	agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapDataList)).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, ?AgDefQuery, ?AgDefHeader, eVPack:encode(MapDataList)).
 
 updateDocs(PoolNameOrSocket, CollName, MapDataList, QueryPars) ->
 	Path = <<"/_api/document/", CollName/binary>>,
-	agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, QueryPars, ?AgDefHeader, eVPack:encodeBin(MapDataList)).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPatch, Path, QueryPars, ?AgDefHeader, eVPack:encode(MapDataList)).
 
 % 删除多个文件
 % DELETE /_api/document/{collection}
@@ -470,8 +470,8 @@ updateDocs(PoolNameOrSocket, CollName, MapDataList, QueryPars) ->
 % 404：如果找不到集合，则返回。在这种情况下，响应主体包含一个错误文档。
 delDocs(PoolNameOrSocket, CollName, KeyOrMapDataList) ->
 	Path = <<"/_api/document/", CollName/binary>>,
-	agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(KeyOrMapDataList)).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, ?AgDefQuery, ?AgDefHeader, eVPack:encode(KeyOrMapDataList)).
 
 delDocs(PoolNameOrSocket, CollName, KeyOrMapDataList, QueryPars) ->
 	Path = <<"/_api/document/", CollName/binary>>,
-	agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, QueryPars, ?AgDefHeader, eVPack:encodeBin(KeyOrMapDataList)).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgDelete, Path, QueryPars, ?AgDefHeader, eVPack:encode(KeyOrMapDataList)).

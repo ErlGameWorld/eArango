@@ -98,7 +98,7 @@
 % 404：如果在查询中访问了不存在的集合，服务器将使用HTTP 404进行响应。
 % 405：如果使用了不受支持的 HTTP 方法，服务器将使用HTTP 405 进行响应。
 newCursor(PoolNameOrSocket, MapData) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/cursor">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/cursor">>, ?AgDefQuery, ?AgDefHeader, eVPack:encode(MapData)).
 
 % 从现有游标返回下一个结果
 % PUT /_api/cursor/{cursor-identifier}
@@ -164,7 +164,7 @@ delCursor(PoolNameOrSocket, CursorId) ->
 % 400：如果请求格式错误，或者查询包含解析错误，服务器将使用HTTP 400响应。响应的正文将包含嵌入在 JSON 对象中的错误详细信息。如果查询引用任何绑定变量，则省略绑定变量也会导致HTTP 400错误。
 % 404：如果在查询中访问了不存在的集合，服务器将使用HTTP 404进行响应。
 explainQuery(PoolNameOrSocket, MapData) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/explain">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/explain">>, ?AgDefQuery, ?AgDefHeader, eVPack:encode(MapData)).
 
 % 解析一个AQL查询并返回有关它的信息
 % POST /_api/query
@@ -175,7 +175,26 @@ explainQuery(PoolNameOrSocket, MapData) ->
 %    200：如果查询有效，服务器将使用HTTP 200进行响应，并在响应的bindVars属性中返回在查询中找到的绑定参数的名称（如果有）。它还将在collections属性中返回查询中使用的collections的数组。如果查询可以成功解析，则返回的JSON 的ast属性将包含查询的抽象语法树表示形式。ast的格式在将来的ArangoDB版本中可能会发生变化，但是可以用来检查ArangoDB如何解释给定查询。请注意，将在不对其应用任何优化的情况下返回抽象语法树。
 %    400：如果请求格式错误或查询包含解析错误，服务器将以HTTP 400响应。响应的正文将包含嵌入在JSON对象中的错误详细信息。
 parseQuery(PoolNameOrSocket, MapData) ->
-	agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/query">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/query">>, ?AgDefQuery, ?AgDefHeader, eVPack:encode(MapData)).
+
+
+% 返回所有 AQL 优化器规则
+% 返回 AQL 查询的所有可用优化器规则的列表。
+% GET /_api/query/rules
+% 所有优化器规则及其属性的列表。
+% 回应
+% HTTP 200：如果可以成功检索到优化器规则列表，则返回。
+% （数组）：对象数组。每个对象描述一个 AQL 优化器规则。
+% 名称（字符串）：查询解释输出中显示的优化器规则的名称。
+% flags（对象）：具有规则属性的对象。
+%     hidden (boolean): 规则是否显示给用户。内部规则是隐藏的。
+%     clusterOnly (boolean)：规则是否仅适用于集群部署模式。
+%     canBeDisabled（布尔值）：是否允许用户禁用此规则。一些规则是强制性的。
+%     canCreateAdditionalPlans (boolean)：此规则是否可以创建额外的查询执行计划。
+%     disabledByDefault (boolean)：优化器是否默认考虑这个规则。
+%     enterpriseOnly（布尔值）：规则是否仅在企业版中可用。
+getRules(PoolNameOrSocket) ->
+   agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/query/rules">>).
 
 % 查询跟踪固定链接
 % ArangoDB具有HTTP接口，用于检索当前正在执行的AQL查询列表和慢速AQL查询列表。为了有意义地使用这些API，需要在执行HTTP请求的数据库中启用查询跟踪。
@@ -210,7 +229,7 @@ getQueryProps(PoolNameOrSocket) ->
 %     200：如果属性更改成功，则返回。
 %     400：如果请求格式错误，服务器将以HTTP 400进行响应，
 changeQueryProps(PoolNameOrSocket, MapData) ->
-	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/query/properties">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/query/properties">>, ?AgDefQuery, ?AgDefHeader, eVPack:encode(MapData)).
 
 % 返回当前运行的 AQL 查询
 % GET /_api/query/current
@@ -362,7 +381,7 @@ getQCacheProps(PoolNameOrSocket) ->
 % 200：如果属性更改成功，则返回。
 % 400：如果请求格式错误，服务器将以HTTP 400进行响应，
 changeQCacheProps(PoolNameOrSocket, MapData) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/query-cache/properties">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/query-cache/properties">>, ?AgDefQuery, ?AgDefHeader, eVPack:encode(MapData)).
 
 % AQL用户功能管理固定链接
 % 这是用于管理AQL用户功能的ArangoDB HTTP接口的简介。AQL用户功能是一种使用用户定义的JavaScript代码扩展ArangoDB查询语言（AQL）功能的方法。
@@ -391,7 +410,7 @@ changeQCacheProps(PoolNameOrSocket, MapData) ->
 %    errorNum：服务器错误号
 %    errorMessage：描述性错误消息
 newUserFun(PoolNameOrSocket, MapData) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/aqlfunction">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/aqlfunction">>, ?AgDefQuery, ?AgDefHeader, eVPack:encode(MapData)).
 
 % 删除现有的AQL用户功能
 % DELETE /_api/aqlfunction/{name}

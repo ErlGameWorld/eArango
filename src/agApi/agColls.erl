@@ -1,4 +1,4 @@
--module(agCollections).
+-module(agColls).
 -include("eArango.hrl").
 
 -compile(inline).
@@ -92,10 +92,10 @@
 %   HTTP 200
 
 newColl(PoolNameOrSocket, MapData) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/collection">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/collection">>, ?AgDefQuery, ?AgDefHeader, eVPack:encode(MapData)).
 
 newColl(PoolNameOrSocket, MapData, QueryPars) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/collection">>, QueryPars, ?AgDefHeader, eVPack:encodeBin(MapData)).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/collection">>, QueryPars, ?AgDefHeader, eVPack:encode(MapData)).
 
 % 删除收藏
 % DELETE /_api/collection/{collection-name}
@@ -196,7 +196,7 @@ collCnt(PoolNameOrSocket, CollName) ->
 % 返回码
 % 200：如果文档计数成功重新计算，则返回HTTP 200。
 % 404：如果集合名称未知，则返回HTTP 404。
-collRecnt(PoolNameOrSocket, CollName) ->
+collReCnt(PoolNameOrSocket, CollName) ->
    Path = <<"/_api/collection/", CollName/binary, "/recalculateCount">>,
    agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path).
 
@@ -245,7 +245,7 @@ collFigures(PoolNameOrSocket, CollName, QueryPars) ->
 % eg: MapData = #{'_key' => testkey, value => 23}
 collResponsibleShard(PoolNameOrSocket, CollName, MapData) ->
    Path = <<"/_api/collection/", CollName/binary, "/responsibleShard">>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, ?AgDefQuery, ?AgDefHeader, eVPack:encode(MapData)).
 
 % 返回集合的分片ID
 % GET /_api/collection/{collection-name}/shards
@@ -320,10 +320,10 @@ collChecksum(PoolNameOrSocket, CollName, QueryPars) ->
 % 通过为可选查询参数excludeSystem提供值为true的值， 将从响应中排除所有系统集合。
 % 返回码
 % 200：收藏列表
-collList(PoolNameOrSocket) ->
+colls(PoolNameOrSocket) ->
    agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/collection">>).
 
-collList(PoolNameOrSocket, QueryPars) ->
+colls(PoolNameOrSocket, QueryPars) ->
    agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/collection">>, QueryPars).
 
 % 加载集合
@@ -351,7 +351,7 @@ loadColl(PoolNameOrSocket, CollName) ->
    agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path).
 
 loadColl(PoolNameOrSocket, CollName, MapData) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/collection/", CollName/binary, "/load">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/collection/", CollName/binary, "/load">>, ?AgDefQuery, ?AgDefHeader, eVPack:encode(MapData)).
 
 % 卸载集合
 % PUT /_api/collection/{collection-name}/unload
@@ -394,7 +394,7 @@ unloadColl(PoolNameOrSocket, CollName) ->
 % 404：如果集合名称未知，则 返回HTTP 404。
 renameColl(PoolNameOrSocket, OldName, MapData) ->
    Path = <<"/_api/collection/", OldName/binary, "/rename">>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, ?AgDefQuery, ?AgDefHeader, eVPack:encode(MapData)).
 
 % 将索引加载到内存中
 % PUT /_api/collection/{collection-name}/loadIndexesIntoMemory
@@ -439,4 +439,25 @@ collLoadIndexesIntoMemory(PoolNameOrSocket, CollName) ->
 % 404：如果集合名称未知，则 返回HTTP 404。
 collChangeProps(PoolNameOrSocket, CollName, MapData) ->
    Path = <<"/_api/collection/", CollName/binary, "/properties">>,
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, ?AgDefQuery, ?AgDefHeader, eVPack:encode(MapData)).
+
+% 压缩集合的数据永久链接
+% 紧凑系列
+%
+% PUT /_api/collection/{collection-name}/compact
+%
+% 路径参数
+%
+% 集合名称（字符串，必需）：要压缩的集合的名称
+% 压缩集合的数据以回收磁盘空间。该操作将通过重写底层 .sst 文件并仅保留相关条目来压缩文档和索引数据。
+%
+% 在正常情况下，不需要运行压缩操作，因为无论如何集合数据最终都会被压缩。但是，在某些情况下，例如在运行大量更新/替换或删除操作之后，集合的磁盘数据可能包含大量过期数据，需要为其回收空间。在这种情况下，可以使用压缩操作。
+%
+% 回应
+%
+% HTTP 200：压缩成功开始
+%
+% HTTP 401：如果请求未作为具有足够权限的用户进行身份验证
+collCompact(PoolNameOrSocket, CollName) ->
+   Path = <<"/_api/collection/", CollName/binary, "/compact">>,
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path).

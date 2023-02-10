@@ -111,7 +111,7 @@ getWalProps(PoolNameOrSocket) ->
 %    200：操作成功返回。
 %    405：使用无效的HTTP方法时返回。
 setWalProps(PoolNameOrSocket, MapData) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_admin/wal/properties">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_admin/wal/properties">>, ?AgDefQuery, ?AgDefHeader, eVPack:encode(MapData)).
 
 % 返回有关当前正在运行的事务的信息
 % GET /_admin/wal/transactions
@@ -166,7 +166,7 @@ curDbTime(PoolNameOrSocket) ->
 %    path：此请求的相对路径
 %    rawRequestBody：已发送字符的数字列表
 echo(PoolNameOrSocket, MapData) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_admin/echo">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_admin/echo">>, ?AgDefQuery, ?AgDefHeader, eVPack:encode(MapData)).
 
 % 返回数据库的版本。
 % GET /_admin/database/target-version

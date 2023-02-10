@@ -58,7 +58,7 @@
 %    409：如果导入会触发唯一键冲突，complete则返回，并将 其设置为true。
 %    500：如果服务器无法为没有用户定义密钥的文档自动生成文档密钥（密钥错误），则返回500。
 docImports(PoolNameOrSocket, ListOfList, QueryPars) ->
-   BodyStr = <<<<(eVPack:encodeBin(OneList))/binary, "\n">> || OneList <- ListOfList>>,
+   BodyStr = <<<<(eVPack:encode(OneList))/binary, "\n">> || OneList <- ListOfList>>,
    agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/import">>, QueryPars, ?AgDefHeader, BodyStr).
 
 % 从JSON导入文档
@@ -101,9 +101,9 @@ docImports(PoolNameOrSocket, ListOfList, QueryPars) ->
 jsonImports(PoolNameOrSocket, MapDataList, QueryPars) ->
    case QueryPars of
       #{type := list} ->
-         BodyStr = eVPack:encodeBin(MapDataList);
+         BodyStr = eVPack:encode(MapDataList);
       #{type := documents} ->
-         BodyStr = <<<<(eVPack:encodeBin(OneList))/binary, "\n">> || OneList <- MapDataList>>;
+         BodyStr = <<<<(eVPack:encode(OneList))/binary, "\n">> || OneList <- MapDataList>>;
       _ ->
          BodyStr = MapDataList
    end,

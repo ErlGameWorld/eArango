@@ -42,7 +42,7 @@ curDbInfo(PoolNameOrSocket) ->
 % 返回码
 % 200：如果数据库列表编译成功，则返回。
 % 400：如果请求无效，则返回。
-visitDbList(PoolNameOrSocket) ->
+visitDbs(PoolNameOrSocket) ->
    agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/database/user">>).
 
 % 检索所有现有数据库的列表
@@ -54,7 +54,7 @@ visitDbList(PoolNameOrSocket) ->
 % 200：如果数据库列表编译成功，则返回。
 % 400：如果请求无效，则返回。
 % 403：如果请求未在_system数据库中执行，则返回。
-dbList(PoolNameOrSocket) ->
+allDbs(PoolNameOrSocket) ->
    agVstCli:callAgency(PoolNameOrSocket, ?AgGet, <<"/_api/database">>, ?AgDefQuery, ?AgDefHeader, ?AgDefBody, true).
 
 % 创建一个新的数据库
@@ -79,7 +79,7 @@ dbList(PoolNameOrSocket) ->
 % 403：如果请求未在_system数据库中执行，则返回。
 % 409：如果具有指定名称的数据库已经存在，则返回。
 newDb(PoolNameOrSocket, MapData) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/database">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData), true).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/database">>, ?AgDefQuery, ?AgDefHeader, eVPack:encode(MapData), true).
 
 % 删除现有数据库
 % DELETE /_api/database/{database-name}

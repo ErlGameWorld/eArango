@@ -77,7 +77,7 @@ getRepInventory(PoolNameOrSocket, QueryPars) ->
 % 400：如果 ttl 值无效或未指定DBserver属性或协调器上的DBserver属性不合法，则返回。
 % 405：使用无效的HTTP方法时返回。
 newRepBatch(PoolNameOrSocket, MapData) ->
-	agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/replication/batch">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/replication/batch">>, ?AgDefQuery, ?AgDefHeader, eVPack:encode(MapData)).
 
 % 删除现有的转储批次
 % 处理转储批处理命令
@@ -114,7 +114,7 @@ delRepBatch(PoolNameOrSocket, BatchId) ->
 % 为了获得相同的数据状态，复制客户端应按照提供的顺序使用转储结果的各个部分。
 prolongRepBatch(PoolNameOrSocket, BatchId, MapData) ->
 	Path = <<"/_api/replication/batch/", (agMiscUtils:toBinary(BatchId))/binary>>,
-	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, Path, ?AgDefQuery, ?AgDefHeader, eVPack:encode(MapData)).
 
 % 返回集合的数据
 % 返回一个集合的全部内容
@@ -269,7 +269,7 @@ getRepDoc(PoolNameOrSocket, QueryPars) ->
 %    500：如果同步期间发生错误，则返回。
 %    501：在集群中的协调器上调用此操作时返回。
 startRepSync(PoolNameOrSocket, MapData) ->
-	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/sync">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/sync">>, ?AgDefQuery, ?AgDefHeader, eVPack:encode(MapData)).
 
 % 返回集合和索引的集群清单
 % 重建集群中的集合和索引的概述
@@ -462,10 +462,10 @@ getRepApplierConfig(PoolNameOrSocket, QueryPars) ->
 % 405：使用无效的HTTP方法时返回。
 % 500：如果组装响应时发生错误，则返回500。
 setRepApplierConfig(PoolNameOrSocket, MapData) ->
-	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/applier-config">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/applier-config">>, ?AgDefQuery, ?AgDefHeader, eVPack:encode(MapData)).
 
 setRepApplierConfig(PoolNameOrSocket, MapData, QueryPars) ->
-	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/applier-config">>, QueryPars, ?AgDefHeader, eVPack:encodeBin(MapData)).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/applier-config">>, QueryPars, ?AgDefHeader, eVPack:encode(MapData)).
 
 % 启动复制应用程序
 % PUT /_api/replication/applier-start
@@ -613,7 +613,7 @@ getRepApplierState(PoolNameOrSocket, QueryPars) ->
 %    500：同步或启动连续复制时出错返回。
 %    501：在集群中的Coordinator上调用该操作时返回。
 changeRepMakeSlave(PoolNameOrSocket, MapData) ->
-	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/make-follower">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_api/replication/make-follower">>, ?AgDefQuery, ?AgDefHeader, eVPack:encode(MapData)).
 
 %其他复制命令
 %返回服务器ID

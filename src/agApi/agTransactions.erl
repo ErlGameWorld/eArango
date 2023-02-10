@@ -79,7 +79,7 @@
 %    400：如果事务规范丢失或格式不正确，则服务器将使用HTTP 400进行响应。
 %    404：如果事务规范包含未知集合，则服务器将使用HTTP 404进行响应。
 beginTransaction(PoolNameOrSocket, MapData) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/transaction/begin">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/transaction/begin">>, ?AgDefQuery, ?AgDefHeader, eVPack:encode(MapData)).
 
 % 提取服务器端事务的状态
 % GET /_api/transaction/{transaction-id}
@@ -196,7 +196,7 @@ transactionList(PoolNameOrSocket) ->
 %    404：如果事务规范包含未知集合，则服务器将使用HTTP 404进行响应。
 %    500：用户抛出的异常将使服务器以HTTP 500的返回码进行响应
 executeTransaction(PoolNameOrSocket, MapData) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/transaction">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/transaction">>, ?AgDefQuery, ?AgDefHeader, eVPack:encode(MapData)).
 
 
 

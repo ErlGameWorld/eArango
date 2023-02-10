@@ -96,7 +96,7 @@ clusterHealth(PoolNameOrSocket) ->
 %    501：
 %    504：
 setClusterMaintenance(PoolNameOrSocket, OnOrOff) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_admin/cluster/maintenance">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(OnOrOff)).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_admin/cluster/maintenance">>, ?AgDefQuery, ?AgDefHeader, eVPack:encode(OnOrOff)).
 
 %%%%%%%%%%%%%%% Agency ??????????????????????????
 

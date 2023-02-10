@@ -106,7 +106,7 @@ getAdminLogLevel(PoolNameOrSocket) ->
 % 405：使用无效的HTTP方法时返回。
 % 500：如果服务器由于内存不足错误而无法生成结果，则返回。
 modifyAdminLogLevel(PoolNameOrSocket, MapData) ->
-   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_admin/log/level">>, ?AgDefQuery, ?AgDefHeader, eVPack:encodeBin(MapData)).
+   agVstCli:callAgency(PoolNameOrSocket, ?AgPut, <<"/_admin/log/level">>, ?AgDefQuery, ?AgDefHeader, eVPack:encode(MapData)).
 
 % TLS
 % 返回TLS数据的摘要

@@ -75,7 +75,7 @@ getIndexInfo(PoolNameOrSocket, IndexId) ->
 %    400：如果发布了无效的索引描述或使用了目标索引不支持的属性，则返回HTTP 400。
 %    404：如果集合未知，则返回HTTP 404。
 newIndex(PoolNameOrSocket, MapData, QueryPars) ->
-	agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/index">>, QueryPars, ?AgDefHeader, eVPack:encodeBin(MapData)).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/index">>, QueryPars, ?AgDefHeader, eVPack:encode(MapData)).
 
 % 删除索引
 % DELETE /_api/index/{index-id}
@@ -122,7 +122,7 @@ indexList(PoolNameOrSocket, QueryPars) ->
 %    400：如果集合中已经包含文档，并且您尝试创建唯一哈希索引以使某些文档违反唯一性，则返回HTTP 400。
 %    404：如果集合名称未知，则返回HTTP 404。
 newIndexOfHash(PoolNameOrSocket, MapData, QueryPars) ->
-	agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/index">>, QueryPars, ?AgDefHeader, eVPack:encodeBin(MapData)).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/index">>, QueryPars, ?AgDefHeader, eVPack:encode(MapData)).
 
 % 使用跳过列表索引
 % 如果存在合适的跳过列表索引，则/_api/simple/range和其他操作将使用该索引来执行查询。
@@ -147,7 +147,7 @@ newIndexOfHash(PoolNameOrSocket, MapData, QueryPars) ->
 %    400：如果集合已经包含文档，并且您尝试以存在违反唯一性的文档的方式创建唯一的跳过列表索引，则返回HTTP 400。
 %    404：如果集合名称未知，则返回HTTP 404。
 newIndexOfSkipList(PoolNameOrSocket, MapData, QueryPars) ->
-	agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/index">>, QueryPars, ?AgDefHeader, eVPack:encodeBin(MapData)).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/index">>, QueryPars, ?AgDefHeader, eVPack:encode(MapData)).
 
 % 使用持久索引
 % 如果存在合适的持久索引，则/_api/simple/range其他操作将使用该索引执行查询。
@@ -172,7 +172,7 @@ newIndexOfSkipList(PoolNameOrSocket, MapData, QueryPars) ->
 %    400：如果集合已经包含文档，并且您尝试以存在违反唯一性的文档的方式创建唯一的持久索引，则返回HTTP 400。
 %    404：如果集合名称未知，则返回HTTP 404。
 newIndexOfPersistent(PoolNameOrSocket, MapData, QueryPars) ->
-	agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/index">>, QueryPars, ?AgDefHeader, eVPack:encodeBin(MapData)).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/index">>, QueryPars, ?AgDefHeader, eVPack:encode(MapData)).
 
 % 使用TTL（生存时间）索引
 %
@@ -191,7 +191,7 @@ newIndexOfPersistent(PoolNameOrSocket, MapData, QueryPars) ->
 %     400：如果集合已经包含另一个TTL索引，则返回HTTP 400，因为每个集合最多可以有一个TTL索引。
 %     404：如果集合名称未知，则返回HTTP 404。
 newIndexOfTtl(PoolNameOrSocket, MapData, QueryPars) ->
-	agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/index">>, QueryPars, ?AgDefHeader, eVPack:encodeBin(MapData)).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/index">>, QueryPars, ?AgDefHeader, eVPack:encode(MapData)).
 
 % 创建地理索引
 % POST /_api/index#geo
@@ -211,7 +211,7 @@ newIndexOfTtl(PoolNameOrSocket, MapData, QueryPars) ->
 %    201：如果索引尚不存在并且可以创建，则 返回HTTP 201。
 %    404：如果集合名称未知，则返回HTTP 404。
 newIndexOfGeo(PoolNameOrSocket, MapData, QueryPars) ->
-	agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/index">>, QueryPars, ?AgDefHeader, eVPack:encodeBin(MapData)).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/index">>, QueryPars, ?AgDefHeader, eVPack:encode(MapData)).
 
 % 全文
 % 如果存在全文索引， /_api/simple/fulltext则将使用该索引执行指定的全文查询。
@@ -229,4 +229,4 @@ newIndexOfGeo(PoolNameOrSocket, MapData, QueryPars) ->
 %    201：如果索引不存在并且可以创建，则 返回HTTP 201。
 %    404：如果集合名称未知，则返回HTTP 404。
 newIndexOfFulltext(PoolNameOrSocket, MapData, QueryPars) ->
-	agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/index">>, QueryPars, ?AgDefHeader, eVPack:encodeBin(MapData)).
+	agVstCli:callAgency(PoolNameOrSocket, ?AgPost, <<"/_api/index">>, QueryPars, ?AgDefHeader, eVPack:encode(MapData)).

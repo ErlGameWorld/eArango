@@ -183,7 +183,7 @@ initMsgId() ->
    case persistent_term:get(agMessageId, undefined) of
       undefined ->
          Ref = atomics:new(1, [{signed, false}]),
-         InitId = rand:uniform(10000),
+         InitId = rand:uniform(100000),
          atomics:put(Ref, 1, InitId),
          persistent_term:put(agMessageId, Ref);
       _ ->
@@ -192,13 +192,5 @@ initMsgId() ->
 
 getMsgId() ->
    Ref = persistent_term:get(agMessageId, undefined),
-   MessageId = atomics:add_get(Ref, 1, 1),
-   if
-      MessageId >= ?agMaxMessageId ->
-         InitId = rand:uniform(10000),
-         atomics:put(Ref, 1, InitId),
-         InitId;
-      true ->
-         MessageId
-   end.
+   atomics:add_get(Ref, 1, 1).
 

@@ -14,7 +14,7 @@
 -spec authInfo(User :: binary(), Password :: binary()) -> ok.
 authInfo(User, Password) ->
    ?AgDebug('IMY******authInfo', " User:~p", [User]),
-   AuthInfo = eVPack:encodeBin([1, 1000, <<"plain">>, User, Password]),
+   AuthInfo = eVPack:encode([1, 1000, <<"plain">>, User, Password]),
    MsgSize = erlang:byte_size(AuthInfo),
    <<(MsgSize + ?AgHeaderSize):32/integer-little-unsigned, 3:32/integer-little-unsigned, (agVstCli:getMsgId()):64/integer-little-unsigned, MsgSize:64/integer-little-unsigned, AuthInfo/binary>>.
 
@@ -25,9 +25,9 @@ request(IsSystem, MessageId, Method, DbName, Path, QueryPars, Headers, Body, Vst
    ReqBin =
       case IsSystem of
          false ->
-            eVPack:encodeBin([1, 1, DbName, Method, Path, QueryPars, Headers]);
+            eVPack:encode([1, 1, DbName, Method, Path, QueryPars, Headers]);
          _ ->
-            eVPack:encodeBin([1, 1, <<"_system">>, Method, Path, QueryPars, Headers])
+            eVPack:encode([1, 1, <<"_system">>, Method, Path, QueryPars, Headers])
       end,
 
    MsgBin = <<ReqBin/binary, Body/binary>>,
