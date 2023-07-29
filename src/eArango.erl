@@ -58,9 +58,9 @@ connDb(DbCfgs) ->
       tcp ->
          case gen_tcp:connect(HostName, Port, ?AgDefSocketOpts, ?AgDefConnTimeout) of
             {ok, Socket} ->
-               gen_tcp:send(Socket, ?AgUpgradeInfo),
+               ntCom:syncSend(Socket, ?AgUpgradeInfo),
                AuthInfo = agVstProto:authInfo(User, Password),
-               gen_tcp:send(Socket, AuthInfo),
+               ntCom:syncSend(Socket, AuthInfo),
                case agVstCli:receiveTcpData(#recvState{}, Socket) of
                   {200, _BodyMap, _HeaderMap} ->
                      setCurDbInfo(Socket, DbName, VstSize, Protocol),

@@ -103,7 +103,7 @@ handleMsg(#agReq{method = Method, path = Path, queryPars = QueryPars, headers = 
                %erlang:put(MessageId, {FromPid, undefined, 0, <<>>}),
                %Ret = agVstProto:response(?AgUndef, 0, 0, 0, 0, <<>>, BBBB),
                %?AgErr(ServerName, "the request is response ret:~p~n", [Ret]),
-               case gen_tcp:send(Socket, Request) of
+               case ntCom:syncSend(Socket, Request) of
                   ok ->
                      TimerRef = case OverTime of
                         infinity ->
@@ -159,9 +159,9 @@ handleMsg(?AgMDoDBConn,
       #dbOpts{port = Port, hostname = HostName, dbName = DbName, user = User, password = Password, vstSize = VstSize} ->
          case gen_tcp:connect(HostName, Port, ?AgDefSocketOpts, ?AgDefConnTimeout) of
             {ok, Socket} ->
-               gen_tcp:send(Socket, ?AgUpgradeInfo),
+               ntCom:syncSend(Socket, ?AgUpgradeInfo),
                AuthInfo = agVstProto:authInfo(User, Password),
-               gen_tcp:send(Socket, AuthInfo),
+               ntCom:syncSend(Socket, AuthInfo),
                case agVstCli:receiveTcpData(#recvState{}, Socket) of
                   {200, _BodyMap, _HeaderMap} ->
                      {ok, SrvState#srvState{dbName = DbName, reConnState = agAgencyUtils:resetReConnState(ReConnState), socket = Socket, vstSize = VstSize}, CliState};
