@@ -13,6 +13,7 @@
    , randElement/1
    , toBinary/1
    , agMethod/1
+   , syncSend/2
 ]).
 
 -spec parseUrl(binary()) -> dbOpts() | {error, invalidUrl}.
@@ -102,4 +103,31 @@ agMethod(3) -> <<"Put">>;
 agMethod(4) -> <<"Head">>;
 agMethod(5) -> <<"Patch">>;
 agMethod(6) -> <<"Options">>.
+
+%% This is a generic "port_command" interface used by TCP, UDP, SCTP, depending
+%% on the driver it is mapped to, and the "Data". It actually sends out data,--
+%% NOT delegating this task to any back-end.  For SCTP, this function MUST NOT
+%% be called directly -- use "sendmsg" instead:
+%%
+syncSend(S, Data) ->
+   MRef = monitor(port, S),
+   MRefBin = term_to_binary(MRef, [local]),
+   MRefBinSize = byte_size(MRefBin),
+   MRefBinSize = MRefBinSize band 16#FFFF,
+   try
+      erlang:port_command(S, [<<MRefBinSize:16, MRefBin/binary>>, Data], [])
+   of
+      false -> % Port busy when nosuspend option was passed
+         {error, busy};
+      true ->
+         receive
+            {inet_reply, S, Status, MRef} ->
+               demonitor(MRef, [flush]),
+               Status;
+            {'DOWN', MRef, _, _, _Reason} ->
+               {error, closed}
+         end
+   catch error: _ ->
+      {error, einval}
+   end.
 

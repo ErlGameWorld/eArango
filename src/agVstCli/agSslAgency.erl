@@ -56,9 +56,32 @@ safeRegister(ServerName) ->
 
 moduleInit(Parent, Args) ->
    case init(Args) of
-      {ok, SrvState, CliState} ->
-         proc_lib:init_ack(Parent, {ok, self()}),
-         ?MODULE:loop(Parent, SrvState, CliState);
+      {ok, #srvState{poolName = PoolName, reConnState = ReConnState} = SrvState, CliState} ->
+         case ?agBeamPool:getv(PoolName) of
+            #dbOpts{port = Port, hostname = HostName, dbName = DbName, user = User, password = Password, vstSize = VstSize} ->
+               case ssl:connect(HostName, Port, ?AgDefSocketOpts, ?AgDefConnTimeout) of
+                  {ok, Socket} ->
+                     ssl:send(Socket, ?AgUpgradeInfo),
+                     AuthInfo = agVstProto:authInfo(User, Password),
+                     ssl:send(Socket, AuthInfo),
+                     case agVstCli:receiveSslData(#recvState{}, Socket) of
+                        {200, _BodyMap, _HeaderMap} ->
+                           NewSrvState = SrvState#srvState{dbName = DbName, reConnState = agAgencyUtils:resetReConnState(ReConnState), socket = Socket, vstSize = VstSize},
+                           proc_lib:init_ack(Parent, {ok, self()}),
+                           erlang:start_timer(?agKeepAliveTime, self(), keep_alive),
+                           ?MODULE:loop(Parent, NewSrvState, CliState);
+                        _Err ->
+                           proc_lib:init_ack(Parent, {error, _Err}),
+                           exit(_Err)
+                     end;
+                  _Err ->
+                     proc_lib:init_ack(Parent, {error, _Err}),
+                     exit(_Err)
+               end;
+            _Ret ->
+               proc_lib:init_ack(Parent, {error, _Ret}),
+               exit(_Ret)
+         end;
       {stop, Reason} ->
          proc_lib:init_ack(Parent, {error, Reason}),
          exit(Reason)
@@ -78,7 +101,6 @@ loop(Parent, SrvState, CliState) ->
 
 -spec init(term()) -> no_return().
 init({PoolName, AgencyName, #agencyOpts{reconnect = Reconnect, backlogSize = BacklogSize, reConnTimeMin = Min, reConnTimeMax = Max}}) ->
-   self() ! ?AgMDoDBConn,
    ReConnState = agAgencyUtils:initReConnState(Reconnect, Min, Max),
    {ok, #srvState{poolName = PoolName, serverName = AgencyName, reConnState = ReConnState}, #cliState{backlogSize = BacklogSize}}.
 
@@ -175,8 +197,17 @@ handleMsg({'$gen_call', FromTag, '$SrvInfo'}, SrvState, CliState) ->
    {To, Tag} = FromTag,
    catch To ! {Tag, {erlang:get(), SrvState, CliState}},
    {ok, SrvState, CliState};
+handleMsg({timeout, _TimerRef, keep_alive}, #srvState{socket = Socket} = SrvState, #cliState{backlogNum = BacklogNum} = CliState) ->
+   case Socket /= undefined andalso BacklogNum =< 0 of
+      true ->
+         self() ! #agReq{method = ?AgGet, path = <<"/_admin/time">>, queryPars = ?AgDefQuery, headers = ?AgDefHeader, body = ?AgDefBody, messageId = agVstCli:getMsgId(), fromPid = undefined, overTime = infinity, isSystem = false};
+      _ ->
+         ignore
+   end,
+   erlang:start_timer(?agKeepAliveTime, self(), keep_alive),
+   {ok, SrvState, CliState};
 handleMsg(Msg, #srvState{serverName = ServerName} = SrvState, CliState) ->
-   ?AgErr(ServerName, "unknown msg: ~p~n", [Msg]),
+   ?AgErr(ServerName, "unknown msg: ~p ~p ~p~n", [Msg, SrvState, CliState]),
    {ok, SrvState, CliState}.
 
 -spec terminate(term(), srvState(), cliState()) -> ok.

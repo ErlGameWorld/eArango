@@ -91,7 +91,7 @@ castAgency(PoolNameOrSocket, Method, Path, QueryPars, Headers, Body, Pid, IsSyst
                Request = agVstProto:request(IsSystem, MessageId, Method, DbName, Path, QueryPars, Headers, Body, VstSize),
                case Protocol of
                   tcp ->
-                     case ntCom:syncSend(PoolNameOrSocket, Request) of
+                     case agMiscUtils:syncSend(PoolNameOrSocket, Request) of
                         ok ->
                            receiveTcpData(#recvState{messageId = MessageId}, PoolNameOrSocket);
                         _Err ->

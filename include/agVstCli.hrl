@@ -1,12 +1,11 @@
 %% agency 管理进程的名称
 -define(agAgencyPoolMgr, agAgencyPoolMgr).
 
-
 -define(agBeamPool, agBeamPool).
 -define(agBeamAgency, agBeamAgency).
 
--define(agMessageId, agMessageId).
--define(agMaxMessageId, 576460752303423486).
+%% HTTP 连接的保持活动超时由keep-alive-timeout(默认为300秒)控制 数据库安装后配置大一点 连接池进程默认半个小时发送一个续期请求
+-define(agKeepAliveTime, 3600000).
 
 -define(AgUndef, 0).                %% Wait One Chunk start
 -define(AgCHeader, 1).              %% Wait One Chunk header
@@ -16,9 +15,6 @@
 -define(AgCDone, 5).                %% receve one Chunk done
 -define(AgMDone, 6).                %% receve one message done
 
-%% pidFrom pid() to reply; undefiend  discard; timeOut 该请求标记为过期了 discard
--record(msgIdCache, {pidFrom, timerRef, chunkCnt, msgBuffer}).
-
 -define(AgMBIdx, 4).
 -define(AgCCIdx, 3).
 -define(AgTRIdx, 2).
@@ -27,7 +23,7 @@
 -define(AgHeaderSize, 24).
 
 %% 默认选项定义
--define(AgDefBaseUrl, <<"http://192.168.0.88:8529">>).
+-define(AgDefBaseUrl, <<"http://127.0.0.1:8529">>).
 -define(AgDefDbName, <<"_system">>).
 -define(AgDefUser, <<"root">>).
 -define(AgDefPassWord, <<"156736">>).
